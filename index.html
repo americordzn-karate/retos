@@ -67,7 +67,7 @@
                         <span class="text-[10px] tracking-widest text-zinc-400 uppercase font-bold block">Alumno Seleccionado</span>
                         <p id="info-nombre" class="text-lg font-black text-black uppercase truncate mt-0.5 tracking-wide"></p>
                         
-                        <!-- Bloque de Etiquetas e Información Biométrica con diseño institucional -->
+                        <!-- Bloque de Etiquetas e Información Biométrica vinculada a columnas Q y R -->
                         <div class="flex flex-wrap gap-2 mt-3">
                             <div class="inline-flex items-center px-2.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-wide bg-zinc-100 text-black border border-zinc-300">
                                 <span id="info-cat"></span>
@@ -209,9 +209,9 @@
             document.getElementById("info-nombre").textContent = alumno.nombre || "SIN NOMBRE";
             document.getElementById("info-cat").textContent = cat;
             
-            // BLINDAJE BIOMÉTRICO OMNIDIRECCIONAL: Busca el dato bajo cualquier variante de nombre de propiedad
-            let rawEstatura = alumno.estatura ?? alumno.estatura_cm ?? alumno.Estatura_cm ?? "";
-            let rawPeso = alumno.peso ?? alumno.peso_kg ?? alumno.Peso_kg ?? "";
+            // MAPEO DIRECTO DE COLUMNAS Q Y R (Estatura_cm y Peso_kg de la base de datos)
+            let rawEstatura = alumno.Estatura_cm ?? alumno.estatura_cm ?? alumno.estatura ?? "";
+            let rawPeso = alumno.Peso_kg ?? alumno.peso_kg ?? alumno.peso ?? "";
 
             const estaturaVal = (rawEstatura.toString().trim() !== "") ? rawEstatura.toString().trim() : "--";
             const pesoVal = (rawPeso.toString().trim() !== "") ? rawPeso.toString().trim() : "--";
@@ -266,7 +266,6 @@
                 const realizados = datosDojo.intentosHoy ? (datosDojo.intentosHoy[hashHoy] || 0) : 0;
                 const limiteMax = parseInt(r.limiteDiario) || 999;
                 
-                // Evaluar si ya se topó el límite diario para bloquear la acción
                 const limiteAlcanzado = realizados >= limiteMax;
 
                 let estrellasStr = "";
@@ -278,7 +277,6 @@
                 const card = document.createElement("div");
                 card.className = "bg-white p-5 rounded-lg border border-zinc-200 flex flex-col justify-between shadow-sm hover:border-zinc-400 transition-all group";
                 
-                // Construcción condicional del botón de acuerdo al estatus de su límite diario
                 let botonHTML = "";
                 if (limiteAlcanzado) {
                     botonHTML = `
@@ -364,11 +362,11 @@
                             borderColor: '#000000',     
                             borderWidth: 1.5,
                             borderRadius: 4,
-                            // Reducción drástica del ancho de barras e interlineado para compactar el eje Y
-                            barThickness: 16,           
-                            maxBarThickness: 18,
-                            categoryPercentage: 0.9,
-                            barPercentage: 0.9    
+                            // Reducción drástica a la mitad de los grosores de barra e interlineados
+                            barThickness: 10,           
+                            maxBarThickness: 12,
+                            categoryPercentage: 0.5,
+                            barPercentage: 0.8    
                         }
                     ]
                 },
@@ -390,9 +388,9 @@
                         y: { 
                             ticks: { 
                                 color: '#1a1a1a', 
-                                font: { size: 10, weight: 'bold' },
-                                // Compactación del área de padding en etiquetas del eje Y
-                                padding: 4
+                                font: { size: 9, weight: 'bold' },
+                                padding: 2,
+                                autoSkip: false // Evita que Chart.js oculte nombres al juntarlos
                             }, 
                             grid: { display: false } 
                         }

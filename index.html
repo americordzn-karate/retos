@@ -4,65 +4,86 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Reto del Mes - Senshi-Kan Karate Academy</title>
-  <!-- Tailwind CSS para Estilos Rápidos y Limpios -->
   <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
-  <!-- Chart.js para Renderizar la Gráfica de Rendimiento -->
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   <style>
-    :root {
-      --color-gold: #D4AF37;
+    body {
+      background-color: #000000;
+      color: #ffffff;
     }
-    .gold-border-glow {
-      border: 2px solid #D4AF37;
-      box-shadow: 0 0 10px rgba(212, 175, 55, 0.2);
+    .text-gold {
+      color: #D4AF37;
+    }
+    .bg-gold {
+      background-color: #D4AF37;
+    }
+    .border-gold {
+      border-color: #D4AF37;
+    }
+    .border-zinc-custom {
+      border-color: #27272a;
+    }
+    .bg-zinc-custom {
+      background-color: #09090b;
+    }
+    .bg-card-custom {
+      background-color: #141416;
     }
   </style>
 </head>
-<body class="bg-black text-white font-sans min-h-screen">
+<body class="font-sans min-h-screen flex flex-col justify-between">
 
-  <!-- Encabezado Principal -->
-  <header class="border-b border-zinc-800 bg-zinc-950 p-6 text-center">
-    <h1 class="text-3xl font-extrabold uppercase tracking-wider text-amber-400">Senshi-Kan Karate Academy</h1>
-    <p class="text-zinc-400 text-sm mt-1">Portal Oficial - Reto del Mes</p>
+  <!-- ENCABEZADO OFICIAL SENSHI-KAN -->
+  <header class="border-b border-zinc-custom bg-zinc-custom p-6 text-center">
+    <h1 class="text-3xl font-black uppercase tracking-wider text-white">
+      SENSHI-KAN <span class="text-gold">KARATE ACADEMY</span>
+    </h1>
+    <p class="text-zinc-400 text-xs tracking-widest uppercase mt-1">Portal del Alumno &bull; Reto del Mes</p>
   </header>
 
-  <!-- Contenedor de la Aplicación -->
-  <main class="max-w-6xl mx-auto p-4 md:p-8 space-y-8">
+  <!-- CONTENEDOR PRINCIPAL -->
+  <main class="max-w-7xl mx-auto p-4 md:p-8 w-full flex-grow space-y-8">
     
-    <!-- Sección de Mensaje de Carga / Estado -->
-    <div id="estado-carga" class="text-center p-8 bg-zinc-900 rounded-lg border border-zinc-800">
-      <p class="text-zinc-400 text-lg animate-pulse">Cargando datos del dojo y puntajes oficiales...</p>
+    <!-- ESTADO DE CARGA -->
+    <div id="estado-carga" class="text-center p-12 bg-card-custom rounded border border-zinc-custom">
+      <p class="text-zinc-400 text-sm tracking-wide animate-pulse uppercase">Sincronizando registros con el Dojo...</p>
     </div>
 
-    <!-- Bloque de Dashboard (Oculto hasta que carguen los datos) -->
+    <!-- SECCIONES DEL PORTAL -->
     <div id="contenido-portal" class="hidden space-y-8">
       
-      <!-- Panel Superior: Gráfica de Rendimiento y Datos Biométricos -->
+      <!-- CONTENEDOR SUPERIOR: GRÁFICA Y LISTADO -->
       <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
         
-        <!-- Gráfica de Barras (Ocupa 2 columnas en pantallas grandes) -->
-        <div class="lg:col-span-2 bg-zinc-900 p-6 rounded-lg border border-zinc-800">
-          <h2 class="text-xl font-bold uppercase text-white mb-4 border-b border-zinc-800 pb-2">Tabla de Rendimiento Mensual</h2>
+        <!-- GRÁFICA DE RENDIMIENTO -->
+        <div class="lg:col-span-2 bg-card-custom p-6 rounded border border-zinc-custom flex flex-col justify-between">
+          <div class="border-b border-zinc-custom pb-3 mb-4">
+            <h2 class="text-lg font-black uppercase tracking-wide text-white">Rendimiento Mensual</h2>
+          </div>
           <div class="relative w-full h-72">
             <canvas id="graficaPuntajes"></canvas>
           </div>
         </div>
 
-        <!-- Visor Lateral: Datos de Alumnos Activos -->
-        <div class="bg-zinc-900 p-6 rounded-lg border border-zinc-800 flex flex-col">
-          <h2 class="text-xl font-bold uppercase text-amber-400 mb-4 border-b border-zinc-800 pb-2">Alumnos Registrados</h2>
-          <div id="lista-alumnos" class="overflow-y-auto max-h-72 space-y-3 pr-2 flex-1">
-            <!-- Los alumnos se inyectarán dinámicamente aquí -->
+        <!-- LISTA DE ALUMNOS ACTIVOS CON BIOMETRÍA -->
+        <div class="bg-card-custom p-6 rounded border border-zinc-custom flex flex-col">
+          <div class="border-b border-zinc-custom pb-3 mb-4">
+            <h2 class="text-lg font-black uppercase tracking-wide text-gold">Alumnos Activos</h2>
+          </div>
+          <div id="lista-alumnos" class="overflow-y-auto max-h-72 space-y-3 pr-2 flex-grow">
+            <!-- Inyección dinámica -->
           </div>
         </div>
 
       </div>
 
-      <!-- Sección Inferior: Módulos de Retos -->
-      <div>
-        <h2 class="text-2xl font-black uppercase text-white mb-6 tracking-wide">Retos Disponibles</h2>
+      <!-- SECCIÓN INFERIOR: TARJETAS DE RETOS -->
+      <div class="space-y-4">
+        <div class="border-b border-zinc-custom pb-2">
+          <h2 class="text-xl font-black uppercase tracking-wide text-white">Módulos de Retos</h2>
+        </div>
         <div id="cuadrícula-retos" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-          <!-- Las tarjetas de retos se inyectarán dinámicamente aquí -->
+          <!-- Inyección dinámica -->
         </div>
       </div>
 
@@ -70,68 +91,61 @@
 
   </main>
 
-  <!-- Pie de Página -->
-  <footer class="text-center p-6 text-zinc-600 text-xs mt-12 border-t border-zinc-900">
-    &copy; 2026 Senshi-Kan Karate Academy &bull; Reynosa, Tamaulipas &bull; Datos de entrenamiento estructurados.
+  <!-- PIE DE PÁGINA -->
+  <footer class="text-center p-6 text-zinc-600 text-[10px] tracking-wider uppercase border-t border-zinc-custom bg-zinc-custom mt-12">
+    &copy; 2026 Senshi-Kan Karate Academy &bull; Reynosa, Tamaulipas &bull; Sports Science & Technology Integration
   </footer>
 
-  <!-- LÓGICA DE CONTROL DEL PORTAL (JAVASCRIPT ORIGINAL INTEGRADO) -->
+  <!-- CONTROL DE INTERFAZ -->
   <script>
-    // Variables de Estado Global de la App
     let datosDojo = { alumnos: [], retos: [], dashboard: { actual: {} } };
     let miGrafica = null;
 
-    // URL del Endpoint del Script del Dojo
-    const SCRIPT_URL = "TU_URL_DE_APPS_SCRIPT_AQUI";
+    // URL DEL COMPILADO EN APPS SCRIPT
+    const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbySqffvaPMOgzpdoscNAlSoUaEJGC_cTmaFG3VKmRNcKbbJ2ui_RRnRxNJTCQE2hAIXrQ/exec";
 
-    // Inicialización al cargar la ventana
     window.addEventListener('DOMContentLoaded', iniciarPortal);
 
     async function iniciarPortal() {
       try {
         const response = await fetch(SCRIPT_URL);
-        if (!response.ok) throw new Error("Error en la respuesta del servidor web.");
+        if (!response.ok) throw new Error("Fallo en la comunicación con la API.");
         
-        // Recibe los datos completos sin alertas de depuración intrusivas
         datosDojo = await response.json();
         
-        // Cambiar estados visuales en la interfaz
         document.getElementById('estado-carga').classList.add('hidden');
         document.getElementById('contenido-portal').classList.remove('hidden');
 
-        // Construir los elementos con los datos limpios recibidos
         renderizarAlumnos();
         renderizarRetos();
         inicializarGrafica();
 
       } catch (error) {
-        console.error("Fallo al inicializar portal:", error);
+        console.error("Error al cargar interfaz:", error);
         document.getElementById('estado-carga').innerHTML = `
-          <p class="text-red-500 font-bold">Error de conexión con la base de datos.</p>
-          <p class="text-zinc-500 text-xs mt-2">${error.message}</p>
+          <p class="text-red-500 font-bold uppercase text-xs tracking-wider">Error de enlace con la base de datos.</p>
         `;
       }
     }
 
-    // Inyección de Tarjetas de Alumnos con Estatura y Peso
     function renderizarAlumnos() {
       const contenedor = document.getElementById('lista-alumnos');
       contenedor.innerHTML = "";
 
-      if (datosDojo.alumnos.length === 0) {
-        contenedor.innerHTML = `<p class="text-zinc-500 text-sm">No hay alumnos activos registrados.</p>`;
+      if (!datosDojo.alumnos || datosDojo.alumnos.length === 0) {
+        contenedor.innerHTML = `<p class="text-zinc-600 text-xs uppercase p-2">Sin alumnos activos.</p>`;
         return;
       }
 
       datosDojo.alumnos.forEach(alumno => {
         const div = document.createElement('div');
-        div.className = "p-3 bg-zinc-950 rounded border border-zinc-800 hover:border-amber-500 transition-colors";
+        div.className = "p-3 bg-black rounded border border-zinc-custom hover:border-gold transition-colors duration-150";
         div.innerHTML = `
           <div class="flex justify-between items-center">
             <span class="font-bold text-sm text-zinc-200">${alumno.nombre}</span>
-            <span class="text-xs bg-zinc-800 text-zinc-400 px-2 py-0.5 rounded">ID: ${alumno.id}</span>
+            <span class="text-[10px] bg-zinc-900 text-zinc-500 px-2 py-0.5 rounded border border-zinc-800">ID: ${alumno.id}</span>
           </div>
-          <div class="flex gap-4 mt-2 text-xs text-zinc-500">
+          <div class="flex gap-4 mt-2 text-[11px] text-zinc-500">
             <span>Estatura: <strong class="text-zinc-300">${alumno.estatura}</strong></span>
             <span>Peso: <strong class="text-zinc-300">${alumno.peso}</strong></span>
           </div>
@@ -140,41 +154,38 @@
       });
     }
 
-    // Inyección de Tarjetas de Retos en la Cuadrícula
     function renderizarRetos() {
       const contenedor = document.getElementById('cuadrícula-retos');
       contenedor.innerHTML = "";
 
-      if (datosDojo.retos.length === 0) {
-        contenedor.innerHTML = `<p class="text-zinc-500 col-span-full text-center py-8">No se encontraron retos asignados.</p>`;
+      if (!datosDojo.retos || datosDojo.retos.length === 0) {
+        contenedor.innerHTML = `<p class="text-zinc-600 text-xs uppercase text-center py-6">No hay retos registrados.</p>`;
         return;
       }
 
       datosDojo.retos.forEach(reto => {
         const tarjeta = document.createElement('div');
-        tarjeta.className = "bg-zinc-900 border border-zinc-800 rounded-lg p-5 flex flex-col justify-between hover:scale-[1.02] transition-transform duration-200";
+        tarjeta.className = "bg-card-custom border border-zinc-custom rounded p-5 flex flex-col justify-between hover:border-zinc-700 transition-colors duration-200";
         tarjeta.innerHTML = `
           <div>
-            <div class="flex justify-between items-start mb-2">
-              <h3 class="font-bold text-lg text-white tracking-wide">${reto.nombre}</h3>
-              <span class="text-xs px-2 py-1 rounded bg-amber-400/10 text-amber-400 font-medium uppercase">${reto.categoria}</span>
+            <div class="flex justify-between items-start mb-3">
+              <h3 class="font-bold text-base text-white tracking-wide uppercase">${reto.nombre}</h3>
+              <span class="text-[9px] tracking-wider px-2 py-0.5 rounded bg-amber-400/10 text-gold border border-amber-400/20 font-bold uppercase">${reto.categoria}</span>
             </div>
-            <p class="text-zinc-400 text-xs mt-1">Límite Diario: <span class="text-zinc-200">${reto.limiteDiario}</span></p>
+            <p class="text-zinc-500 text-xs">Límite Diario: <span class="text-zinc-300 font-medium">${reto.limiteDiario}</span></p>
           </div>
-          <div class="mt-6 pt-4 border-t border-zinc-800/60 flex justify-between items-center">
-            <span class="text-xs text-zinc-500">Popularidad: ${reto.popularidad || 0}★</span>
-            <a href="${reto.url}" target="_blank" class="text-xs font-bold uppercase tracking-wider bg-white text-black px-4 py-2 rounded hover:bg-amber-400 hover:text-black transition-colors">Ver Guía</a>
+          <div class="mt-6 pt-4 border-t border-zinc-800 flex justify-between items-center">
+            <span class="text-[11px] text-zinc-600">Popularidad: ${reto.popularidad || 0}★</span>
+            <a href="${reto.url}" target="_blank" class="text-[10px] font-bold uppercase tracking-widest bg-white text-black px-4 py-2 rounded hover:bg-gold hover:text-black transition-colors duration-150">Ver Guía</a>
           </div>
         `;
         contenedor.appendChild(tarjeta);
       });
     }
 
-    // Construcción de la Gráfica de Barras con Chart.js usando la Sumatoria Directa
     function inicializarGrafica() {
       const ctx = document.getElementById('graficaPuntajes').getContext('2d');
       
-      // Mapeamos las llaves y valores directamente desde el objeto dashboard.actual
       const nombresAlumnos = Object.keys(datosDojo.dashboard.actual);
       const puntajesTotales = Object.values(datosDojo.dashboard.actual);
 
@@ -187,12 +198,11 @@
         data: {
           labels: nombresAlumnos.length > 0 ? nombresAlumnos : ["Sin Datos"],
           datasets: [{
-            label: 'Puntos Acumulados',
             data: puntajesTotales.length > 0 ? puntajesTotales : [0],
-            backgroundColor: '#D4AF37', // Color Oro Senshi-Kan
+            backgroundColor: '#D4AF37', 
             borderColor: '#FFFFFF',
-            borderWidth: 1,
-            borderRadius: 4
+            borderWidth: 0,
+            borderRadius: 2
           }]
         },
         options: {
@@ -201,22 +211,23 @@
           plugins: {
             legend: { display: false },
             tooltip: {
-              backgroundColor: '#18181b',
-              titleColor: '#fbbf24',
+              backgroundColor: '#09090b',
+              titleColor: '#D4AF37',
               bodyColor: '#ffffff',
               borderColor: '#27272a',
-              borderWidth: 1
+              borderWidth: 1,
+              cornerRadius: 2
             }
           },
           scales: {
             y: {
               beginAtZero: true,
-              grid: { color: '#27272a' },
-              ticks: { color: '#a1a1aa', font: { size: 11 } }
+              grid: { color: '#18181b' },
+              ticks: { color: '#71717a', font: { size: 10 } }
             },
             x: {
               grid: { display: false },
-              ticks: { color: '#a1a1aa', font: { size: 11, weight: 'bold' } }
+              ticks: { color: '#a1a1aa', font: { size: 10, weight: '600' } }
             }
           }
         }

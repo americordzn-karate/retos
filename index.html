@@ -1,238 +1,426 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Reto del Mes - Senshi-Kan Karate Academy</title>
-  <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
-  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-  <style>
-    body {
-      background-color: #000000;
-      color: #ffffff;
-    }
-    .text-gold {
-      color: #D4AF37;
-    }
-    .bg-gold {
-      background-color: #D4AF37;
-    }
-    .border-gold {
-      border-color: #D4AF37;
-    }
-    .border-zinc-custom {
-      border-color: #27272a;
-    }
-    .bg-zinc-custom {
-      background-color: #09090b;
-    }
-    .bg-card-custom {
-      background-color: #141416;
-    }
-  </style>
-</head>
-<body class="font-sans min-h-screen flex flex-col justify-between">
-
-  <!-- ENCABEZADO OFICIAL SENSHI-KAN -->
-  <header class="border-b border-zinc-custom bg-zinc-custom p-6 text-center">
-    <h1 class="text-3xl font-black uppercase tracking-wider text-white">
-      SENSHI-KAN <span class="text-gold">KARATE ACADEMY</span>
-    </h1>
-    <p class="text-zinc-400 text-xs tracking-widest uppercase mt-1">Portal del Alumno &bull; Reto del Mes</p>
-  </header>
-
-  <!-- CONTENEDOR PRINCIPAL -->
-  <main class="max-w-7xl mx-auto p-4 md:p-8 w-full flex-grow space-y-8">
-    
-    <!-- ESTADO DE CARGA -->
-    <div id="estado-carga" class="text-center p-12 bg-card-custom rounded border border-zinc-custom">
-      <p class="text-zinc-400 text-sm tracking-wide animate-pulse uppercase">Sincronizando registros con el Dojo...</p>
-    </div>
-
-    <!-- SECCIONES DEL PORTAL -->
-    <div id="contenido-portal" class="hidden space-y-8">
-      
-      <!-- CONTENEDOR SUPERIOR: GRÁFICA Y LISTADO -->
-      <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
-        
-        <!-- GRÁFICA DE RENDIMIENTO -->
-        <div class="lg:col-span-2 bg-card-custom p-6 rounded border border-zinc-custom flex flex-col justify-between">
-          <div class="border-b border-zinc-custom pb-3 mb-4">
-            <h2 class="text-lg font-black uppercase tracking-wide text-white">Rendimiento Mensual</h2>
-          </div>
-          <div class="relative w-full h-72">
-            <canvas id="graficaPuntajes"></canvas>
-          </div>
-        </div>
-
-        <!-- LISTA DE ALUMNOS ACTIVOS CON BIOMETRÍA -->
-        <div class="bg-card-custom p-6 rounded border border-zinc-custom flex flex-col">
-          <div class="border-b border-zinc-custom pb-3 mb-4">
-            <h2 class="text-lg font-black uppercase tracking-wide text-gold">Alumnos Activos</h2>
-          </div>
-          <div id="lista-alumnos" class="overflow-y-auto max-h-72 space-y-3 pr-2 flex-grow">
-            <!-- Inyección dinámica -->
-          </div>
-        </div>
-
-      </div>
-
-      <!-- SECCIÓN INFERIOR: TARJETAS DE RETOS -->
-      <div class="space-y-4">
-        <div class="border-b border-zinc-custom pb-2">
-          <h2 class="text-xl font-black uppercase tracking-wide text-white">Módulos de Retos</h2>
-        </div>
-        <div id="cuadrícula-retos" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-          <!-- Inyección dinámica -->
-        </div>
-      </div>
-
-    </div>
-
-  </main>
-
-  <!-- PIE DE PÁGINA -->
-  <footer class="text-center p-6 text-zinc-600 text-[10px] tracking-wider uppercase border-t border-zinc-custom bg-zinc-custom mt-12">
-    &copy; 2026 Senshi-Kan Karate Academy &bull; Reynosa, Tamaulipas &bull; Sports Science & Technology Integration
-  </footer>
-
-  <!-- CONTROL DE INTERFAZ -->
-  <script>
-    let datosDojo = { alumnos: [], retos: [], dashboard: { actual: {} } };
-    let miGrafica = null;
-
-    // URL DEL COMPILADO EN APPS SCRIPT
-    const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbySqffvaPMOgzpdoscNAlSoUaEJGC_cTmaFG3VKmRNcKbbJ2ui_RRnRxNJTCQE2hAIXrQ/exec";
-
-    window.addEventListener('DOMContentLoaded', iniciarPortal);
-
-    async function iniciarPortal() {
-      try {
-        const response = await fetch(SCRIPT_URL);
-        if (!response.ok) throw new Error("Fallo en la comunicación con la API.");
-        
-        datosDojo = await response.json();
-        
-        document.getElementById('estado-carga').classList.add('hidden');
-        document.getElementById('contenido-portal').classList.remove('hidden');
-
-        renderizarAlumnos();
-        renderizarRetos();
-        inicializarGrafica();
-
-      } catch (error) {
-        console.error("Error al cargar interfaz:", error);
-        document.getElementById('estado-carga').innerHTML = `
-          <p class="text-red-500 font-bold uppercase text-xs tracking-wider">Error de enlace con la base de datos.</p>
-        `;
-      }
-    }
-
-    function renderizarAlumnos() {
-      const contenedor = document.getElementById('lista-alumnos');
-      contenedor.innerHTML = "";
-
-      if (!datosDojo.alumnos || datosDojo.alumnos.length === 0) {
-        contenedor.innerHTML = `<p class="text-zinc-600 text-xs uppercase p-2">Sin alumnos activos.</p>`;
-        return;
-      }
-
-      datosDojo.alumnos.forEach(alumno => {
-        const div = document.createElement('div');
-        div.className = "p-3 bg-black rounded border border-zinc-custom hover:border-gold transition-colors duration-150";
-        div.innerHTML = `
-          <div class="flex justify-between items-center">
-            <span class="font-bold text-sm text-zinc-200">${alumno.nombre}</span>
-            <span class="text-[10px] bg-zinc-900 text-zinc-500 px-2 py-0.5 rounded border border-zinc-800">ID: ${alumno.id}</span>
-          </div>
-          <div class="flex gap-4 mt-2 text-[11px] text-zinc-500">
-            <span>Estatura: <strong class="text-zinc-300">${alumno.estatura}</strong></span>
-            <span>Peso: <strong class="text-zinc-300">${alumno.peso}</strong></span>
-          </div>
-        `;
-        contenedor.appendChild(div);
-      });
-    }
-
-    function renderizarRetos() {
-      const contenedor = document.getElementById('cuadrícula-retos');
-      contenedor.innerHTML = "";
-
-      if (!datosDojo.retos || datosDojo.retos.length === 0) {
-        contenedor.innerHTML = `<p class="text-zinc-600 text-xs uppercase text-center py-6">No hay retos registrados.</p>`;
-        return;
-      }
-
-      datosDojo.retos.forEach(reto => {
-        const tarjeta = document.createElement('div');
-        tarjeta.className = "bg-card-custom border border-zinc-custom rounded p-5 flex flex-col justify-between hover:border-zinc-700 transition-colors duration-200";
-        tarjeta.innerHTML = `
-          <div>
-            <div class="flex justify-between items-start mb-3">
-              <h3 class="font-bold text-base text-white tracking-wide uppercase">${reto.nombre}</h3>
-              <span class="text-[9px] tracking-wider px-2 py-0.5 rounded bg-amber-400/10 text-gold border border-amber-400/20 font-bold uppercase">${reto.categoria}</span>
-            </div>
-            <p class="text-zinc-500 text-xs">Límite Diario: <span class="text-zinc-300 font-medium">${reto.limiteDiario}</span></p>
-          </div>
-          <div class="mt-6 pt-4 border-t border-zinc-800 flex justify-between items-center">
-            <span class="text-[11px] text-zinc-600">Popularidad: ${reto.popularidad || 0}★</span>
-            <a href="${reto.url}" target="_blank" class="text-[10px] font-bold uppercase tracking-widest bg-white text-black px-4 py-2 rounded hover:bg-gold hover:text-black transition-colors duration-150">Ver Guía</a>
-          </div>
-        `;
-        contenedor.appendChild(tarjeta);
-      });
-    }
-
-    function inicializarGrafica() {
-      const ctx = document.getElementById('graficaPuntajes').getContext('2d');
-      
-      const nombresAlumnos = Object.keys(datosDojo.dashboard.actual);
-      const puntajesTotales = Object.values(datosDojo.dashboard.actual);
-
-      if (miGrafica) {
-        miGrafica.destroy();
-      }
-
-      miGrafica = new Chart(ctx, {
-        type: 'bar',
-        data: {
-          labels: nombresAlumnos.length > 0 ? nombresAlumnos : ["Sin Datos"],
-          datasets: [{
-            data: puntajesTotales.length > 0 ? puntajesTotales : [0],
-            backgroundColor: '#D4AF37', 
-            borderColor: '#FFFFFF',
-            borderWidth: 0,
-            borderRadius: 2
-          }]
-        },
-        options: {
-          responsive: true,
-          maintainAspectRatio: false,
-          plugins: {
-            legend: { display: false },
-            tooltip: {
-              backgroundColor: '#09090b',
-              titleColor: '#D4AF37',
-              bodyColor: '#ffffff',
-              borderColor: '#27272a',
-              borderWidth: 1,
-              cornerRadius: 2
-            }
-          },
-          scales: {
-            y: {
-              beginAtZero: true,
-              grid: { color: '#18181b' },
-              ticks: { color: '#71717a', font: { size: 10 } }
-            },
-            x: {
-              grid: { display: false },
-              ticks: { color: '#a1a1aa', font: { size: 10, weight: '600' } }
-            }
-          }
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Senshi-Kan - Portal Reto del Mes</title>
+    <!-- Tailwind CSS para el estilizado institucional -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Chart.js para la gráfica de rendimiento -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        body {
+            background-color: #ffffff;
+            color: #1a1a1a;
+            font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
         }
-      });
-    }
-  </script>
+        .text-mustard { color: #e5a93c; }
+        .bg-mustard { background-color: #e5a93c; }
+        .bg-mustard-hover:hover { background-color: #d4962b; }
+        .border-mustard { border-color: #e5a93c; }
+        
+        /* Estilos de scrollbar limpios */
+        ::-webkit-scrollbar { width: 6px; }
+        ::-webkit-scrollbar-track { background: #f4f4f5; }
+        ::-webkit-scrollbar-thumb { background: #d4d4d8; border-radius: 3px; }
+        ::-webkit-scrollbar-thumb:hover { background: #e5a93c; }
+    </style>
+</head>
+<body class="antialiased p-4 md:p-8 min-h-screen flex flex-col justify-between">
+
+    <div class="max-w-6xl mx-auto w-full flex-grow">
+        <!-- Encabezado Principal Institucional -->
+        <header class="text-center mb-8 border-b-2 border-black pb-6">
+            <h1 class="text-3xl md:text-5xl font-black tracking-widest text-black uppercase">SENSHI-KAN</h1>
+            <p class="text-xs md:text-sm mt-2 tracking-[0.3em] text-mustard font-bold uppercase">Portal Digital • Reto del Mes</p>
+        </header>
+
+        <!-- Pantalla de Carga -->
+        <div id="loading" class="flex flex-col items-center justify-center py-24">
+            <div class="w-12 h-12 border-4 border-t-transparent border-mustard rounded-full animate-spin mb-4"></div>
+            <p class="text-xs tracking-widest text-zinc-500 uppercase font-bold animate-pulse">Sincronizando datos del dojo...</p>
+        </div>
+
+        <!-- Contenedor Principal de la Aplicación -->
+        <div id="main-container" class="hidden space-y-6">
+            
+            <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                
+                <!-- Columna Izquierda: Identificación y Perfil -->
+                <div class="bg-zinc-50 p-6 rounded-xl border border-zinc-200 shadow-sm flex flex-col justify-between">
+                    <div>
+                        <h2 class="text-xs font-bold uppercase tracking-wider text-zinc-400 mb-4">Paso 1: Selección</h2>
+                        <h3 class="text-lg font-bold text-black mb-3">Ingresa tu Nombre</h3>
+                        
+                        <div class="relative">
+                            <select id="alumno-select" class="w-full bg-white text-black p-3 pr-10 border border-zinc-300 rounded-lg appearance-none focus:outline-none focus:border-mustard transition-all text-sm cursor-pointer shadow-sm">
+                                <option value="">-- Selecciona de la lista --</option>
+                            </select>
+                            <div class="pointer-events-none absolute inset-y-0 right-0 flex items-center px-3 text-zinc-500">
+                                <svg class="fill-current h-4 w-4" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20"><path d="M9.293 12.95l.707.707L15.657 8l-1.414-1.414L10 10.828 5.757 6.586 4.343 8z"/></svg>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Ficha del Alumno Enriquecida -->
+                    <div id="info-alumno" class="hidden mt-8 pt-6 border-t border-zinc-200 bg-white p-4 rounded-lg border border-zinc-100 shadow-inner">
+                        <span class="text-[10px] tracking-widest text-zinc-400 uppercase font-bold block">Alumno Seleccionado</span>
+                        <p id="info-nombre" class="text-lg font-black text-black uppercase truncate mt-0.5 tracking-wide"></p>
+                        
+                        <!-- Bloque de Etiquetas e Información Biométrica vinculado a columnas Q y R -->
+                        <div class="flex flex-wrap gap-2 mt-3">
+                            <div class="inline-flex items-center px-2.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-wide bg-zinc-100 text-black border border-zinc-300">
+                                <span id="info-cat"></span>
+                            </div>
+                            <div class="inline-flex items-center px-2.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-wide bg-zinc-100 text-black border border-zinc-300">
+                                📏 <span id="info-estatura" class="ml-1">--</span> cm
+                            </div>
+                            <div class="inline-flex items-center px-2.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-wide bg-zinc-100 text-black border border-zinc-300">
+                                ⚖️ <span id="info-peso" class="ml-1">--</span> kg
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Columna Derecha: Panel de Retos Disponibles -->
+                <div class="lg:col-span-2 bg-zinc-50 p-6 rounded-xl border border-zinc-200 shadow-sm flex flex-col">
+                    <h2 class="text-xs font-bold uppercase tracking-wider text-zinc-400 mb-4">Paso 2: Retos Disponibles</h2>
+
+                    <!-- Mensaje Inicial -->
+                    <div id="placeholder-retos" class="flex-grow flex flex-col items-center justify-center py-16 text-center">
+                        <svg class="w-12 h-12 text-zinc-300 mb-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01"></path></svg>
+                        <p class="text-sm text-zinc-400 italic">Elige tu nombre en el panel izquierdo para cargar tus retos asignados.</p>
+                    </div>
+
+                    <!-- Listado Dinámico de Retos -->
+                    <div id="retos-container" class="hidden grid grid-cols-1 sm:grid-cols-2 gap-4 overflow-y-auto max-h-[380px] pr-1">
+                        <!-- Inserción vía JavaScript -->
+                    </div>
+                </div>
+
+            </div>
+
+            <!-- Sección Inferior: Métricas e Historial General -->
+            <div class="bg-zinc-50 p-6 rounded-xl border border-zinc-200 shadow-sm">
+                <div class="flex flex-col sm:flex-row sm:items-center justify-between border-b border-zinc-200 pb-4 mb-6 gap-4">
+                    <div>
+                        <h2 class="text-xs font-bold uppercase tracking-wider text-zinc-400 mb-1">Métricas del Dojo</h2>
+                        <h3 class="text-lg font-bold text-black">Tabla General de Rendimiento</h3>
+                    </div>
+                    
+                    <!-- Botones Selectores de Meses -->
+                    <div class="inline-flex rounded-md shadow-sm bg-white p-1 border border-zinc-200" role="group">
+                        <button id="btn-mes-actual" onclick="cambiarMesGrafica('actual')" class="px-4 py-2 text-xs font-bold uppercase rounded-md transition-all bg-black text-white">
+                            Mes Actual
+                        </button>
+                        <button id="btn-mes-anterior" onclick="cambiarMesGrafica('anterior')" class="px-4 py-2 text-xs font-bold uppercase rounded-md transition-all text-zinc-600 hover:text-black">
+                            Mes Anterior
+                        </button>
+                    </div>
+                </div>
+                
+                <!-- Área del Gráfico con Scroll Inteligente si hay demasiados elementos -->
+                <div class="w-full bg-white p-2 rounded-lg border border-zinc-100 shadow-inner overflow-y-auto max-h-[500px]">
+                    <div id="canvas-container" class="relative w-full">
+                        <canvas id="chart-rendimiento"></canvas>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+    </div>
+
+    <!-- Pie de página institucional -->
+    <footer class="text-center text-[10px] text-zinc-400 tracking-widest mt-12 border-t border-zinc-200 pt-4 max-w-6xl mx-auto w-full font-bold uppercase">
+        SENSHI-KAN © 2026 • HONOR • DISCIPLINA • CONSTANCIA
+    </footer>
+
+    <script>
+        const API_URL = "https://script.google.com/macros/s/AKfycbyDB0Ynik_VWbOnboJE6ix9Xm1VRVMx1V1UoMREiHkCaBfOAWcOpJvfQN1I1y9WO8UqSQ/exec";
+
+        let datosDojo = { alumnos: [], retos: [], intentosHoy: {}, dashboard: { actual: {}, anterior: {} } };
+        let graficoRendimiento = null;
+        let vistaMesSeleccionado = 'actual';
+
+        window.addEventListener("load", iniciarPortal);
+
+        async function iniciarPortal() {
+            try {
+                const response = await fetch(API_URL);
+                if (!response.ok) throw new Error("Error en la conexión con el servidor");
+                
+                datosDojo = await response.json();
+                
+                document.getElementById("loading").classList.add("hidden");
+                document.getElementById("main-container").classList.remove("hidden");
+
+                cargarListaAlumnos();
+                construirGraficaHorizontal();
+            } catch (err) {
+                console.error(err);
+                document.getElementById("loading").innerHTML = `
+                    <p class="text-red-600 font-bold text-sm tracking-wide">⚠️ ERROR DE ENLACE CON LA BASE DE DATOS</p>
+                    <p class="text-xs text-zinc-400 mt-1">Verifica la conexión a internet o el estado de la implementación.</p>
+                `;
+            }
+        }
+
+        function cargarListaAlumnos() {
+            const select = document.getElementById("alumno-select");
+            
+            if (!datosDojo.alumnos || !Array.isArray(datosDojo.alumnos)) {
+                datosDojo.alumnos = [];
+            }
+
+            datosDojo.alumnos.sort((a, b) => {
+                const nA = a.nombre || "";
+                const nB = b.nombre || "";
+                return nA.localeCompare(nB);
+            });
+            
+            datosDojo.alumnos.forEach(al => {
+                if (al && al.nombre) {
+                    const opt = document.createElement("option");
+                    opt.value = al.id;
+                    opt.textContent = al.nombre.toUpperCase();
+                    select.appendChild(opt);
+                }
+            });
+
+            select.addEventListener("change", seleccionarAlumno);
+        }
+
+        function seleccionarAlumno(e) {
+            const idAl = e.target.value;
+            const placeholder = document.getElementById("placeholder-retos");
+            const contenedor = document.getElementById("retos-container");
+            const info = document.getElementById("info-alumno");
+
+            if (!idAl) {
+                placeholder.classList.remove("hidden");
+                contenedor.classList.add("hidden");
+                info.classList.add("hidden");
+                return;
+            }
+
+            const alumno = datosDojo.alumnos.find(a => a.id === idAl);
+            if (!alumno) return;
+
+            const cat = obtenerCategoriaPorEdad(alumno.fechaNacimiento);
+
+            document.getElementById("info-nombre").textContent = alumno.nombre || "SIN NOMBRE";
+            document.getElementById("info-cat").textContent = cat;
+            
+            // ESCANEO DINÁMICO TOLERANTE AL FORMATO DECIMAL DE GOOGLE SHEETS
+            let estaturaFinal = "--";
+            let pesoFinal = "--";
+
+            // Recorremos todas las llaves reales del objeto alumno que viene desde la hoja de cálculo
+            Object.keys(alumno).forEach(key => {
+                const llaveNormalizada = key.toLowerCase().trim();
+                const valorOriginal = alumno[key];
+
+                // Verificamos que el valor no sea nulo, indefinido ni una cadena vacía
+                if (valorOriginal !== null && valorOriginal !== undefined && valorOriginal.toString().trim() !== "") {
+                    // Si la columna contiene la palabra 'estatura' o 'altura'
+                    if (llaveNormalizada.includes("estatura") || llaveNormalizada.includes("altura")) {
+                        estaturaFinal = valorOriginal;
+                    }
+                    // Si la columna contiene la palabra 'peso'
+                    if (llaveNormalizada.includes("peso")) {
+                        pesoFinal = valorOriginal;
+                    }
+                }
+            });
+
+            document.getElementById("info-estatura").textContent = estaturaFinal;
+            document.getElementById("info-peso").textContent = pesoFinal;
+            
+            info.classList.remove("hidden");
+
+            desplegarRetosFiltrados(alumno.nombre, cat);
+            
+            placeholder.classList.add("hidden");
+            contenedor.classList.remove("hidden");
+        }
+
+        function obtenerCategoriaPorEdad(fechaNacStr) {
+            if (!fechaNacStr) return "infantil";
+            try {
+                const nac = new Date(fechaNacStr);
+                if (isNaN(nac.getTime())) return "infantil";
+                const hoy = new Date();
+                let edad = hoy.getFullYear() - nac.getFullYear();
+                const m = hoy.getMonth() - nac.getMonth();
+                if (m < 0 || (m === 0 && hoy.getDate() < nac.getDate())) {
+                    edad--;
+                }
+                return (edad >= 13) ? "juvenil" : "infantil";
+            } catch (e) {
+                return "infantil";
+            }
+        }
+
+        function desplegarRetosFiltrados(nombreAl, catAl) {
+            const contenedor = document.getElementById("retos-container");
+            contenedor.innerHTML = "";
+
+            if (!datosDojo.retos || !Array.isArray(datosDojo.retos)) return;
+
+            const filtrados = datosDojo.retos.filter(r => {
+                if (!r || !r.categoria) return false;
+                const rCat = r.categoria.toLowerCase().trim();
+                return rCat === "ambas" || rCat === "" || rCat === catAl.toLowerCase().trim();
+            });
+
+            if (filtrados.length === 0) {
+                contenedor.innerHTML = `<p class="col-span-full text-center text-zinc-400 py-12 text-xs italic">No hay retos asignados para tu grupo este mes.</p>`;
+                return;
+            }
+
+            filtrados.forEach(r => {
+                const hashHoy = `${nombreAl || ''}_${r.nombre || ''}`;
+                const realizados = datosDojo.intentosHoy ? (datosDojo.intentosHoy[hashHoy] || 0) : 0;
+                const limiteMax = parseInt(r.limiteDiario) || 999;
+                
+                const limiteAlcanzado = realizados >= limiteMax;
+
+                let stars = "";
+                const pop = parseInt(r.popularidad) || 0;
+                for(let s=0; s<5; s++) {
+                    stars += s < pop ? "★" : "☆";
+                }
+
+                const card = document.createElement("div");
+                card.className = "bg-white p-5 rounded-lg border border-zinc-200 flex flex-col justify-between shadow-sm hover:border-zinc-400 transition-all group";
+                
+                let botonHTML = "";
+                if (limiteAlcanzado) {
+                    botonHTML = `
+                        <button disabled 
+                           class="w-full inline-flex items-center justify-center text-center text-xs bg-zinc-300 text-zinc-500 font-extrabold py-3 px-4 rounded-md tracking-widest uppercase cursor-not-allowed shadow-none">
+                           🛑 LÍMITE ALCANZADO
+                        </button>
+                    `;
+                } else {
+                    botonHTML = `
+                        <a href="${r.url && r.url !== '#' ? r.url : 'javascript:void(0);'}" 
+                           class="w-full inline-flex items-center justify-center text-center text-xs bg-black text-white font-extrabold py-3 px-4 rounded-md transition-colors tracking-widest uppercase shadow-sm bg-mustard-hover"
+                           ${(!r.url || r.url === '#') ? 'onclick="alert(\'Este reto no tiene un enlace configurado todavía.\')"' : ''}>
+                           ⚡ IR AL RETO
+                        </a>
+                    `;
+                }
+
+                card.innerHTML = `
+                    <div>
+                        <div class="flex justify-between items-center text-[10px] mb-2">
+                            <span class="uppercase tracking-widest font-extrabold ${(r.categoria === 'ambas' || r.categoria === '') ? 'text-zinc-400' : 'text-mustard'}">
+                                ${(r.categoria === 'ambas' || r.categoria === '') ? 'General' : r.categoria}
+                            </span>
+                            <span class="text-mustard font-bold tracking-tighter">${stars}</span>
+                        </div>
+                        <h3 class="font-black text-base text-black uppercase tracking-wide mb-1 group-hover:text-mustard transition-colors">${r.nombre || 'Reto'}</h3>
+                        <p class="text-xs text-zinc-400 mb-6">Completados hoy: <span class="font-bold text-zinc-700">${realizados}</span> de <span class="font-bold text-zinc-700">${limiteMax}</span></p>
+                    </div>
+                    <div>
+                        ${botonHTML}
+                    </div>
+                `;
+                contenedor.appendChild(card);
+            });
+        }
+
+        function cambiarMesGrafica(mes) {
+            if (vistaMesSeleccionado === mes) return;
+            vistaMesSeleccionado = mes;
+
+            const btnActual = document.getElementById("btn-mes-actual");
+            const btnAnterior = document.getElementById("btn-mes-anterior");
+
+            if (mes === 'actual') {
+                btnActual.className = "px-4 py-2 text-xs font-bold uppercase rounded-md transition-all bg-black text-white";
+                btnAnterior.className = "px-4 py-2 text-xs font-bold uppercase rounded-md transition-all text-zinc-600 hover:text-black";
+            } else {
+                btnAnterior.className = "px-4 py-2 text-xs font-bold uppercase rounded-md transition-all bg-black text-white";
+                btnActual.className = "px-4 py-2 text-xs font-bold uppercase rounded-md transition-all text-zinc-600 hover:text-black";
+            }
+
+            construirGraficaHorizontal();
+        }
+
+        function construirGraficaHorizontal() {
+            const container = document.getElementById('canvas-container');
+            const ctx = document.getElementById('chart-rendimiento').getContext('2d');
+            
+            const baseDashboard = datosDojo.dashboard || { actual: {}, anterior: {} };
+            const datosMes = baseDashboard[vistaMesSeleccionado] || {};
+            
+            const labels = Object.keys(datosMes).sort();
+            const puntuaciones = labels.map(alumno => datosMes[alumno] || 0);
+
+            if(labels.length === 0) {
+                labels.push("SIN REGISTROS ESTE MES");
+                puntuaciones.push(0);
+            }
+
+            const totalAlumnos = labels.length;
+            const alturaCalculada = (totalAlumnos * 28) + 40; 
+            container.style.height = `${alturaCalculada}px`;
+
+            if (graficoRendimiento) {
+                graficoRendimiento.destroy();
+            }
+
+            graficoRendimiento = new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: labels.map(l => l.toUpperCase()),
+                    datasets: [
+                        {
+                            label: `PUNTOS`,
+                            data: puntuaciones,
+                            backgroundColor: '#e5a93c', 
+                            borderColor: '#000000',     
+                            borderWidth: 1.5,
+                            borderRadius: 3,
+                            barThickness: 14,          
+                            categoryPercentage: 1.0,
+                            barPercentage: 1.0    
+                        }
+                    ]
+                },
+                options: {
+                    indexAxis: 'y', 
+                    responsive: true,
+                    maintainAspectRatio: false, 
+                    scales: {
+                        x: { 
+                            beginAtZero: true,
+                            max: 1000, 
+                            ticks: { 
+                                color: '#1a1a1a', 
+                                font: { size: 10, weight: 'bold' },
+                                stepSize: 100 
+                            }, 
+                            grid: { color: '#f4f4f5' } 
+                        },
+                        y: { 
+                            ticks: { 
+                                color: '#1a1a1a', 
+                                font: { size: 10, weight: 'bold' },
+                                padding: 6,
+                                autoSkip: false 
+                            }, 
+                            grid: { display: false } 
+                        }
+                    },
+                    plugins: {
+                        legend: { display: false }
+                    }
+                }
+            });
+        }
+    </script>
 </body>
 </html>

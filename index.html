@@ -61,7 +61,7 @@
 
     <script>
         // URL de producción oficial provista para Senshi-Kan
-        const API_URL = "https://script.google.com/macros/s/AKfycbxb7uRVsdBlnPoJwCQ34lQAX98-M4Cc4WK0XcgpTabsOhpFDp8_GKW0BibKnjujExqZ/exec";
+        const API_URL = "https://script.google.com/macros/s/AKfycby0K-KNgf9nWSqQsv6JBdcI3o1aXSX1UBg7np44kGGiybshfpTbqv2Aa01UD7E6fIZkWA/exec";
 
         let BD_GLOBAL = { alumnos: [], retos: [] };
 
@@ -78,7 +78,6 @@
                 // ORDENAR ALFABÉTICAMENTE ASCENDENTE (A a la Z)
                 if (BD_GLOBAL.alumnos && BD_GLOBAL.alumnos.length > 0) {
                     BD_GLOBAL.alumnos.sort((a, b) => {
-                        // Compara 'a' contra 'b' para mantener el orden alfabético natural
                         return a.nombre.localeCompare(b.nombre, 'es', { sensitivity: 'base' });
                     });
                 }
@@ -115,7 +114,7 @@
             // Recuperar datos del alumno seleccionado
             const alumno = BD_GLOBAL.alumnos[index];
             const edad = parsearYCalcularEdad(alumno.fechaNacimiento);
-            const categoria = (edad <= 12) ? "infantil" : "juvenil"; // Umbral de categoría del dojo
+            const categoria = (edad <= 12) ? "infantil" : "juvenil"; 
 
             // Mostrar perfil en pantalla
             document.getElementById("lbl-nombre").textContent = alumno.nombre;
@@ -136,17 +135,14 @@
 
             let fechaObjeto = new Date(fechaString);
 
-            // Si falla el parseo directo por configuración regional, dividimos la cadena por sus separadores
             if (isNaN(fechaObjeto.getTime())) {
                 const fechaLimpia = fechaString.split(" ")[0];
                 const partes = fechaLimpia.split(/[-/]/);
                 
                 if (partes.length === 3) {
                     if (partes[0].length === 4) {
-                        // Formato Año/Mes/Día (AAAA-MM-DD)
                         fechaObjeto = new Date(parseInt(partes[0]), parseInt(partes[1]) - 1, parseInt(partes[2]));
                     } else {
-                        // Formato Latino Estándar: Día/Mes/Año (DD/MM/AAAA)
                         fechaObjeto = new Date(parseInt(partes[2]), parseInt(partes[1]) - 1, parseInt(partes[0]));
                     }
                 }
@@ -154,7 +150,6 @@
 
             if (isNaN(fechaObjeto.getTime())) return NaN;
 
-            // Cálculo de edad exacta
             const hoy = new Date();
             let edad = hoy.getFullYear() - fechaObjeto.getFullYear();
             const mes = hoy.getMonth() - fechaObjeto.getMonth();
@@ -179,15 +174,23 @@
             }
 
             retosFiltrados.forEach(reto => {
-                // Se construye la URL pasando los parámetros de forma segura al reto específico
                 const urlDestino = `${reto.url}?nombre=${encodeURIComponent(nombreAlumno)}&edad=${edadAlumno}&reto=${encodeURIComponent(reto.nombre)}`;
+                
+                // Construir la cadena de estrellas repitiendo el emoji según el nivel de popularidad
+                const numEstrellas = reto.popularidad || 1;
+                const estrellasHtml = "⭐".repeat(numEstrellas);
 
                 const tarjeta = document.createElement("div");
-                tarjeta.className = "bg-white border-2 border-gray-200 rounded-lg p-5 shadow-sm hover:shadow-md transition-shadow flex flex-col justify-between";
+                // Agregamos la clase 'relative' a la tarjeta para poder posicionar las estrellas en la esquina de forma absoluta
+                tarjeta.className = "relative bg-white border-2 border-gray-200 rounded-lg p-5 shadow-sm hover:shadow-md transition-shadow flex flex-col justify-between";
                 tarjeta.innerHTML = `
+                    <!-- Contenedor absoluto para las estrellas en la esquina superior derecha -->
+                    <div class="absolute top-3 right-3 text-sm select-none" title="Popularidad: ${numEstrellas} de 5">
+                        ${estrellasHtml}
+                    </div>
                     <div>
                         <span class="inline-block text-xs font-semibold px-2 py-1 rounded bg-amber-100 text-amber-800 uppercase mb-2">${reto.categoria}</span>
-                        <h4 class="text-xl font-bold text-gray-800 mb-2">${reto.nombre}</h4>
+                        <h4 class="text-xl font-bold text-gray-800 mb-2 pr-16">${reto.nombre}</h4>
                         <p class="text-sm text-gray-600 mb-4">Completa esta actividad en casa para seguir acumulando puntos este mes.</p>
                     </div>
                     <a href="${urlDestino}" class="block text-center bg-brand-black text-brand-gold font-bold py-3 px-4 rounded hover:bg-gray-800 transition-colors tracking-wide border border-brand-gold">

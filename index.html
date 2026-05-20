@@ -190,14 +190,6 @@
             select.addEventListener("change", seleccionarAlumno);
         }
 
-        // Extractor omnidireccional tolerante a variaciones de columnas e indexaciones de Sheets
-        function buscarDatoBiometrico(objAlumno, palabraClave) {
-            if (!objAlumno) return "";
-            const keys = Object.keys(objAlumno);
-            const encontrada = keys.find(k => k.toLowerCase().replace(/[^a-z0-9]/g, '').includes(palabraClave));
-            return encontrada ? objAlumno[encontrada] : "";
-        }
-
         function seleccionarAlumno(e) {
             const idAl = e.target.value;
             const placeholder = document.getElementById("placeholder-retos");
@@ -219,15 +211,13 @@
             document.getElementById("info-nombre").textContent = alumno.nombre || "SIN NOMBRE";
             document.getElementById("info-cat").textContent = cat;
             
-            // Extracción robusta buscando fragmentos del nombre de las columnas Q y R de Alumnos
-            let rawEstatura = buscarDatoBiometrico(alumno, "estatura");
-            let rawPeso = buscarDatoBiometrico(alumno, "peso");
+            // EXTRACCIÓN DIRECTA SEGURA: Lee directamente la propiedad o sus variantes comunes sin alterar el tipo de dato primitivo
+            let estRaw = alumno.Estatura_cm || alumno.estatura_cm || alumno.Estatura || alumno.estatura || "";
+            let pesoRaw = alumno.Peso_kg || alumno.peso_kg || alumno.Peso || alumno.peso || "";
 
-            const estaturaVal = (rawEstatura !== undefined && rawEstatura.toString().trim() !== "") ? rawEstatura.toString().trim() : "--";
-            const pesoVal = (rawPeso !== undefined && rawPeso.toString().trim() !== "") ? rawPeso.toString().trim() : "--";
-            
-            document.getElementById("info-estatura").textContent = estaturaVal;
-            document.getElementById("info-peso").textContent = pesoVal;
+            // Forzar renderizado limpio si el dato es numérico o string válido
+            document.getElementById("info-estatura").textContent = (estRaw !== undefined && estRaw !== null && estRaw !== "") ? estRaw : "0";
+            document.getElementById("info-peso").textContent = (pesoRaw !== undefined && pesoRaw !== null && pesoRaw !== "") ? pesoRaw : "0";
             
             info.classList.remove("hidden");
 
@@ -278,10 +268,10 @@
                 
                 const limiteAlcanzado = realizados >= limiteMax;
 
-                let estrellasStr = "";
+                let stars = "";
                 const pop = parseInt(r.popularidad) || 0;
                 for(let s=0; s<5; s++) {
-                    estrellasStr += s < pop ? "★" : "☆";
+                    stars += s < pop ? "★" : "☆";
                 }
 
                 const card = document.createElement("div");
@@ -311,7 +301,7 @@
                             <span class="uppercase tracking-widest font-extrabold ${(r.categoria === 'ambas' || r.categoria === '') ? 'text-zinc-400' : 'text-mustard'}">
                                 ${(r.categoria === 'ambas' || r.categoria === '') ? 'General' : r.categoria}
                             </span>
-                            <span class="text-mustard font-bold tracking-tighter">${estrellasStr}</span>
+                            <span class="text-mustard font-bold tracking-tighter">${stars}</span>
                         </div>
                         <h3 class="font-black text-base text-black uppercase tracking-wide mb-1 group-hover:text-mustard transition-colors">${r.nombre || 'Reto'}</h3>
                         <p class="text-xs text-zinc-400 mb-6">Completados hoy: <span class="font-bold text-zinc-700">${realizados}</span> de <span class="font-bold text-zinc-700">${limiteMax}</span></p>
@@ -357,8 +347,6 @@
                 puntuaciones.push(0);
             }
 
-            // REDUCCIÓN CRUCIAL DE SEPARACIÓN: Calculamos el alto del canvas multiplicando los elementos.
-            // Esto junta las barras al mínimo espacio posible sin importar el alto de la pantalla del usuario.
             const totalAlumnos = labels.length;
             const alturaCalculada = (totalAlumnos * 28) + 40; 
             container.style.height = `${alturaCalculada}px`;
@@ -379,7 +367,7 @@
                             borderColor: '#000000',     
                             borderWidth: 1.5,
                             borderRadius: 3,
-                            barThickness: 14, // Ancho consistente de barra          
+                            barThickness: 14,          
                             categoryPercentage: 1.0,
                             barPercentage: 1.0    
                         }
@@ -388,7 +376,7 @@
                 options: {
                     indexAxis: 'y', 
                     responsive: true,
-                    maintainAspectRatio: false, // Permite que tome la altura exacta calculada por JS
+                    maintainAspectRatio: false, 
                     scales: {
                         x: { 
                             beginAtZero: true,

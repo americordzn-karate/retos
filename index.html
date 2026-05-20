@@ -211,27 +211,40 @@
             document.getElementById("info-nombre").textContent = alumno.nombre || "SIN NOMBRE";
             document.getElementById("info-cat").textContent = cat;
             
-            // ESCANEO DINÁMICO TOLERANTE AL FORMATO DECIMAL DE GOOGLE SHEETS
+            // EXTRACCIÓN ROBUSTA DE COLUMNAS Q Y R (ÍNDICES 16 Y 17 RESPECTIVAMENTE)
             let estaturaFinal = "--";
             let pesoFinal = "--";
 
-            // Recorremos todas las llaves reales del objeto alumno que viene desde la hoja de cálculo
-            Object.keys(alumno).forEach(key => {
-                const llaveNormalizada = key.toLowerCase().trim();
-                const valorOriginal = alumno[key];
+            try {
+                // 1. Intento por mapeo de índices directo si los datos vienen mapeados como array de columnas
+                if (Array.isArray(alumno.datosFila)) {
+                    if (alumno.datosFila[16] !== undefined && alumno.datosFila[16] !== null && alumno.datosFila[16].toString().trim() !== "") {
+                        estaturaFinal = alumno.datosFila[16];
+                    }
+                    if (alumno.datosFila[17] !== undefined && alumno.datosFila[17] !== null && alumno.datosFila[17].toString().trim() !== "") {
+                        pesoFinal = alumno.datosFila[17];
+                    }
+                } 
+                
+                // 2. Respaldo por escaneo de llaves si el backend envía objetos con nombres de propiedades
+                if (estaturaFinal === "--" || pesoFinal === "--") {
+                    Object.keys(alumno).forEach(key => {
+                        const llaveNormalizada = key.toLowerCase().trim();
+                        const valorOriginal = alumno[key];
 
-                // Verificamos que el valor no sea nulo, indefinido ni una cadena vacía
-                if (valorOriginal !== null && valorOriginal !== undefined && valorOriginal.toString().trim() !== "") {
-                    // Si la columna contiene la palabra 'estatura' o 'altura'
-                    if (llaveNormalizada.includes("estatura") || llaveNormalizada.includes("altura")) {
-                        estaturaFinal = valorOriginal;
-                    }
-                    // Si la columna contiene la palabra 'peso'
-                    if (llaveNormalizada.includes("peso")) {
-                        pesoFinal = valorOriginal;
-                    }
+                        if (valorOriginal !== null && valorOriginal !== undefined && valorOriginal.toString().trim() !== "") {
+                            if (estaturaFinal === "--" && (llaveNormalizada.includes("estatura") || llaveNormalizada.includes("altura") || llaveNormalizada === "q")) {
+                                estaturaFinal = valorOriginal;
+                            }
+                            if (pesoFinal === "--" && (llaveNormalizada.includes("peso") || llaveNormalizada === "r")) {
+                                pesoFinal = valorOriginal;
+                            }
+                        }
+                    });
                 }
-            });
+            } catch (error) {
+                console.warn("Faltan datos biométricos en este alumno, continuando sin detener el sistema.", error);
+            }
 
             document.getElementById("info-estatura").textContent = estaturaFinal;
             document.getElementById("info-peso").textContent = pesoFinal;
@@ -400,8 +413,7 @@
                             max: 1000, 
                             ticks: { 
                                 color: '#1a1a1a', 
-                                font: { size: 10, weight: 'bold' },
-                                stepSize: 100 
+                                font: { size: 10, weight: 'bold' }
                             }, 
                             grid: { color: '#f4f4f5' } 
                         },

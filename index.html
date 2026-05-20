@@ -67,7 +67,7 @@
                         <span class="text-[10px] tracking-widest text-zinc-400 uppercase font-bold block">Alumno Seleccionado</span>
                         <p id="info-nombre" class="text-lg font-black text-black uppercase truncate mt-0.5 tracking-wide"></p>
                         
-                        <!-- Bloque de Etiquetas e Información Biométrica vinculada a columnas Q y R -->
+                        <!-- Bloque de Etiquetas e Información Biométrica vinculado a columnas Q y R -->
                         <div class="flex flex-wrap gap-2 mt-3">
                             <div class="inline-flex items-center px-2.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-wide bg-zinc-100 text-black border border-zinc-300">
                                 <span id="info-cat"></span>
@@ -108,7 +108,7 @@
                         <h3 class="text-lg font-bold text-black">Tabla General de Rendimiento</h3>
                     </div>
                     
-                    <!-- Botones Selectores de Meses Claros -->
+                    <!-- Botones Selectores de Meses -->
                     <div class="inline-flex rounded-md shadow-sm bg-white p-1 border border-zinc-200" role="group">
                         <button id="btn-mes-actual" onclick="cambiarMesGrafica('actual')" class="px-4 py-2 text-xs font-bold uppercase rounded-md transition-all bg-black text-white">
                             Mes Actual
@@ -119,9 +119,11 @@
                     </div>
                 </div>
                 
-                <!-- Área del Gráfico -->
-                <div class="relative h-[450px] w-full bg-white p-2 rounded-lg border border-zinc-100 shadow-inner">
-                    <canvas id="chart-rendimiento"></canvas>
+                <!-- Área del Gráfico con Scroll Inteligente si hay demasiados elementos -->
+                <div class="w-full bg-white p-2 rounded-lg border border-zinc-100 shadow-inner overflow-y-auto max-h-[500px]">
+                    <div id="canvas-container" class="relative w-full">
+                        <canvas id="chart-rendimiento"></canvas>
+                    </div>
                 </div>
             </div>
 
@@ -188,6 +190,14 @@
             select.addEventListener("change", seleccionarAlumno);
         }
 
+        // Extractor omnidireccional tolerante a variaciones de columnas e indexaciones de Sheets
+        function buscarDatoBiometrico(objAlumno, palabraClave) {
+            if (!objAlumno) return "";
+            const keys = Object.keys(objAlumno);
+            const encontrada = keys.find(k => k.toLowerCase().replace(/[^a-z0-9]/g, '').includes(palabraClave));
+            return encontrada ? objAlumno[encontrada] : "";
+        }
+
         function seleccionarAlumno(e) {
             const idAl = e.target.value;
             const placeholder = document.getElementById("placeholder-retos");
@@ -209,12 +219,12 @@
             document.getElementById("info-nombre").textContent = alumno.nombre || "SIN NOMBRE";
             document.getElementById("info-cat").textContent = cat;
             
-            // MAPEO DIRECTO DE COLUMNAS Q Y R (Estatura_cm y Peso_kg de la base de datos)
-            let rawEstatura = alumno.Estatura_cm ?? alumno.estatura_cm ?? alumno.estatura ?? "";
-            let rawPeso = alumno.Peso_kg ?? alumno.peso_kg ?? alumno.peso ?? "";
+            // Extracción robusta buscando fragmentos del nombre de las columnas Q y R de Alumnos
+            let rawEstatura = buscarDatoBiometrico(alumno, "estatura");
+            let rawPeso = buscarDatoBiometrico(alumno, "peso");
 
-            const estaturaVal = (rawEstatura.toString().trim() !== "") ? rawEstatura.toString().trim() : "--";
-            const pesoVal = (rawPeso.toString().trim() !== "") ? rawPeso.toString().trim() : "--";
+            const estaturaVal = (rawEstatura !== undefined && rawEstatura.toString().trim() !== "") ? rawEstatura.toString().trim() : "--";
+            const pesoVal = (rawPeso !== undefined && rawPeso.toString().trim() !== "") ? rawPeso.toString().trim() : "--";
             
             document.getElementById("info-estatura").textContent = estaturaVal;
             document.getElementById("info-peso").textContent = pesoVal;
@@ -333,6 +343,7 @@
         }
 
         function construirGraficaHorizontal() {
+            const container = document.getElementById('canvas-container');
             const ctx = document.getElementById('chart-rendimiento').getContext('2d');
             
             const baseDashboard = datosDojo.dashboard || { actual: {}, anterior: {} };
@@ -345,6 +356,12 @@
                 labels.push("SIN REGISTROS ESTE MES");
                 puntuaciones.push(0);
             }
+
+            // REDUCCIÓN CRUCIAL DE SEPARACIÓN: Calculamos el alto del canvas multiplicando los elementos.
+            // Esto junta las barras al mínimo espacio posible sin importar el alto de la pantalla del usuario.
+            const totalAlumnos = labels.length;
+            const alturaCalculada = (totalAlumnos * 28) + 40; 
+            container.style.height = `${alturaCalculada}px`;
 
             if (graficoRendimiento) {
                 graficoRendimiento.destroy();
@@ -361,19 +378,17 @@
                             backgroundColor: '#e5a93c', 
                             borderColor: '#000000',     
                             borderWidth: 1.5,
-                            borderRadius: 4,
-                            // Reducción drástica a la mitad de los grosores de barra e interlineados
-                            barThickness: 10,           
-                            maxBarThickness: 12,
-                            categoryPercentage: 0.5,
-                            barPercentage: 0.8    
+                            borderRadius: 3,
+                            barThickness: 14, // Ancho consistente de barra          
+                            categoryPercentage: 1.0,
+                            barPercentage: 1.0    
                         }
                     ]
                 },
                 options: {
                     indexAxis: 'y', 
                     responsive: true,
-                    maintainAspectRatio: false,
+                    maintainAspectRatio: false, // Permite que tome la altura exacta calculada por JS
                     scales: {
                         x: { 
                             beginAtZero: true,
@@ -388,9 +403,9 @@
                         y: { 
                             ticks: { 
                                 color: '#1a1a1a', 
-                                font: { size: 9, weight: 'bold' },
-                                padding: 2,
-                                autoSkip: false // Evita que Chart.js oculte nombres al juntarlos
+                                font: { size: 10, weight: 'bold' },
+                                padding: 6,
+                                autoSkip: false 
                             }, 
                             grid: { display: false } 
                         }

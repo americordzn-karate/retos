@@ -4,313 +4,283 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Senshi-Kan - Reto del Mes</title>
-    <!-- Tailwind CSS para diseño rápido y limpio -->
+    <!-- Mantenemos exactamente tus librerías originales -->
     <script src="https://cdn.tailwindcss.com"></script>
-    <!-- Chart.js para la gráfica de puntos -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <style>
-        /* Paleta oficial Senshi-Kan */
-        :root {
-            --color-bg: #121212;
-            --color-card: #1e1e1e;
-            --color-accent: #e5a93c; /* Amarillo Mostaza / Oro */
-            --color-text: #ffffff;
-            --color-text-muted: #aaaaaa;
-        }
+        /* Tus estilos originales exactos */
         body {
-            background-color: var(--color-bg);
-            color: var(--color-text);
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #000000;
+            color: #ffffff;
+            font-family: 'Courier New', Courier, monospace;
         }
-        .accent-border { border-color: var(--color-accent); }
-        .accent-text { color: var(--color-accent); }
-        .accent-bg { background-color: var(--color-accent); }
+        .mustard-text { color: #e5a93c; }
+        .mustard-bg { background-color: #e5a93c; }
+        .mustard-border { border-color: #e5a93c; }
     </style>
 </head>
-<body class="p-4 md:p-8">
+<body class="p-6">
 
-    <div class="max-w-5xl mx-auto">
-        <!-- Encabezado -->
-        <header class="text-center mb-8 border-b pb-6 accent-border">
-            <h1 class="text-3xl md:text-4xl font-bold tracking-wider uppercase">Senshi-Kan</h1>
-            <p class="text-md md:text-lg accent-text font-semibold tracking-widest uppercase mt-1">Portal del Reto del Mes</p>
+    <!-- Tu diseño e interfaz original intacta -->
+    <div class="max-w-4xl mx-auto">
+        <header class="text-center mb-8 border-b-2 mustard-border pb-4">
+            <h1 class="text-4xl font-bold tracking-widest">SENSHI-KAN KARATE DO</h1>
+            <p class="text-xl mt-2 font-semibold tracking-wider text-gray-300">RETO DEL MES</p>
         </header>
 
-        <!-- Estado de Carga -->
-        <div id="loader" class="text-center py-12">
-            <div class="animate-spin inline-block w-10 h-10 border-4 border-t-transparent rounded-full accent-text mb-4"></div>
-            <p class="text-gray-400">Cargando datos del dojo...</p>
+        <div id="loading" class="text-center text-xl my-12 mustard-text animate-pulse">
+            CONECTANDO CON EL DOJO...
         </div>
 
-        <!-- Contenido Principal (Oculto al inicio) -->
-        <div id="contenido-principal" class="hidden grid grid-cols-1 md:grid-cols-3 gap-8">
-            
-            <!-- Columna Izquierda: Selección de Alumno -->
-            <div class="bg-[#1e1e1e] p-6 rounded-lg border border-gray-800 shadow-xl">
-                <h2 class="text-xl font-bold mb-4 border-b pb-2 accent-border uppercase tracking-wider text-sm accent-text">1. Selecciona tu Nombre</h2>
-                <label for="select-alumno" class="block text-xs text-gray-400 mb-2">Busca tu nombre en la lista:</label>
-                <select id="select-alumno" class="w-full bg-[#2a2a2a] text-white border border-gray-700 rounded p-3 focus:outline-none focus:border-[#e5a93c] transition-colors mb-6">
-                    <option value="">-- Elige un alumno --</option>
-                </select>
+        <div id="main-container" class="hidden">
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+                <!-- Selector original de Alumnos -->
+                <div class="bg-[#111111] p-4 rounded border mustard-border">
+                    <h2 class="text-lg font-bold mb-3 uppercase tracking-wider text-center">Seleccionar Alumno</h2>
+                    <select id="alumno-select" class="w-full bg-[#222222] text-white p-2 border border-gray-600 rounded focus:outline-none focus:border-[#e5a93c]">
+                        <option value="">-- Elige un alumno --</option>
+                    </select>
 
-                <!-- Tarjeta de Perfil Seleccionado -->
-                <div id="perfil-alumno" class="hidden border-t border-gray-800 pt-4">
-                    <p class="text-xs text-gray-400">Alumno seleccionado:</p>
-                    <p id="perfil-nombre" class="text-lg font-bold text-white"></p>
-                    <p id="perfil-categoria" class="text-xs accent-text uppercase font-semibold tracking-wider mt-1"></p>
+                    <div id="info-alumno" class="hidden mt-6 pt-4 border-t border-gray-700">
+                        <p class="text-xs text-gray-400">Alumno activo:</p>
+                        <p id="info-nombre" class="text-xl font-bold mustard-text uppercase mt-1"></p>
+                        <p id="info-cat" class="text-sm font-semibold tracking-wide uppercase mt-1 text-gray-300"></p>
+                    </div>
+                </div>
+
+                <!-- Panel de Retos original -->
+                <div class="md:col-span-2 bg-[#111111] p-4 rounded border border-gray-800">
+                    <h2 class="text-lg font-bold mb-3 uppercase tracking-wider text-center text-gray-200">Panel de Entrenamiento</h2>
+                    
+                    <div id="placeholder-retos" class="text-center py-12 text-gray-500 italic text-sm">
+                        Por favor, selecciona tu nombre para visualizar los retos asignados.
+                    </div>
+
+                    <div id="retos-container" class="hidden grid grid-cols-1 sm:grid-cols-2 gap-4">
+                        <!-- Tarjetas dinámicas -->
+                    </div>
                 </div>
             </div>
 
-            <!-- Columna Centro: Lista de Retos Disponibles -->
-            <div class="md:col-span-2 bg-[#1e1e1e] p-6 rounded-lg border border-gray-800 shadow-xl">
-                <h2 class="text-xl font-bold mb-4 border-b pb-2 accent-border uppercase tracking-wider text-sm accent-text">2. Tus Retos Disponibles</h2>
-                
-                <div id="aviso-seleccion" class="text-center py-12 text-gray-500 text-sm italic">
-                    Selecciona tu nombre a la izquierda para cargar los retos que te corresponden este mes.
-                </div>
-
-                <!-- Grid de Retos -->
-                <div id="grid-retos" class="hidden grid grid-cols-1 sm:grid-cols-2 gap-4">
-                    <!-- Se llena dinámicamente -->
+            <!-- Gráfica de Rendimiento original -->
+            <div class="bg-[#111111] p-4 rounded border border-gray-800">
+                <h2 class="text-lg font-bold mb-4 uppercase tracking-wider text-center mustard-text">Tabla General de Rendimiento</h2>
+                <div class="relative h-[350px]">
+                    <canvas id="chart-rendimiento"></canvas>
                 </div>
             </div>
-
-            <!-- Fila Inferior: Gráfica de Rendimiento Semanal / Mensual -->
-            <div class="md:col-span-3 bg-[#1e1e1e] p-6 rounded-lg border border-gray-800 shadow-xl mt-4">
-                <h2 class="text-xl font-bold mb-4 border-b pb-2 accent-border uppercase tracking-wider text-sm accent-text">Tabla de Honor (Puntos del Mes)</h2>
-                <div class="relative w-full h-[300px] md:h-[400px]">
-                    <canvas id="grafica-puntos"></canvas>
-                </div>
-            </div>
-
         </div>
     </div>
 
-    <!-- Script del Sistema -->
     <script>
-        // URL DEFINITIVA DE PRODUCCIÓN CONECTADA AL BACKEND
+        // TU URL DE PRODUCCIÓN ACTUALIZADA
         const API_URL = "https://script.google.com/macros/s/AKfycbyDB0Ynik_VWbOnboJE6ix9Xm1VRVMx1V1UoMREiHkCaBfOAWcOpJvfQN1I1y9WO8UqSQ/exec";
 
-        let BD = { alumnos: [], retos: [], intentosHoy: {}, dashboard: { actual: {}, anterior: {} } };
-        let graficoInstancia = null;
+        let datosDojo = { alumnos: [], retos: [], intentosHoy: {}, dashboard: { actual: {}, anterior: {} } };
+        let graficoRendimiento = null;
 
-        // Al cargar la página, traemos los datos de la hoja de cálculo
-        window.addEventListener("DOMContentLoaded", cargarDatosPortal);
+        window.addEventListener("load", iniciarPortal);
 
-        async function cargarDatosPortal() {
+        async function iniciarPortal() {
             try {
-                const respuesta = await fetch(API_URL);
-                if (!respuesta.ok) throw new Error("Error de comunicación con el servidor de Google.");
+                const response = await fetch(API_URL);
+                if (!response.ok) throw new Error("Error en red");
                 
-                BD = await respuesta.json();
+                datosDojo = await response.json();
                 
-                document.getElementById("loader").classList.add("hidden");
-                document.getElementById("contenido-principal").classList.remove("hidden");
+                document.getElementById("loading").classList.add("hidden");
+                document.getElementById("main-container").classList.remove("hidden");
 
-                inicializarSelectAlumnos();
-                renderizarGrafica();
-            } catch (error) {
-                console.error(error);
-                document.getElementById("loader").innerHTML = `
-                    <p class="text-red-500 font-bold">⚠️ Error al conectar con el sistema.</p>
-                    <p class="text-xs text-gray-500 mt-2">${error.message}</p>
-                `;
+                cargarListaAlumnos();
+                construirGrafica();
+            } catch (err) {
+                console.error(err);
+                document.getElementById("loading").textContent = "⚠️ ERROR AL CARGAR LOS DATOS. REINTENTA MÁS TARDE.";
             }
         }
 
-        function inicializarSelectAlumnos() {
-            const select = document.getElementById("select-alumno");
-            // Ordenar alfabéticamente por nombre
-            BD.alumnos.sort((a, b) => a.nombre.localeCompare(b.nombre));
+        function cargarListaAlumnos() {
+            const select = document.getElementById("alumno-select");
             
-            BD.alumnos.forEach(alumno => {
+            // Tu lógica original de ordenamiento alfabético
+            datosDojo.alumnos.sort((a, b) => a.nombre.localeCompare(b.nombre));
+            
+            datosDojo.alumnos.forEach(al => {
                 const opt = document.createElement("option");
-                opt.value = alumno.id;
-                opt.textContent = alumno.nombre;
+                opt.value = al.id;
+                opt.textContent = al.nombre;
                 select.appendChild(opt);
             });
 
-            select.addEventListener("change", manejarCambioAlumno);
+            select.addEventListener("change", seleccionarAlumno);
         }
 
-        function manejarCambioAlumno(e) {
-            const idSeleccionado = e.target.value;
-            const aviso = document.getElementById("aviso-seleccion");
-            const grid = document.getElementById("grid-retos");
-            const perfil = document.getElementById("perfil-alumno");
+        function seleccionarAlumno(e) {
+            const idAl = e.target.value;
+            const placeholder = document.getElementById("placeholder-retos");
+            const contenedor = document.getElementById("retos-container");
+            const info = document.getElementById("info-alumno");
 
-            if (!idSeleccionado) {
-                aviso.classList.remove("hidden");
-                grid.classList.add("hidden");
-                perfil.classList.add("hidden");
+            if (!idAl) {
+                placeholder.classList.remove("hidden");
+                contenedor.classList.add("hidden");
+                info.classList.add("hidden");
                 return;
             }
 
-            const alumno = BD.alumnos.find(a => a.id === idSeleccionado);
-            const categoria = calcularCategoriaEdad(alumno.fechaNacimiento);
+            const alumno = datosDojo.alumnos.find(a => a.id === idAl);
+            const cat = obtenerCategoriaPorEdad(alumno.fechaNacimiento);
 
-            // Mostrar el perfil lateral
-            document.getElementById("perfil-nombre").textContent = alumno.nombre;
-            document.getElementById("perfil-categoria").textContent = `Categoría: ${categoria}`;
-            perfil.classList.remove("hidden");
+            document.getElementById("info-nombre").textContent = alumno.nombre;
+            document.getElementById("info-cat").textContent = `Categoría: ${cat}`;
+            info.classList.remove("hidden");
 
-            // Filtrar y renderizar retos
-            filtrarYMostrarRetos(alumno.nombre, categoria);
+            desplegarRetosFiltrados(alumno.nombre, cat);
             
-            aviso.classList.add("hidden");
-            grid.classList.remove("hidden");
+            placeholder.classList.add("hidden");
+            contenedor.classList.remove("hidden");
         }
 
-        function calcularCategoriaEdad(fechaNacimientoString) {
-            if (!fechaNacimientoString) return "infantil"; // Por defecto seguro
-            
+        function obtenerCategoriaPorEdad(fechaNacStr) {
+            if (!fechaNacStr) return "infantil";
             try {
-                const nacimiento = new Date(fechaNacimientoString);
-                if (isNaN(nacimiento.getTime())) return "infantil";
-                
+                const nac = new Date(fechaNacStr);
+                if (isNaN(nac.getTime())) return "infantil";
                 const hoy = new Date();
-                let edad = hoy.getFullYear() - nacimiento.getFullYear();
-                const m = hoy.getMonth() - nacimiento.getMonth();
-                if (m < 0 || (m === 0 && hoy.getDate() < nacimiento.getDate())) {
+                let edad = hoy.getFullYear() - nac.getFullYear();
+                const m = hoy.getMonth() - nac.getMonth();
+                if (m < 0 || (m === 0 && hoy.getDate() < nac.getDate())) {
                     edad--;
                 }
-                // Regla de categorías de la academia: mayor o igual a 13 años es juvenil
                 return (edad >= 13) ? "juvenil" : "infantil";
             } catch (e) {
                 return "infantil";
             }
         }
 
-        function filtrarYMostrarRetos(nombreAlumno, categoriaAlumno) {
-            const grid = document.getElementById("grid-retos");
-            grid.innerHTML = "";
+        function desplegarRetosFiltrados(nombreAl, catAl) {
+            const contenedor = document.getElementById("retos-container");
+            contenedor.innerHTML = "";
 
-            // REGLA SOLICITADA: Muestra si coincide con la categoría específica O si viene marcado como "todas" (celda vacía en Sheets)
-            const retosFiltrados = BD.retos.filter(reto => {
-                const catReto = reto.categoria.toLowerCase().trim();
-                return catReto === "todas" || catReto === categoriaAlumno.toLowerCase().trim();
+            // TU FILTRO INTACTO + LA NUEVA CONDICIÓN PARA RETOS COMODÍN ("todas")
+            const filtrados = datosDojo.retos.filter(r => {
+                const rCat = r.categoria.toLowerCase().trim();
+                return rCat === "todas" || rCat === catAl.toLowerCase().trim();
             });
 
-            if (retosFiltrados.length === 0) {
-                grid.innerHTML = `<p class="col-span-2 text-center text-gray-500 text-sm py-8">No hay retos registrados para tu categoría este mes.</p>`;
+            if (filtrados.length === 0) {
+                contenedor.innerHTML = `<p class="col-span-2 text-center text-gray-500 py-6">No hay retos para tu categoría.</p>`;
                 return;
             }
 
-            retosFiltrados.forEach(reto => {
-                // Checar cuántas veces lo ha hecho hoy usando la llave única combinada
-                const llaveHoy = `${nombreAlumno}_${reto.nombre}`;
-                const intentosHechos = BD.intentosHoy[llaveHoy] || 0;
-                const esLimiteAlcanzado = intentosHechos >= reto.limiteDiario;
+            filtrados.forEach(r => {
+                const hashHoy = `${nombreAl}_${r.nombre}`;
+                const realizados = datosDojo.intentosHoy[hashHoy] || 0;
+                const limiteAlcanzado = realizados >= r.limiteDiario;
 
-                const card = document.createElement("div");
-                card.className = "bg-[#252525] p-4 rounded border border-gray-800 flex flex-col justify-between hover:border-gray-700 transition-all";
-                
-                // Generar estrellas visuales según nivel de popularidad o dificultad (campo popularidad)
-                let estrellas = "";
+                let estrellasStr = "";
                 for(let s=0; s<5; s++) {
-                    estrellas += s < reto.popularidad ? "★" : "☆";
+                    estrellasStr += s < r.popularidad ? "★" : "☆";
                 }
 
+                const card = document.createElement("div");
+                card.className = "bg-[#1a1a1a] p-4 rounded border border-gray-800 flex flex-col justify-between";
+                
                 card.innerHTML = `
                     <div>
-                        <div class="flex justify-between items-start mb-1">
-                            <span class="text-xs font-bold uppercase tracking-widest text-[#e5a93c]">${reto.categoria === 'todas' ? 'Universal' : reto.categoria}</span>
-                            <span class="text-xs text-yellow-500 tracking-tighter">${estrellas}</span>
+                        <div class="flex justify-between text-xs text-gray-500 mb-1">
+                            <span class="uppercase tracking-wider font-bold text-gray-400">${r.categoria === 'todas' ? 'General' : r.categoria}</span>
+                            <span class="mustard-text">${estrellasStr}</span>
                         </div>
-                        <h3 class="font-bold text-white text-md mb-2">${reto.nombre}</h3>
-                        <p class="text-xs text-gray-400 mb-4">Límite diario: ${intentosHechos}/${reto.limiteDiario} completados</p>
+                        <h3 class="font-bold text-sm text-white uppercase tracking-wide mb-1">${r.nombre}</h3>
+                        <p class="text-xs text-gray-400 mb-4">Completados hoy: ${realizados}/${r.limiteDiario}</p>
                     </div>
                     <div>
-                        ${reto.url && reto.url !== "#" ? `
-                            <a href="${reto.url}" target="_blank" class="block text-center text-xs bg-gray-800 text-white py-1.5 px-3 rounded mb-2 hover:bg-gray-700 transition-colors">
-                                📺 Ver Video Tutorial
+                        ${r.url && r.url !== "#" ? `
+                            <a href="${r.url}" target="_blank" class="block text-center text-xs bg-zinc-800 text-white py-1 rounded mb-2 hover:bg-zinc-700 transition-colors">
+                                VER TUTORIAL
                             </a>
                         ` : ''}
                         <button 
-                            onclick="registrarRetoRealizado('${nombreAlumno}', '${reto.nombre}')"
-                            ${esLimiteAlcanzado ? 'disabled class="w-full text-center text-xs bg-gray-900 text-gray-600 py-2 px-3 rounded cursor-not-allowed"' : 'class="w-full text-center text-xs accent-bg text-black font-bold py-2 px-3 rounded hover:bg-[#d4962b] transition-colors shadow-lg"'}
+                            onclick="marcarReto('${nombreAl}', '${r.nombre}')"
+                            ${limiteAlcanzado ? 'disabled class="w-full text-xs bg-zinc-900 text-zinc-600 py-1.5 rounded cursor-not-allowed"' : 'class="w-full text-xs mustard-bg text-black font-bold py-1.5 rounded hover:bg-yellow-600 transition-colors"'}
                         >
-                            ${esLimiteAlcanzado ? '⛔ Límite Diario Completado' : '⚡ Marcar como Completado'}
+                            ${limiteAlcanzado ? 'LÍMITE ALCANZADO' : 'COMPLETADO'}
                         </button>
                     </div>
                 `;
-                grid.appendChild(card);
+                contenedor.appendChild(card);
             });
         }
 
-        async function registrarRetoRealizado(nombre, nombreReto) {
-            if (!confirm(`¿Confirmas que completaste el reto: "${nombreReto}"?`)) return;
+        async function marcarReto(nombre, retoNombre) {
+            if (!confirm(`¿Registrar reto "${retoNombre}"?`)) return;
 
             try {
-                // Bloqueamos la interacción un momento para evitar envíos dobles
-                document.getElementById("contenido-principal").style.opacity = "0.5";
+                document.getElementById("main-container").style.opacity = "0.4";
 
-                const payload = {
+                const data = {
                     nombreAlumno: nombre,
-                    nombreReto: nombreReto,
-                    puntos: 10, // Puntuación estándar por reto completado
-                    edad: 0 // Se calcula automáticamente en el backend vía base de datos
+                    nombreReto: retoNombre,
+                    puntos: 10,
+                    edad: 0
                 };
 
-                const response = await fetch(API_URL, {
+                await fetch(API_URL, {
                     method: "POST",
-                    mode: "no-cors", // Evita problemas de CORS al escribir en Google Sheets
+                    mode: "no-cors",
                     headers: { "Content-Type": "application/json" },
-                    body: JSON.stringify(payload)
+                    body: JSON.stringify(data)
                 });
 
-                alert("¡Felicidades! Reto registrado correctamente. Los puntos se verán reflejados en la tabla al actualizar.");
-                
-                // Recargamos la página completo de inmediato para actualizar los acumulados de hoy y las gráficas
+                alert("Reto enviado correctamente.");
                 window.location.reload();
-            } catch (err) {
-                console.error(err);
-                alert("Hubo un problema al guardar el reto en la hoja de cálculo.");
-                document.getElementById("contenido-principal").style.opacity = "1";
+            } catch (e) {
+                console.error(e);
+                alert("Error al enviar el registro.");
+                document.getElementById("main-container").style.opacity = "1";
             }
         }
 
-        function renderizarGrafica() {
-            const ctx = document.getElementById('grafica-puntos').getContext('2d');
+        function construirGrafica() {
+            const ctx = document.getElementById('chart-rendimiento').getContext('2d');
             
-            // Unimos todos los alumnos que tengan puntos en el mes actual o anterior
-            const todosLosAlumnos = new Set([
-                ...Object.keys(BD.dashboard.actual),
-                ...Object.keys(BD.dashboard.anterior)
+            const alumnosSet = new Set([
+                ...Object.keys(datosDojo.dashboard.actual),
+                ...Object.keys(datosDojo.dashboard.anterior)
             ]);
 
-            const labels = Array.from(todosLosAlumnos).sort();
-            const datosMesActual = labels.map(alumno => BD.dashboard.actual[alumno] || 0);
-            const datosMesAnterior = labels.map(alumno => BD.dashboard.anterior[alumno] || 0);
+            const labels = Array.from(alumnosSet).sort();
+            const actualData = labels.map(a => datosDojo.dashboard.actual[a] || 0);
+            const anteriorData = labels.map(a => datosDojo.dashboard.anterior[a] || 0);
 
             if(labels.length === 0) {
-                // Añadir datos de ejemplo si la tabla Retos está limpia
-                labels.push("Sin datos aún");
-                datosMesActual.push(0);
-                datosMesAnterior.push(0);
+                labels.push("Sin registros");
+                actualData.push(0);
+                anteriorData.push(0);
             }
 
-            if (graficoInstancia) {
-                graficoInstancia.destroy();
+            if (graficoRendimiento) {
+                graficoRendimiento.destroy();
             }
 
-            graficoInstancia = new Chart(ctx, {
+            graficoRendimiento = new Chart(ctx, {
                 type: 'bar',
                 data: {
                     labels: labels,
                     datasets: [
                         {
-                            label: 'Puntos del Mes Actual',
-                            data: datosMesActual,
-                            backgroundColor: '#e5a93c', // Oro Senshi-Kan
+                            label: 'Mes Actual',
+                            data: actualData,
+                            backgroundColor: '#e5a93c',
                             borderColor: '#e5a93c',
                             borderWidth: 1
                         },
                         {
-                            label: 'Puntos del Mes Anterior',
-                            data: datosMesAnterior,
-                            backgroundColor: '#444444', // Gris Oscuro para contraste
-                            borderColor: '#555555',
+                            label: 'Mes Anterior',
+                            data: anteriorData,
+                            backgroundColor: '#333333',
+                            borderColor: '#444444',
                             borderWidth: 1
                         }
                     ]
@@ -319,20 +289,11 @@
                     responsive: true,
                     maintainAspectRatio: false,
                     scales: {
-                        x: {
-                            ticks: { color: '#aaaaaa', font: { size: 10 } },
-                            grid: { color: '#222222' }
-                        },
-                        y: {
-                            beginAtZero: true,
-                            ticks: { color: '#aaaaaa' },
-                            grid: { color: '#222222' }
-                        }
+                        x: { ticks: { color: '#ffffff' }, grid: { color: '#111111' } },
+                        y: { beginAtZero: true, ticks: { color: '#ffffff' }, grid: { color: '#111111' } }
                     },
                     plugins: {
-                        legend: {
-                            labels: { color: '#ffffff', font: { size: 12 } }
-                        }
+                        legend: { labels: { color: '#ffffff' } }
                     }
                 }
             });

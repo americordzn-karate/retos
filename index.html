@@ -4,10 +4,10 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Portal Reto del Mes - Senshi-Kan</title>
-    <!-- Tailwind CSS para diseño rápido y responsivo -->
+    <!-- Tailwind CSS para diseño limpio y responsivo -->
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
-        /* Personalización de colores institucionales de la academia */
+        /* Colores institucionales de la academia */
         .bg-brand-black { background-color: #1a1a1a; }
         .text-brand-gold { color: #d4af37; }
         .bg-brand-gold { background-color: #d4af37; }
@@ -60,18 +60,18 @@
     </main>
 
     <script>
-        // URL DE TU WEB APP DE GOOGLE APPS SCRIPT (Reemplázala con la tuya)
+        // URL de producción de tu Google Apps Script
         const API_URL = "https://script.google.com/macros/s/AKfycbxFQwdVZbr9l5FFqJ5h9zCZ55IInQVR99dV4bacpxB2U-wEMCpC3LfPyxjWuU285IKbtw/exec";
 
         let BD_GLOBAL = { alumnos: [], retos: [] };
 
-        // Al cargar la página, traemos los datos desde Google Sheets
+        // Al cargar la página, traemos los datos desde tu Web App de Google
         document.addEventListener("DOMContentLoaded", async () => {
             const select = document.getElementById("select-alumnos");
             
             try {
                 const response = await fetch(API_URL);
-                if (!response.ok) throw new Error("Error en la comunicación con el servidor.");
+                if (!response.ok) throw new Error("Error en la comunicación con el script de Google.");
                 
                 BD_GLOBAL = await response.json();
                 
@@ -79,7 +79,7 @@
                 select.innerHTML = '<option value="">-- Selecciona tu Nombre --</option>';
                 BD_GLOBAL.alumnos.forEach((alumno, index) => {
                     const option = document.createElement("option");
-                    option.value = index; // Guardamos el índice para recuperar el objeto completo después
+                    option.value = index; // Guardamos el índice para recuperar el objeto completo
                     option.textContent = alumno.nombre;
                     select.appendChild(option);
                 });
@@ -107,7 +107,7 @@
             // Recuperar datos del alumno seleccionado
             const alumno = BD_GLOBAL.alumnos[index];
             const edad = calcularEdad(alumno.fechaNacimiento);
-            const categoria = (edad <= 12) ? "infantil" : "juvenil"; // Umbral de categoría
+            const categoria = (edad <= 12) ? "infantil" : "juvenil"; // Umbral de categoría del dojo
 
             // Mostrar perfil en pantalla
             document.getElementById("lbl-nombre").textContent = alumno.nombre;
@@ -115,14 +115,14 @@
             document.getElementById("lbl-categoria").textContent = categoria;
             perfil.classList.remove("hidden");
 
-            // Filtrar y renderizar los retos del catálogo correspondientes a la categoría
+            // Filtrar y renderizar los retos activos correspondientes
             filtrarRetos(categoria, alumno.nombre, edad);
 
             msgEspera.classList.add("hidden");
             contenedorRetos.classList.remove("hidden");
         });
 
-        // Función auxiliar para calcular la edad exacta a partir del string de fecha de Sheets
+        // Función auxiliar para calcular la edad exacta a partir del formato de fecha de Sheets
         function calcularEdad(fechaNacimientoString) {
             const cumpleaños = new Date(fechaNacimientoString);
             const hoy = new Date();
@@ -140,7 +140,7 @@
             const contenedor = document.getElementById("contenedor-retos");
             contenedor.innerHTML = ""; // Limpiar retos anteriores
 
-            // Filtrar los retos activos que coincidan con la categoría
+            // Filtrar los retos que coincidan con la categoría (infantil / juvenil)
             const retosFiltrados = BD_GLOBAL.retos.filter(reto => reto.categoria.toLowerCase() === categoriaAlumno);
 
             if (retosFiltrados.length === 0) {
@@ -149,17 +149,17 @@
             }
 
             retosFiltrados.forEach(reto => {
-                // Sanitizar y codificar los datos para pasarlos de forma segura por la URL
+                // Estructurar parámetros seguros para pasar a las Web Apps independientes de cada reto
                 const urlDestino = `${reto.url}?nombre=${encodeURIComponent(nombreAlumno)}&edad=${edadAlumno}&reto=${encodeURIComponent(reto.nombre)}`;
 
-                // Crear tarjeta HTML
+                // Crear tarjeta del reto
                 const tarjeta = document.createElement("div");
                 tarjeta.className = "bg-white border-2 border-gray-200 rounded-lg p-5 shadow-sm hover:shadow-md transition-shadow flex flex-col justify-between";
                 tarjeta.innerHTML = `
                     <div>
                         <span class="inline-block text-xs font-semibold px-2 py-1 rounded bg-amber-100 text-amber-800 uppercase mb-2">${reto.categoria}</span>
                         <h4 class="text-xl font-bold text-gray-800 mb-2">${reto.nombre}</h4>
-                        <p class="text-sm text-gray-600 mb-4">Ingresa y completa las actividades dinámicas para sumar puntos para los premios del mes.</p>
+                        <p class="text-sm text-gray-600 mb-4">Completa esta actividad en casa para seguir acumulando puntos este mes.</p>
                     </div>
                     <a href="${urlDestino}" class="block text-center bg-brand-black text-brand-gold font-bold py-3 px-4 rounded hover:bg-gray-800 transition-colors tracking-wide border border-brand-gold">
                         INICIAR RETO

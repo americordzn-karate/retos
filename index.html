@@ -26,30 +26,7 @@
 
     <main class="max-w-4xl mx-auto px-4 py-8">
         
-        <!-- ================= SECCIÓN: RESULTADOS DEL MES (DASHBOARD) ================= -->
-        <section class="bg-white p-6 rounded-lg shadow-md mb-8 border border-gray-200">
-            <h2 class="text-2xl font-bold text-gray-800 mb-4 text-center tracking-wide">RESULTADOS DEL MES</h2>
-            
-            <!-- Selector de periodo (Mes Actual / Mes Anterior) -->
-            <div class="flex justify-center mb-6">
-                <div class="inline-flex rounded-md shadow-sm" role="group">
-                    <button id="btn-mes-actual" type="button" class="px-5 py-2.5 text-sm font-medium text-white bg-amber-500 rounded-l-lg border border-amber-500 hover:bg-amber-600 focus:z-10 focus:ring-2 focus:ring-amber-500 transition-colors">
-                        Mes Actual
-                    </button>
-                    <button id="btn-mes-anterior" type="button" class="px-5 py-2.5 text-sm font-medium text-gray-700 bg-white rounded-r-lg border border-gray-200 hover:bg-gray-100 hover:text-amber-600 focus:z-10 focus:ring-2 focus:ring-amber-500 transition-colors">
-                        Mes Anterior
-                    </button>
-                </div>
-            </div>
-
-            <!-- Contenedor del lienzo de la gráfica -->
-            <div class="relative w-full overflow-x-auto" style="min-height: 350px;">
-                <canvas id="graficaPuntajes"></canvas>
-            </div>
-        </section>
-
-
-        <!-- Sección de Selección de Alumno -->
+        <!-- 1. Sección de Selección de Alumno -->
         <section class="bg-white p-6 rounded-lg shadow-md mb-8 border border-gray-200">
             <h2 class="text-xl font-bold text-gray-800 mb-4 text-center">¡Bienvenido! Selecciona tu nombre para empezar</h2>
             
@@ -69,8 +46,8 @@
             </div>
         </section>
 
-        <!-- Sección de Retos Disponibles -->
-        <section>
+        <!-- 2. Sección de Retos Disponibles -->
+        <section class="mb-10">
             <h3 class="text-2xl font-bold text-gray-800 mb-6 border-b-2 border-brand-black pb-2">Retos Disponibles Para Ti</h3>
             
             <!-- Estado de espera -->
@@ -83,15 +60,39 @@
                 <!-- Las tarjetas se generarán dinámicamente con JavaScript -->
             </div>
         </section>
+
+
+        <!-- ================= 3. SECCIÓN COLOCADA ABAJO: RESULTADOS DEL MES ================= -->
+        <section class="bg-white p-6 rounded-lg shadow-md border border-gray-200">
+            <h2 class="text-2xl font-bold text-gray-800 mb-4 text-center tracking-wide">RESULTADOS DEL MES</h2>
+            
+            <!-- Selector de periodo (Mes Actual / Mes Anterior) -->
+            <div class="flex justify-center mb-6">
+                <div class="inline-flex rounded-md shadow-sm" role="group">
+                    <button id="btn-mes-actual" type="button" class="px-5 py-2.5 text-sm font-medium text-white bg-amber-500 rounded-l-lg border border-amber-500 hover:bg-amber-600 focus:z-10 focus:ring-2 focus:ring-amber-500 transition-colors">
+                        Mes Actual
+                    </button>
+                    <button id="btn-mes-anterior" type="button" class="px-5 py-2.5 text-sm font-medium text-gray-700 bg-white rounded-r-lg border border-gray-200 hover:bg-gray-100 hover:text-amber-600 focus:z-10 focus:ring-2 focus:ring-amber-500 transition-colors">
+                        Mes Anterior
+                    </button>
+                </div>
+            </div>
+
+            <!-- Contenedor del lienzo de la gráfica -->
+            <div class="relative w-full overflow-x-auto" style="min-height: 380px;">
+                <canvas id="graficaPuntajes"></canvas>
+            </div>
+        </section>
+
     </main>
 
     <script>
-        // URL provista y actualizada para Senshi-Kan
-        const API_URL = "https://script.google.com/macros/s/AKfycbyuzcCN4A8c2--kVnpSaNPQz-SyZy9q3QYnivTEGLHQ5BNVHzXL-N5CUkowijXy9Um0OQ/exec";
+        // URL oficial e intacta provista para Senshi-Kan
+        const API_URL = "https://script.google.com/macros/s/AKfycbxFsVwOO-dX052nrPtokihm_pBgJfCu4t_K7ej3SoFfgI0lZDSs4ZxqA-zQ9Kc3Pqqi-A/exec";
 
-        let BD_GLOBAL = { alumnos: [], retos: [], intentosHoy: {} };
-        let miGraficaInstance = null; // Instancia global de Chart.js para poder destruirla y redibujarla sin errores
-        let mesFiltroSeleccionado = "actual"; // Control de estado para los botones: "actual" o "anterior"
+        let BD_GLOBAL = { alumnos: [], retos: [], intentosHoy: {}, dashboard: { actual: {}, anterior: {} } };
+        let miGraficaInstance = null; 
+        let mesFiltroSeleccionado = "actual"; 
 
         // Al cargar la página, traemos los datos desde tu Web App de Google
         document.addEventListener("DOMContentLoaded", async () => {
@@ -119,7 +120,7 @@
                     select.appendChild(option);
                 });
 
-                // Inicializar y construir la gráfica del mes actual de forma automática al abrir el sitio
+                // Inicializar y construir la gráfica del mes actual automáticamente con los datos reales
                 procesarYConstruirGrafica();
 
             } catch (error) {
@@ -133,7 +134,6 @@
             if (mesFiltroSeleccionado === "actual") return;
             mesFiltroSeleccionado = "actual";
             
-            // Cambiar estilos de botones de forma visual
             this.className = "px-5 py-2.5 text-sm font-medium text-white bg-amber-500 rounded-l-lg border border-amber-500 focus:z-10";
             document.getElementById("btn-mes-anterior").className = "px-5 py-2.5 text-sm font-medium text-gray-700 bg-white rounded-r-lg border border-gray-200 hover:bg-gray-100 hover:text-amber-600 focus:z-10";
             
@@ -144,7 +144,6 @@
             if (mesFiltroSeleccionado === "anterior") return;
             mesFiltroSeleccionado = "anterior";
             
-            // Cambiar estilos de botones de forma visual
             this.className = "px-5 py-2.5 text-sm font-medium text-white bg-amber-500 rounded-r-lg border border-amber-500 focus:z-10";
             document.getElementById("btn-mes-actual").className = "px-5 py-2.5 text-sm font-medium text-gray-700 bg-white rounded-l-lg border border-gray-200 hover:bg-gray-100 hover:text-amber-600 focus:z-10";
             
@@ -152,62 +151,39 @@
         });
 
         /**
-         * LÓGICA DE PROCESAMIENTO DE HISTORIAL Y CONSTRUCCIÓN GRÁFICA
+         * SUMATORIA DE PUNTOS REALES DE LA TABLA RETOS Y CONSTRUCCIÓN DE LA GRÁFICA
          */
         function procesarYConstruirGrafica() {
-            const fechaRef = new Date();
-            let añoFiltro = fechaRef.getFullYear();
-            let mesFiltro = fechaRef.getMonth(); // 0 = Ene, 4 = May, etc.
+            // Extraer el set de datos correcto enviado desde las sumatorias del backend
+            const fuentePuntos = (BD_GLOBAL.dashboard && BD_GLOBAL.dashboard[mesFiltroSeleccionado]) 
+                ? BD_GLOBAL.dashboard[mesFiltroSeleccionado] 
+                : {};
 
-            if (mesFiltroSeleccionado === "anterior") {
-                mesFiltro--;
-                if (mesFiltro < 0) {
-                    mesFiltro = 11;
-                    añoFiltro--;
-                }
-            }
+            const datosOrdenados = [];
 
-            const acumuladorPuntos = {};
-            
-            // Mapeamos inicialmente a todos los alumnos del dojo con 0 puntos para asegurar su aparición
+            // Aseguramos incluir a todos los alumnos vigentes sumando sus puntos correspondientes
             BD_GLOBAL.alumnos.forEach(alum => {
-                acumuladorPuntos[alum.nombre] = 0;
-            });
-
-            // Recorremos el diccionario de ejecuciones que devuelve el backend
-            // El backend retorna un mapa con estructura "Nombre Alumno_Nombre Reto"
-            // Para procesar históricos por meses sin sobrecargar, usaremos los envíos de la tabla Retos mapeados
-            if (BD_GLOBAL.intentosHoy) {
-                // Nota: Los datos de puntos acumulados por mes se calculan sumando las incidencias de los registros del periodo
-                // Si la estructura de la base de datos envía registros o conteos, parseamos las claves.
-                // Como las ejecuciones están indexadas, totalizaremos los datos de rendimiento.
-            }
-
-            // Para que refleje puntajes reales históricos basados en los intentos guardados:
-            // Dado que el objeto intentosHoy contiene los del día de hoy, expandimos la lógica leyendo 
-            // la respuesta cruda de envíos o simulando la extracción estructurada de sumas.
-            // Para garantizar consistencia de render, tomamos las puntuaciones asociadas:
-            
-            // En caso de que se requiera simular si el objeto global cuenta con la base de registros completa:
-            // Agrupamos y ordenamos de mayor a menor:
-            const datosOrdenados = Object.keys(acumuladorPuntos).map(nombre => {
-                return { nombre: nombre, puntos: acumuladorPuntos[nombre] || 0 };
+                const totalPuntosAlumno = fuentePuntos[alum.nombre] || 0;
+                datosOrdenados.push({
+                    nombre: alum.nombre,
+                    puntos: totalPuntosAlumno
+                });
             });
             
-            // Ordenamos descendentemente (El mayor puntaje primero arriba en la gráfica de barras horizontales)
+            // ORDENAR DE MAYOR A MENOR: El alumno con más puntos acumulados aparecerá hasta arriba (Eje Y)
             datosOrdenados.sort((a, b) => b.puntos - a.puntos);
 
             const listaNombres = datosOrdenados.map(item => item.nombre);
             const listaPuntos = datosOrdenados.map(item => item.puntos);
 
-            // Destruir la gráfica previa si ya existía para evitar encimamientos de imágenes
+            // Destruir la gráfica previa si existía para evitar encimamientos visuales
             if (miGraficaInstance) {
                 miGraficaInstance.destroy();
             }
 
             const ctx = document.getElementById('graficaPuntajes').getContext('2d');
             
-            // Dibujar la nueva gráfica de barras horizontales (type: 'bar', indexAxis: 'y')
+            // Dibujar gráfica de barras horizontales
             miGraficaInstance = new Chart(ctx, {
                 type: 'bar',
                 data: {
@@ -215,21 +191,19 @@
                     datasets: [{
                         label: 'Puntos Acumulados',
                         data: listaPuntos,
-                        backgroundColor: '#d4af37', // Color Oro/Amarillo Institucional de Senshi-Kan
-                        borderColor: '#1a1a1a',     // Contorno negro sólido
+                        backgroundColor: '#d4af37', // Amarillo/Oro Institucional
+                        borderColor: '#1a1a1a',     // Borde negro sutil
                         borderWidth: 1,
-                        barThickness: 18,           // Grosor estilizado y limpio para las barras
+                        barThickness: 16,           
                         borderRadius: 4
                     }]
                 },
                 options: {
-                    indexAxis: 'y', // Configura las barras de forma Horizontal de forma obligatoria
+                    indexAxis: 'y', // Fuerza la orientación de las barras horizontales
                     responsive: true,
                     maintainAspectRatio: false,
                     plugins: {
-                        legend: {
-                            display: false // Ocultamos la leyenda genérica superior
-                        },
+                        legend: { display: false },
                         tooltip: {
                             callbacks: {
                                 label: function(context) {
@@ -244,28 +218,18 @@
                             title: {
                                 display: true,
                                 text: 'PUNTOS ACUMULADOS',
-                                font: {
-                                    weight: 'bold',
-                                    size: 11
-                                },
+                                font: { weight: 'bold', size: 11 },
                                 color: '#4b5563'
                             },
-                            grid: {
-                                color: '#e5e7eb'
-                            }
+                            grid: { color: '#e5e7eb' }
                         },
                         y: {
                             ticks: {
-                                autoSkip: false, // Forzar a que salgan listados todos los nombres de los alumnos sin cortes
-                                font: {
-                                    size: 11,
-                                    weight: '600'
-                                },
+                                autoSkip: false, // Obliga a listar a todos los alumnos a la izquierda sin omitir renglones
+                                font: { size: 11, weight: '600' },
                                 color: '#111827'
                             },
-                            grid: {
-                                display: false // Quitamos las líneas verticales de fondo en el eje Y para una estética minimalista
-                            }
+                            grid: { display: false }
                         }
                     }
                 }
@@ -304,10 +268,9 @@
             contenedorRetos.classList.remove("hidden");
         });
 
-        // Función automática para procesar las fechas de Google Sheets
+        // Función para procesar las fechas de nacimiento
         function parsearYCalcularEdad(fechaString) {
             if (!fechaString) return NaN;
-
             let fechaObjeto = new Date(fechaString);
 
             if (isNaN(fechaObjeto.getTime())) {
@@ -335,12 +298,11 @@
             return edad;
         }
 
-        // Función para inyectar en pantalla los retos de la categoría adecuada
+        // Función para inyectar los retos vigentes en pantalla
         function filtrarRetos(categoriaAlumno, nombreAlumno, edadAlumno) {
             const contenedor = document.getElementById("contenedor-retos");
             contenedor.innerHTML = ""; 
 
-            // Filtrar los retos activos según la categoría calculada (infantil / juvenil)
             const retosFiltrados = BD_GLOBAL.retos.filter(reto => reto.categoria.toLowerCase() === categoriaAlumno);
 
             if (retosFiltrados.length === 0) {
@@ -350,19 +312,15 @@
 
             retosFiltrados.forEach(reto => {
                 const urlDestino = `${reto.url}?nombre=${encodeURIComponent(nombreAlumno)}&edad=${edadAlumno}&reto=${encodeURIComponent(reto.nombre)}`;
-                
-                // Construir las estrellas de popularidad
                 const numEstrellas = reto.popularidad || 1;
                 const estrellasHtml = "⭐".repeat(numEstrellas);
 
-                // CONTROL DE LÍMITES DIARIOS: Comprobar el mapa de ejecuciones enviado desde Google Apps Script
                 const llaveCombinada = `${nombreAlumno}_${reto.nombre}`;
                 const hechosHoy = BD_GLOBAL.intentosHoy[llaveCombinada] || 0;
                 const limiteMaximo = reto.limiteDiario;
                 
                 const yaLlegoAlLimite = hechosHoy >= limiteMaximo;
 
-                // Definir las propiedades del botón según su estatus de disponibilidad
                 let botonHtml = "";
                 if (yaLlegoAlLimite) {
                     botonHtml = `
@@ -378,7 +336,6 @@
                     `;
                 }
 
-                // Texto informativo opcional para indicar los intentos consumidos
                 const infoIntentos = (limiteMaximo < 999) 
                     ? `<p class="text-xs font-semibold mt-2 ${yaLlegoAlLimite ? 'text-red-600' : 'text-gray-500'}">Realizados hoy: ${hechosHoy} de ${limiteMaximo} permitidos</p>`
                     : '';

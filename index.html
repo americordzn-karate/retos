@@ -166,7 +166,6 @@
         function cargarListaAlumnos() {
             const select = document.getElementById("alumno-select");
             
-            // BLINDAJE 1: Asegura que si 'alumnos' no viene o no es un arreglo válido, el código no truene.
             if (!datosDojo.alumnos || !Array.isArray(datosDojo.alumnos)) {
                 datosDojo.alumnos = [];
             }
@@ -210,10 +209,12 @@
             document.getElementById("info-nombre").textContent = alumno.nombre || "SIN NOMBRE";
             document.getElementById("info-cat").textContent = cat;
             
-            // BLINDAJE 2: Verificación estricta de nulos, vacíos o indefinidos para datos biométricos.
-            // Si la celda está vacía en Sheets o no existe el campo, se asigna "--" automáticamente.
-            const estaturaVal = (alumno.estatura !== undefined && alumno.estatura !== null && alumno.estatura.toString().trim() !== "") ? alumno.estatura.toString().trim() : "--";
-            const pesoVal = (alumno.peso !== undefined && alumno.peso !== null && alumno.peso.toString().trim() !== "") ? alumno.peso.toString().trim() : "--";
+            // BLINDAJE BIOMÉTRICO OMNIDIRECCIONAL: Busca el dato bajo cualquier variante de nombre de propiedad
+            let rawEstatura = alumno.estatura ?? alumno.estatura_cm ?? alumno.Estatura_cm ?? "";
+            let rawPeso = alumno.peso ?? alumno.peso_kg ?? alumno.Peso_kg ?? "";
+
+            const estaturaVal = (rawEstatura.toString().trim() !== "") ? rawEstatura.toString().trim() : "--";
+            const pesoVal = (rawPeso.toString().trim() !== "") ? rawPeso.toString().trim() : "--";
             
             document.getElementById("info-estatura").textContent = estaturaVal;
             document.getElementById("info-peso").textContent = pesoVal;
@@ -263,6 +264,10 @@
             filtrados.forEach(r => {
                 const hashHoy = `${nombreAl || ''}_${r.nombre || ''}`;
                 const realizados = datosDojo.intentosHoy ? (datosDojo.intentosHoy[hashHoy] || 0) : 0;
+                const limiteMax = parseInt(r.limiteDiario) || 999;
+                
+                // Evaluar si ya se topó el límite diario para bloquear la acción
+                const limiteAlcanzado = realizados >= limiteMax;
 
                 let estrellasStr = "";
                 const pop = parseInt(r.popularidad) || 0;
@@ -273,6 +278,25 @@
                 const card = document.createElement("div");
                 card.className = "bg-white p-5 rounded-lg border border-zinc-200 flex flex-col justify-between shadow-sm hover:border-zinc-400 transition-all group";
                 
+                // Construcción condicional del botón de acuerdo al estatus de su límite diario
+                let botonHTML = "";
+                if (limiteAlcanzado) {
+                    botonHTML = `
+                        <button disabled 
+                           class="w-full inline-flex items-center justify-center text-center text-xs bg-zinc-300 text-zinc-500 font-extrabold py-3 px-4 rounded-md tracking-widest uppercase cursor-not-allowed shadow-none">
+                           🛑 LÍMITE ALCANZADO
+                        </button>
+                    `;
+                } else {
+                    botonHTML = `
+                        <a href="${r.url && r.url !== '#' ? r.url : 'javascript:void(0);'}" 
+                           class="w-full inline-flex items-center justify-center text-center text-xs bg-black text-white font-extrabold py-3 px-4 rounded-md transition-colors tracking-widest uppercase shadow-sm bg-mustard-hover"
+                           ${(!r.url || r.url === '#') ? 'onclick="alert(\'Este reto no tiene un enlace configurado todavía.\')"' : ''}>
+                           ⚡ IR AL RETO
+                        </a>
+                    `;
+                }
+
                 card.innerHTML = `
                     <div>
                         <div class="flex justify-between items-center text-[10px] mb-2">
@@ -282,14 +306,10 @@
                             <span class="text-mustard font-bold tracking-tighter">${estrellasStr}</span>
                         </div>
                         <h3 class="font-black text-base text-black uppercase tracking-wide mb-1 group-hover:text-mustard transition-colors">${r.nombre || 'Reto'}</h3>
-                        <p class="text-xs text-zinc-400 mb-6">Completados hoy: <span class="font-bold text-zinc-700">${realizados}</span> de <span class="font-bold text-zinc-700">${r.limiteDiario || 999}</span></p>
+                        <p class="text-xs text-zinc-400 mb-6">Completados hoy: <span class="font-bold text-zinc-700">${realizados}</span> de <span class="font-bold text-zinc-700">${limiteMax}</span></p>
                     </div>
                     <div>
-                        <a href="${r.url && r.url !== '#' ? r.url : 'javascript:void(0);'}" 
-                           class="w-full inline-flex items-center justify-center text-center text-xs bg-black text-white font-extrabold py-3 px-4 rounded-md transition-colors tracking-widest uppercase shadow-sm bg-mustard-hover"
-                           ${(!r.url || r.url === '#') ? 'onclick="alert(\'Este reto no tiene un enlace configurado todavía.\')"' : ''}>
-                           ⚡ IR AL RETO
-                        </a>
+                        ${botonHTML}
                     </div>
                 `;
                 contenedor.appendChild(card);
@@ -317,7 +337,6 @@
         function construirGraficaHorizontal() {
             const ctx = document.getElementById('chart-rendimiento').getContext('2d');
             
-            // BLINDAJE 3: Control si la estructura de datos del dashboard no existe.
             const baseDashboard = datosDojo.dashboard || { actual: {}, anterior: {} };
             const datosMes = baseDashboard[vistaMesSeleccionado] || {};
             
@@ -345,8 +364,11 @@
                             borderColor: '#000000',     
                             borderWidth: 1.5,
                             borderRadius: 4,
-                            barThickness: 24,           
-                            categoryPercentage: 0.85    
+                            // Reducción drástica del ancho de barras e interlineado para compactar el eje Y
+                            barThickness: 16,           
+                            maxBarThickness: 18,
+                            categoryPercentage: 0.9,
+                            barPercentage: 0.9    
                         }
                     ]
                 },
@@ -366,7 +388,12 @@
                             grid: { color: '#f4f4f5' } 
                         },
                         y: { 
-                            ticks: { color: '#1a1a1a', font: { size: 10, weight: 'bold' } }, 
+                            ticks: { 
+                                color: '#1a1a1a', 
+                                font: { size: 10, weight: 'bold' },
+                                // Compactación del área de padding en etiquetas del eje Y
+                                padding: 4
+                            }, 
                             grid: { display: false } 
                         }
                     },

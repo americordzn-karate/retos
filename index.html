@@ -67,7 +67,7 @@
                         <span class="text-[10px] tracking-widest text-zinc-400 uppercase font-bold block">Alumno Seleccionado</span>
                         <p id="info-nombre" class="text-lg font-black text-black uppercase truncate mt-0.5 tracking-wide"></p>
                         
-                        <!-- Bloque de Etiquetas e Información Biométrica vinculado a columnas Q y R -->
+                        <!-- Bloque de Etiquetas e Información Biométrica -->
                         <div class="flex flex-wrap gap-2 mt-3">
                             <div class="inline-flex items-center px-2.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-wide bg-zinc-100 text-black border border-zinc-300">
                                 <span id="info-cat"></span>
@@ -206,27 +206,25 @@
             const alumno = datosDojo.alumnos.find(a => a.id === idAl);
             if (!alumno) return;
 
+            // RASTREADOR TEMPORAL: Muestra los nombres reales de los campos del alumno para solucionar el problema inmediatamente
+            alert("Campos recibidos para este alumno:\n" + JSON.stringify(alumno, null, 2));
+
             const cat = obtenerCategoriaPorEdad(alumno.fechaNacimiento);
 
             document.getElementById("info-nombre").textContent = alumno.nombre || "SIN NOMBRE";
             document.getElementById("info-cat").textContent = cat;
             
-            // ESCANEO DINÁMICO TOLERANTE AL FORMATO DECIMAL DE GOOGLE SHEETS
             let estaturaFinal = "--";
             let pesoFinal = "--";
 
-            // Recorremos todas las llaves reales del objeto alumno que viene desde la hoja de cálculo
             Object.keys(alumno).forEach(key => {
                 const llaveNormalizada = key.toLowerCase().trim();
                 const valorOriginal = alumno[key];
 
-                // Verificamos que el valor no sea nulo, indefinido ni una cadena vacía
                 if (valorOriginal !== null && valorOriginal !== undefined && valorOriginal.toString().trim() !== "") {
-                    // Si la columna contiene la palabra 'estatura' o 'altura'
                     if (llaveNormalizada.includes("estatura") || llaveNormalizada.includes("altura")) {
                         estaturaFinal = valorOriginal;
                     }
-                    // Si la columna contiene la palabra 'peso'
                     if (llaveNormalizada.includes("peso")) {
                         pesoFinal = valorOriginal;
                     }

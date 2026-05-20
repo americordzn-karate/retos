@@ -3,360 +3,338 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Portal Reto del Mes - Senshi-Kan</title>
-    <!-- Tailwind CSS para diseño limpio y responsivo -->
+    <title>Senshi-Kan - Reto del Mes</title>
+    <!-- Tailwind CSS para diseño rápido y limpio -->
     <script src="https://cdn.tailwindcss.com"></script>
-    <!-- Chart.js para renderizar la gráfica de barras horizontales -->
+    <!-- Chart.js para la gráfica de puntos -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <style>
-        /* Colores institucionales de la academia */
-        .bg-brand-black { background-color: #1a1a1a; }
-        .text-brand-gold { color: #d4af37; }
-        .bg-brand-gold { background-color: #d4af37; }
-        .border-brand-gold { border-color: #d4af37; }
+        /* Paleta oficial Senshi-Kan */
+        :root {
+            --color-bg: #121212;
+            --color-card: #1e1e1e;
+            --color-accent: #e5a93c; /* Amarillo Mostaza / Oro */
+            --color-text: #ffffff;
+            --color-text-muted: #aaaaaa;
+        }
+        body {
+            background-color: var(--color-bg);
+            color: var(--color-text);
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+        .accent-border { border-color: var(--color-accent); }
+        .accent-text { color: var(--color-accent); }
+        .accent-bg { background-color: var(--color-accent); }
     </style>
 </head>
-<body class="bg-gray-100 min-h-screen font-sans">
+<body class="p-4 md:p-8">
 
-    <!-- Encabezado -->
-    <header class="bg-brand-black text-white py-6 shadow-md text-center border-b-4 border-brand-gold">
-        <h1 class="text-3xl font-bold tracking-wider text-brand-gold text-center">RETO DEL MES</h1>
-        <p class="text-gray-400 text-sm mt-1">Academia de Karate-Do</p>
-    </header>
+    <div class="max-w-5xl mx-auto">
+        <!-- Encabezado -->
+        <header class="text-center mb-8 border-b pb-6 accent-border">
+            <h1 class="text-3xl md:text-4xl font-bold tracking-wider uppercase">Senshi-Kan</h1>
+            <p class="text-md md:text-lg accent-text font-semibold tracking-widest uppercase mt-1">Portal del Reto del Mes</p>
+        </header>
 
-    <main class="max-w-4xl mx-auto px-4 py-8">
-        
-        <!-- 1. Sección de Selección de Alumno -->
-        <section class="bg-white p-6 rounded-lg shadow-md mb-8 border border-gray-200">
-            <h2 class="text-xl font-bold text-gray-800 mb-4 text-center">¡Bienvenido! Selecciona tu nombre para empezar</h2>
+        <!-- Estado de Carga -->
+        <div id="loader" class="text-center py-12">
+            <div class="animate-spin inline-block w-10 h-10 border-4 border-t-transparent rounded-full accent-text mb-4"></div>
+            <p class="text-gray-400">Cargando datos del dojo...</p>
+        </div>
+
+        <!-- Contenido Principal (Oculto al inicio) -->
+        <div id="contenido-principal" class="hidden grid grid-cols-1 md:grid-cols-3 gap-8">
             
-            <div class="flex flex-col md:flex-row gap-4 justify-center items-center">
-                <div class="w-full md:w-2/3">
-                    <label for="select-alumnos" class="block text-sm font-medium text-gray-700 mb-1">Lista de Alumnos Activos:</label>
-                    <select id="select-alumnos" class="w-full p-3 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-amber-500 bg-gray-50 text-gray-800 text-lg">
-                        <option value="">Cargando alumnos del dojo...</option>
-                    </select>
+            <!-- Columna Izquierda: Selección de Alumno -->
+            <div class="bg-[#1e1e1e] p-6 rounded-lg border border-gray-800 shadow-xl">
+                <h2 class="text-xl font-bold mb-4 border-b pb-2 accent-border uppercase tracking-wider text-sm accent-text">1. Selecciona tu Nombre</h2>
+                <label for="select-alumno" class="block text-xs text-gray-400 mb-2">Busca tu nombre en la lista:</label>
+                <select id="select-alumno" class="w-full bg-[#2a2a2a] text-white border border-gray-700 rounded p-3 focus:outline-none focus:border-[#e5a93c] transition-colors mb-6">
+                    <option value="">-- Elige un alumno --</option>
+                </select>
+
+                <!-- Tarjeta de Perfil Seleccionado -->
+                <div id="perfil-alumno" class="hidden border-t border-gray-800 pt-4">
+                    <p class="text-xs text-gray-400">Alumno seleccionado:</p>
+                    <p id="perfil-nombre" class="text-lg font-bold text-white"></p>
+                    <p id="perfil-categoria" class="text-xs accent-text uppercase font-semibold tracking-wider mt-1"></p>
                 </div>
             </div>
 
-            <!-- Datos del perfil cargado de forma dinámica -->
-            <div id="perfil-alumno" class="hidden mt-6 pt-4 border-t border-gray-200 text-center">
-                <p class="text-lg text-gray-700">Hola, <span id="lbl-nombre" class="font-bold text-gray-900"></span></p>
-                <p class="text-sm text-gray-500">Edad calculada: <span id="lbl-edad" class="font-bold text-gray-800"></span> años (<span id="lbl-categoria" class="font-bold text-amber-600 uppercase"></span>)</p>
-            </div>
-        </section>
+            <!-- Columna Centro: Lista de Retos Disponibles -->
+            <div class="md:col-span-2 bg-[#1e1e1e] p-6 rounded-lg border border-gray-800 shadow-xl">
+                <h2 class="text-xl font-bold mb-4 border-b pb-2 accent-border uppercase tracking-wider text-sm accent-text">2. Tus Retos Disponibles</h2>
+                
+                <div id="aviso-seleccion" class="text-center py-12 text-gray-500 text-sm italic">
+                    Selecciona tu nombre a la izquierda para cargar los retos que te corresponden este mes.
+                </div>
 
-        <!-- 2. Sección de Retos Disponibles -->
-        <section class="mb-10">
-            <h3 class="text-2xl font-bold text-gray-800 mb-6 border-b-2 border-brand-black pb-2">Retos Disponibles Para Ti</h3>
-            
-            <!-- Estado de espera -->
-            <div id="msg-espera" class="bg-amber-50 border-l-4 border-amber-500 p-4 text-amber-700 rounded rounded-l-none text-center">
-                Por favor, selecciona tu nombre arriba para desbloquear tus retos correspondientes.
-            </div>
-
-            <!-- Contenedor de Tarjetas de Retos -->
-            <div id="contenedor-retos" class="grid grid-cols-1 md:grid-cols-2 gap-6 hidden">
-                <!-- Las tarjetas se generarán dinámicamente con JavaScript -->
-            </div>
-        </section>
-
-
-        <!-- ================= 3. SECCIÓN COLOCADA ABAJO: RESULTADOS DEL MES ================= -->
-        <section class="bg-white p-6 rounded-lg shadow-md border border-gray-200">
-            <h2 class="text-2xl font-bold text-gray-800 mb-4 text-center tracking-wide">RESULTADOS DEL MES</h2>
-            
-            <!-- Selector de periodo (Mes Actual / Mes Anterior) -->
-            <div class="flex justify-center mb-6">
-                <div class="inline-flex rounded-md shadow-sm" role="group">
-                    <button id="btn-mes-actual" type="button" class="px-5 py-2.5 text-sm font-medium text-white bg-amber-500 rounded-l-lg border border-amber-500 hover:bg-amber-600 focus:z-10 focus:ring-2 focus:ring-amber-500 transition-colors">
-                        Mes Actual
-                    </button>
-                    <button id="btn-mes-anterior" type="button" class="px-5 py-2.5 text-sm font-medium text-gray-700 bg-white rounded-r-lg border border-gray-200 hover:bg-gray-100 hover:text-amber-600 focus:z-10 focus:ring-2 focus:ring-amber-500 transition-colors">
-                        Mes Anterior
-                    </button>
+                <!-- Grid de Retos -->
+                <div id="grid-retos" class="hidden grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <!-- Se llena dinámicamente -->
                 </div>
             </div>
 
-            <!-- Contenedor del lienzo de la gráfica -->
-            <div class="relative w-full overflow-x-auto" style="min-height: 380px;">
-                <canvas id="graficaPuntajes"></canvas>
+            <!-- Fila Inferior: Gráfica de Rendimiento Semanal / Mensual -->
+            <div class="md:col-span-3 bg-[#1e1e1e] p-6 rounded-lg border border-gray-800 shadow-xl mt-4">
+                <h2 class="text-xl font-bold mb-4 border-b pb-2 accent-border uppercase tracking-wider text-sm accent-text">Tabla de Honor (Puntos del Mes)</h2>
+                <div class="relative w-full h-[300px] md:h-[400px]">
+                    <canvas id="grafica-puntos"></canvas>
+                </div>
             </div>
-        </section>
 
-    </main>
+        </div>
+    </div>
 
+    <!-- Script del Sistema -->
     <script>
-        // URL oficial e intacta provista para Senshi-Kan
-        const API_URL = "https://script.google.com/macros/s/AKfycbxRujWBbv7PpKuuxdr3eJ1wSkBTXqV_Pl1691HmUX4gEcj7SeaYOpmajzd3ivK8Pwr-dg/exec";
+        // URL DEFINITIVA DE PRODUCCIÓN CONECTADA AL BACKEND
+        const API_URL = "https://script.google.com/macros/s/AKfycbyDB0Ynik_VWbOnboJE6ix9Xm1VRVMx1V1UoMREiHkCaBfOAWcOpJvfQN1I1y9WO8UqSQ/exec";
 
-        let BD_GLOBAL = { alumnos: [], retos: [], intentosHoy: {}, dashboard: { actual: {}, anterior: {} } };
-        let miGraficaInstance = null; 
-        let mesFiltroSeleccionado = "actual"; 
+        let BD = { alumnos: [], retos: [], intentosHoy: {}, dashboard: { actual: {}, anterior: {} } };
+        let graficoInstancia = null;
 
-        // Al cargar la página, traemos los datos desde tu Web App de Google
-        document.addEventListener("DOMContentLoaded", async () => {
-            const select = document.getElementById("select-alumnos");
-            
+        // Al cargar la página, traemos los datos de la hoja de cálculo
+        window.addEventListener("DOMContentLoaded", cargarDatosPortal);
+
+        async function cargarDatosPortal() {
             try {
-                const response = await fetch(API_URL);
-                if (!response.ok) throw new Error("Error en la comunicación con el script de Google.");
+                const respuesta = await fetch(API_URL);
+                if (!respuesta.ok) throw new Error("Error de comunicación con el servidor de Google.");
                 
-                BD_GLOBAL = await response.json();
+                BD = await respuesta.json();
                 
-                // ORDENAR ALFABÉTICAMENTE ASCENDENTE (A a la Z) para la lista de selección
-                if (BD_GLOBAL.alumnos && BD_GLOBAL.alumnos.length > 0) {
-                    BD_GLOBAL.alumnos.sort((a, b) => {
-                        return a.nombre.localeCompare(b.nombre, 'es', { sensitivity: 'base' });
-                    });
-                }
-                
-                // Limpiar y llenar el select de alumnos
-                select.innerHTML = '<option value="">-- Selecciona tu Nombre --</option>';
-                BD_GLOBAL.alumnos.forEach((alumno, index) => {
-                    const option = document.createElement("option");
-                    option.value = index; 
-                    option.textContent = alumno.nombre;
-                    select.appendChild(option);
-                });
+                document.getElementById("loader").classList.add("hidden");
+                document.getElementById("contenido-principal").classList.remove("hidden");
 
-                // Inicializar y construir la gráfica del mes actual automáticamente con los datos reales
-                procesarYConstruirGrafica();
-
+                inicializarSelectAlumnos();
+                renderizarGrafica();
             } catch (error) {
                 console.error(error);
-                select.innerHTML = '<option value="">Error al cargar alumnos. Avisa a tu Sensei.</option>';
+                document.getElementById("loader").innerHTML = `
+                    <p class="text-red-500 font-bold">⚠️ Error al conectar con el sistema.</p>
+                    <p class="text-xs text-gray-500 mt-2">${error.message}</p>
+                `;
             }
-        });
-
-        // Eventos para interactuar con los botones de control de periodos
-        document.getElementById("btn-mes-actual").addEventListener("click", function() {
-            if (mesFiltroSeleccionado === "actual") return;
-            mesFiltroSeleccionado = "actual";
-            
-            this.className = "px-5 py-2.5 text-sm font-medium text-white bg-amber-500 rounded-l-lg border border-amber-500 focus:z-10";
-            document.getElementById("btn-mes-anterior").className = "px-5 py-2.5 text-sm font-medium text-gray-700 bg-white rounded-r-lg border border-gray-200 hover:bg-gray-100 hover:text-amber-600 focus:z-10";
-            
-            procesarYConstruirGrafica();
-        });
-
-        document.getElementById("btn-mes-anterior").addEventListener("click", function() {
-            if (mesFiltroSeleccionado === "anterior") return;
-            mesFiltroSeleccionado = "anterior";
-            
-            this.className = "px-5 py-2.5 text-sm font-medium text-white bg-amber-500 rounded-r-lg border border-amber-500 focus:z-10";
-            document.getElementById("btn-mes-actual").className = "px-5 py-2.5 text-sm font-medium text-gray-700 bg-white rounded-l-lg border border-gray-200 hover:bg-gray-100 hover:text-amber-600 focus:z-10";
-            
-            procesarYConstruirGrafica();
-        });
-
-        /**
-         * SUMATORIA DE PUNTOS REALES DE LA TABLA RETOS Y CONSTRUCCIÓN DE LA GRÁFICA
-         */
-        function procesarYConstruirGrafica() {
-            // Extraer el set de datos correcto enviado desde las sumatorias del backend
-            const fuentePuntos = (BD_GLOBAL.dashboard && BD_GLOBAL.dashboard[mesFiltroSeleccionado]) 
-                ? BD_GLOBAL.dashboard[mesFiltroSeleccionado] 
-                : {};
-
-            const datosOrdenados = [];
-
-            // Aseguramos incluir a todos los alumnos vigentes sumando sus puntos correspondientes
-            BD_GLOBAL.alumnos.forEach(alum => {
-                const totalPuntosAlumno = fuentePuntos[alum.nombre] || 0;
-                datosOrdenados.push({
-                    nombre: alum.nombre,
-                    puntos: totalPuntosAlumno
-                });
-            });
-            
-            // ORDENAR DE MAYOR A MENOR: El alumno con más puntos acumulados aparecerá hasta arriba (Eje Y)
-            datosOrdenados.sort((a, b) => b.puntos - a.puntos);
-
-            const listaNombres = datosOrdenados.map(item => item.nombre);
-            const listaPuntos = datosOrdenados.map(item => item.puntos);
-
-            // Destruir la gráfica previa si existía para evitar encimamientos visuales
-            if (miGraficaInstance) {
-                miGraficaInstance.destroy();
-            }
-
-            const ctx = document.getElementById('graficaPuntajes').getContext('2d');
-            
-            // Dibujar gráfica de barras horizontales
-            miGraficaInstance = new Chart(ctx, {
-                type: 'bar',
-                data: {
-                    labels: listaNombres,
-                    datasets: [{
-                        label: 'Puntos Acumulados',
-                        data: listaPuntos,
-                        backgroundColor: '#d4af37', // Amarillo/Oro Institucional
-                        borderColor: '#1a1a1a',     // Borde negro sutil
-                        borderWidth: 1,
-                        barThickness: 16,           
-                        borderRadius: 4
-                    }]
-                },
-                options: {
-                    indexAxis: 'y', // Fuerza la orientación de las barras horizontales
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    plugins: {
-                        legend: { display: false },
-                        tooltip: {
-                            callbacks: {
-                                label: function(context) {
-                                    return ` ${context.parsed.x} puntos totales`;
-                                }
-                            }
-                        }
-                    },
-                    scales: {
-                        x: {
-                            beginAtZero: true,
-                            title: {
-                                display: true,
-                                text: 'PUNTOS ACUMULADOS',
-                                font: { weight: 'bold', size: 11 },
-                                color: '#4b5563'
-                            },
-                            grid: { color: '#e5e7eb' }
-                        },
-                        y: {
-                            ticks: {
-                                autoSkip: false, // Obliga a listar a todos los alumnos a la izquierda sin omitir renglones
-                                font: { size: 11, weight: '600' },
-                                color: '#111827'
-                            },
-                            grid: { display: false }
-                        }
-                    }
-                }
-            });
         }
 
-        // Escuchar el cambio de selección de alumno
-        document.getElementById("select-alumnos").addEventListener("change", function() {
-            const index = this.value;
-            const msgEspera = document.getElementById("msg-espera");
-            const contenedorRetos = document.getElementById("contenedor-retos");
+        function inicializarSelectAlumnos() {
+            const select = document.getElementById("select-alumno");
+            // Ordenar alfabéticamente por nombre
+            BD.alumnos.sort((a, b) => a.nombre.localeCompare(b.nombre));
+            
+            BD.alumnos.forEach(alumno => {
+                const opt = document.createElement("option");
+                opt.value = alumno.id;
+                opt.textContent = alumno.nombre;
+                select.appendChild(opt);
+            });
+
+            select.addEventListener("change", manejarCambioAlumno);
+        }
+
+        function manejarCambioAlumno(e) {
+            const idSeleccionado = e.target.value;
+            const aviso = document.getElementById("aviso-seleccion");
+            const grid = document.getElementById("grid-retos");
             const perfil = document.getElementById("perfil-alumno");
 
-            if (index === "") {
-                msgEspera.classList.remove("hidden");
-                contenedorRetos.classList.add("hidden");
+            if (!idSeleccionado) {
+                aviso.classList.remove("hidden");
+                grid.classList.add("hidden");
                 perfil.classList.add("hidden");
                 return;
             }
 
-            // Recuperar datos del alumno seleccionado
-            const alumno = BD_GLOBAL.alumnos[index];
-            const edad = parsearYCalcularEdad(alumno.fechaNacimiento);
-            const categoria = (edad <= 12) ? "infantil" : "juvenil"; 
+            const alumno = BD.alumnos.find(a => a.id === idSeleccionado);
+            const categoria = calcularCategoriaEdad(alumno.fechaNacimiento);
 
-            // Mostrar perfil en pantalla
-            document.getElementById("lbl-nombre").textContent = alumno.nombre;
-            document.getElementById("lbl-edad").textContent = isNaN(edad) ? "Error" : edad;
-            document.getElementById("lbl-categoria").textContent = categoria;
+            // Mostrar el perfil lateral
+            document.getElementById("perfil-nombre").textContent = alumno.nombre;
+            document.getElementById("perfil-categoria").textContent = `Categoría: ${categoria}`;
             perfil.classList.remove("hidden");
 
-            // Filtrar y renderizar los retos activos correspondientes
-            filtrarRetos(categoria, alumno.nombre, edad);
-
-            msgEspera.classList.add("hidden");
-            contenedorRetos.classList.remove("hidden");
-        });
-
-        // Función para procesar las fechas de nacimiento
-        function parsearYCalcularEdad(fechaString) {
-            if (!fechaString) return NaN;
-            let fechaObjeto = new Date(fechaString);
-
-            if (isNaN(fechaObjeto.getTime())) {
-                const fechaLimpia = fechaString.split(" ")[0];
-                const partes = fechaLimpia.split(/[-/]/);
-                
-                if (partes.length === 3) {
-                    if (partes[0].length === 4) {
-                        fechaObjeto = new Date(parseInt(partes[0]), parseInt(partes[1]) - 1, parseInt(partes[2]));
-                    } else {
-                        fechaObjeto = new Date(parseInt(partes[2]), parseInt(partes[1]) - 1, parseInt(partes[0]));
-                    }
-                }
-            }
-
-            if (isNaN(fechaObjeto.getTime())) return NaN;
-
-            const hoy = new Date();
-            let edad = hoy.getFullYear() - fechaObjeto.getFullYear();
-            const mes = hoy.getMonth() - fechaObjeto.getMonth();
+            // Filtrar y renderizar retos
+            filtrarYMostrarRetos(alumno.nombre, categoria);
             
-            if (mes < 0 || (mes === 0 && hoy.getDate() < fechaObjeto.getDate())) {
-                edad--;
-            }
-            return edad;
+            aviso.classList.add("hidden");
+            grid.classList.remove("hidden");
         }
 
-        // Función para inyectar los retos vigentes en pantalla
-        function filtrarRetos(categoriaAlumno, nombreAlumno, edadAlumno) {
-            const contenedor = document.getElementById("contenedor-retos");
-            contenedor.innerHTML = ""; 
+        function calcularCategoriaEdad(fechaNacimientoString) {
+            if (!fechaNacimientoString) return "infantil"; // Por defecto seguro
+            
+            try {
+                const nacimiento = new Date(fechaNacimientoString);
+                if (isNaN(nacimiento.getTime())) return "infantil";
+                
+                const hoy = new Date();
+                let edad = hoy.getFullYear() - nacimiento.getFullYear();
+                const m = hoy.getMonth() - nacimiento.getMonth();
+                if (m < 0 || (m === 0 && hoy.getDate() < nacimiento.getDate())) {
+                    edad--;
+                }
+                // Regla de categorías de la academia: mayor o igual a 13 años es juvenil
+                return (edad >= 13) ? "juvenil" : "infantil";
+            } catch (e) {
+                return "infantil";
+            }
+        }
 
-            const retosFiltrados = BD_GLOBAL.retos.filter(reto => reto.categoria.toLowerCase() === categoriaAlumno);
+        function filtrarYMostrarRetos(nombreAlumno, categoriaAlumno) {
+            const grid = document.getElementById("grid-retos");
+            grid.innerHTML = "";
+
+            // REGLA SOLICITADA: Muestra si coincide con la categoría específica O si viene marcado como "todas" (celda vacía en Sheets)
+            const retosFiltrados = BD.retos.filter(reto => {
+                const catReto = reto.categoria.toLowerCase().trim();
+                return catReto === "todas" || catReto === categoriaAlumno.toLowerCase().trim();
+            });
 
             if (retosFiltrados.length === 0) {
-                contenedor.innerHTML = `<div class="col-span-full text-center py-4 text-gray-500">No hay retos activos para tu categoría este mes.</div>`;
+                grid.innerHTML = `<p class="col-span-2 text-center text-gray-500 text-sm py-8">No hay retos registrados para tu categoría este mes.</p>`;
                 return;
             }
 
             retosFiltrados.forEach(reto => {
-                const urlDestino = `${reto.url}?nombre=${encodeURIComponent(nombreAlumno)}&edad=${edadAlumno}&reto=${encodeURIComponent(reto.nombre)}`;
-                const numEstrellas = reto.popularidad || 1;
-                const estrellasHtml = "⭐".repeat(numEstrellas);
+                // Checar cuántas veces lo ha hecho hoy usando la llave única combinada
+                const llaveHoy = `${nombreAlumno}_${reto.nombre}`;
+                const intentosHechos = BD.intentosHoy[llaveHoy] || 0;
+                const esLimiteAlcanzado = intentosHechos >= reto.limiteDiario;
 
-                const llaveCombinada = `${nombreAlumno}_${reto.nombre}`;
-                const hechosHoy = BD_GLOBAL.intentosHoy[llaveCombinada] || 0;
-                const limiteMaximo = reto.limiteDiario;
+                const card = document.createElement("div");
+                card.className = "bg-[#252525] p-4 rounded border border-gray-800 flex flex-col justify-between hover:border-gray-700 transition-all";
                 
-                const yaLlegoAlLimite = hechosHoy >= limiteMaximo;
-
-                let botonHtml = "";
-                if (yaLlegoAlLimite) {
-                    botonHtml = `
-                        <button disabled class="w-full text-center bg-gray-300 text-gray-500 font-bold py-3 px-4 rounded cursor-not-allowed uppercase text-sm tracking-wide border border-gray-400">
-                            Límite Diario Alcanzado
-                        </button>
-                    `;
-                } else {
-                    botonHtml = `
-                        <a href="${urlDestino}" class="block text-center bg-brand-black text-brand-gold font-bold py-3 px-4 rounded hover:bg-gray-800 transition-colors tracking-wide border border-brand-gold">
-                            INICIAR RETO
-                        </a>
-                    `;
+                // Generar estrellas visuales según nivel de popularidad o dificultad (campo popularidad)
+                let estrellas = "";
+                for(let s=0; s<5; s++) {
+                    estrellas += s < reto.popularidad ? "★" : "☆";
                 }
 
-                const infoIntentos = (limiteMaximo < 999) 
-                    ? `<p class="text-xs font-semibold mt-2 ${yaLlegoAlLimite ? 'text-red-600' : 'text-gray-500'}">Realizados hoy: ${hechosHoy} de ${limiteMaximo} permitidos</p>`
-                    : '';
-
-                const tarjeta = document.createElement("div");
-                tarjeta.className = "relative bg-white border-2 border-gray-200 rounded-lg p-5 shadow-sm hover:shadow-md transition-shadow flex flex-col justify-between";
-                tarjeta.innerHTML = `
-                    <div class="absolute top-3 right-3 text-sm select-none" title="Popularidad: ${numEstrellas} de 5">
-                        ${estrellasHtml}
+                card.innerHTML = `
+                    <div>
+                        <div class="flex justify-between items-start mb-1">
+                            <span class="text-xs font-bold uppercase tracking-widest text-[#e5a93c]">${reto.categoria === 'todas' ? 'Universal' : reto.categoria}</span>
+                            <span class="text-xs text-yellow-500 tracking-tighter">${estrellas}</span>
+                        </div>
+                        <h3 class="font-bold text-white text-md mb-2">${reto.nombre}</h3>
+                        <p class="text-xs text-gray-400 mb-4">Límite diario: ${intentosHechos}/${reto.limiteDiario} completados</p>
                     </div>
                     <div>
-                        <span class="inline-block text-xs font-semibold px-2 py-1 rounded bg-amber-100 text-amber-800 uppercase mb-2">${reto.categoria}</span>
-                        <h4 class="text-xl font-bold text-gray-800 mb-2 pr-16">${reto.nombre}</h4>
-                        <p class="text-sm text-gray-600 mb-4">Completa esta actividad en casa para seguir acumulando puntos este mes.</p>
-                    </div>
-                    <div>
-                        ${botonHtml}
-                        ${infoIntentos}
+                        ${reto.url && reto.url !== "#" ? `
+                            <a href="${reto.url}" target="_blank" class="block text-center text-xs bg-gray-800 text-white py-1.5 px-3 rounded mb-2 hover:bg-gray-700 transition-colors">
+                                📺 Ver Video Tutorial
+                            </a>
+                        ` : ''}
+                        <button 
+                            onclick="registrarRetoRealizado('${nombreAlumno}', '${reto.nombre}')"
+                            ${esLimiteAlcanzado ? 'disabled class="w-full text-center text-xs bg-gray-900 text-gray-600 py-2 px-3 rounded cursor-not-allowed"' : 'class="w-full text-center text-xs accent-bg text-black font-bold py-2 px-3 rounded hover:bg-[#d4962b] transition-colors shadow-lg"'}
+                        >
+                            ${esLimiteAlcanzado ? '⛔ Límite Diario Completado' : '⚡ Marcar como Completado'}
+                        </button>
                     </div>
                 `;
-                contenedor.appendChild(tarjeta);
+                grid.appendChild(card);
+            });
+        }
+
+        async function registrarRetoRealizado(nombre, nombreReto) {
+            if (!confirm(`¿Confirmas que completaste el reto: "${nombreReto}"?`)) return;
+
+            try {
+                // Bloqueamos la interacción un momento para evitar envíos dobles
+                document.getElementById("contenido-principal").style.opacity = "0.5";
+
+                const payload = {
+                    nombreAlumno: nombre,
+                    nombreReto: nombreReto,
+                    puntos: 10, // Puntuación estándar por reto completado
+                    edad: 0 // Se calcula automáticamente en el backend vía base de datos
+                };
+
+                const response = await fetch(API_URL, {
+                    method: "POST",
+                    mode: "no-cors", // Evita problemas de CORS al escribir en Google Sheets
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify(payload)
+                });
+
+                alert("¡Felicidades! Reto registrado correctamente. Los puntos se verán reflejados en la tabla al actualizar.");
+                
+                // Recargamos la página completo de inmediato para actualizar los acumulados de hoy y las gráficas
+                window.location.reload();
+            } catch (err) {
+                console.error(err);
+                alert("Hubo un problema al guardar el reto en la hoja de cálculo.");
+                document.getElementById("contenido-principal").style.opacity = "1";
+            }
+        }
+
+        function renderizarGrafica() {
+            const ctx = document.getElementById('grafica-puntos').getContext('2d');
+            
+            // Unimos todos los alumnos que tengan puntos en el mes actual o anterior
+            const todosLosAlumnos = new Set([
+                ...Object.keys(BD.dashboard.actual),
+                ...Object.keys(BD.dashboard.anterior)
+            ]);
+
+            const labels = Array.from(todosLosAlumnos).sort();
+            const datosMesActual = labels.map(alumno => BD.dashboard.actual[alumno] || 0);
+            const datosMesAnterior = labels.map(alumno => BD.dashboard.anterior[alumno] || 0);
+
+            if(labels.length === 0) {
+                // Añadir datos de ejemplo si la tabla Retos está limpia
+                labels.push("Sin datos aún");
+                datosMesActual.push(0);
+                datosMesAnterior.push(0);
+            }
+
+            if (graficoInstancia) {
+                graficoInstancia.destroy();
+            }
+
+            graficoInstancia = new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: labels,
+                    datasets: [
+                        {
+                            label: 'Puntos del Mes Actual',
+                            data: datosMesActual,
+                            backgroundColor: '#e5a93c', // Oro Senshi-Kan
+                            borderColor: '#e5a93c',
+                            borderWidth: 1
+                        },
+                        {
+                            label: 'Puntos del Mes Anterior',
+                            data: datosMesAnterior,
+                            backgroundColor: '#444444', // Gris Oscuro para contraste
+                            borderColor: '#555555',
+                            borderWidth: 1
+                        }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        x: {
+                            ticks: { color: '#aaaaaa', font: { size: 10 } },
+                            grid: { color: '#222222' }
+                        },
+                        y: {
+                            beginAtZero: true,
+                            ticks: { color: '#aaaaaa' },
+                            grid: { color: '#222222' }
+                        }
+                    },
+                    plugins: {
+                        legend: {
+                            labels: { color: '#ffffff', font: { size: 12 } }
+                        }
+                    }
+                }
             });
         }
     </script>

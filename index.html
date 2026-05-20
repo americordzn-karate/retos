@@ -67,7 +67,7 @@
                         <span class="text-[10px] tracking-widest text-zinc-400 uppercase font-bold block">Alumno Seleccionado</span>
                         <p id="info-nombre" class="text-lg font-black text-black uppercase truncate mt-0.5 tracking-wide"></p>
                         
-                        <!-- Bloque de Etiquetas e Información Biométrica -->
+                        <!-- Bloque de Etiquetas e Información Biométrica con diseño institucional -->
                         <div class="flex flex-wrap gap-2 mt-3">
                             <div class="inline-flex items-center px-2.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-wide bg-zinc-100 text-black border border-zinc-300">
                                 <span id="info-cat"></span>
@@ -134,7 +134,7 @@
     </footer>
 
     <script>
-        const API_URL = "https://script.google.com/macros/s/AKfycbwTJS5e231Fr2Dhe8v1Aim_v-K-beu2gJJEFHnPC38TlWTc7BR_dMoMR-cvy_Kja7fOgg/exec";
+        const API_URL = "https://script.google.com/macros/s/AKfycbyDB0Ynik_VWbOnboJE6ix9Xm1VRVMx1V1UoMREiHkCaBfOAWcOpJvfQN1I1y9WO8UqSQ/exec";
 
         let datosDojo = { alumnos: [], retos: [], intentosHoy: {}, dashboard: { actual: {}, anterior: {} } };
         let graficoRendimiento = null;
@@ -165,13 +165,25 @@
 
         function cargarListaAlumnos() {
             const select = document.getElementById("alumno-select");
-            datosDojo.alumnos.sort((a, b) => a.nombre.localeCompare(b.nombre));
+            
+            // BLINDAJE 1: Asegura que si 'alumnos' no viene o no es un arreglo válido, el código no truene.
+            if (!datosDojo.alumnos || !Array.isArray(datosDojo.alumnos)) {
+                datosDojo.alumnos = [];
+            }
+
+            datosDojo.alumnos.sort((a, b) => {
+                const nA = a.nombre || "";
+                const nB = b.nombre || "";
+                return nA.localeCompare(nB);
+            });
             
             datosDojo.alumnos.forEach(al => {
-                const opt = document.createElement("option");
-                opt.value = al.id;
-                opt.textContent = al.nombre.toUpperCase();
-                select.appendChild(opt);
+                if (al && al.nombre) {
+                    const opt = document.createElement("option");
+                    opt.value = al.id;
+                    opt.textContent = al.nombre.toUpperCase();
+                    select.appendChild(opt);
+                }
             });
 
             select.addEventListener("change", seleccionarAlumno);
@@ -191,15 +203,20 @@
             }
 
             const alumno = datosDojo.alumnos.find(a => a.id === idAl);
+            if (!alumno) return;
+
             const cat = obtenerCategoriaPorEdad(alumno.fechaNacimiento);
 
-            // Inyección de datos principales e información biométrica (Estatura y Peso) desde Google Sheets
-            document.getElementById("info-nombre").textContent = alumno.nombre;
+            document.getElementById("info-nombre").textContent = alumno.nombre || "SIN NOMBRE";
             document.getElementById("info-cat").textContent = cat;
             
-            // Mapeamos de forma segura las columnas correspondientes de la hoja Alumnos
-            document.getElementById("info-estatura").textContent = alumno.estatura || "--";
-            document.getElementById("info-peso").textContent = alumno.peso || "--";
+            // BLINDAJE 2: Verificación estricta de nulos, vacíos o indefinidos para datos biométricos.
+            // Si la celda está vacía en Sheets o no existe el campo, se asigna "--" automáticamente.
+            const estaturaVal = (alumno.estatura !== undefined && alumno.estatura !== null && alumno.estatura.toString().trim() !== "") ? alumno.estatura.toString().trim() : "--";
+            const pesoVal = (alumno.peso !== undefined && alumno.peso !== null && alumno.peso.toString().trim() !== "") ? alumno.peso.toString().trim() : "--";
+            
+            document.getElementById("info-estatura").textContent = estaturaVal;
+            document.getElementById("info-peso").textContent = pesoVal;
             
             info.classList.remove("hidden");
 
@@ -230,7 +247,10 @@
             const contenedor = document.getElementById("retos-container");
             contenedor.innerHTML = "";
 
+            if (!datosDojo.retos || !Array.isArray(datosDojo.retos)) return;
+
             const filtrados = datosDojo.retos.filter(r => {
+                if (!r || !r.categoria) return false;
                 const rCat = r.categoria.toLowerCase().trim();
                 return rCat === "ambas" || rCat === "" || rCat === catAl.toLowerCase().trim();
             });
@@ -241,12 +261,13 @@
             }
 
             filtrados.forEach(r => {
-                const hashHoy = `${nombreAl}_${r.nombre}`;
-                const realizados = datosDojo.intentosHoy[hashHoy] || 0;
+                const hashHoy = `${nombreAl || ''}_${r.nombre || ''}`;
+                const realizados = datosDojo.intentosHoy ? (datosDojo.intentosHoy[hashHoy] || 0) : 0;
 
                 let estrellasStr = "";
+                const pop = parseInt(r.popularidad) || 0;
                 for(let s=0; s<5; s++) {
-                    estrellasStr += s < r.popularidad ? "★" : "☆";
+                    estrellasStr += s < pop ? "★" : "☆";
                 }
 
                 const card = document.createElement("div");
@@ -260,13 +281,13 @@
                             </span>
                             <span class="text-mustard font-bold tracking-tighter">${estrellasStr}</span>
                         </div>
-                        <h3 class="font-black text-base text-black uppercase tracking-wide mb-1 group-hover:text-mustard transition-colors">${r.nombre}</h3>
-                        <p class="text-xs text-zinc-400 mb-6">Completados hoy: <span class="font-bold text-zinc-700">${realizados}</span> de <span class="font-bold text-zinc-700">${r.limiteDiario}</span></p>
+                        <h3 class="font-black text-base text-black uppercase tracking-wide mb-1 group-hover:text-mustard transition-colors">${r.nombre || 'Reto'}</h3>
+                        <p class="text-xs text-zinc-400 mb-6">Completados hoy: <span class="font-bold text-zinc-700">${realizados}</span> de <span class="font-bold text-zinc-700">${r.limiteDiario || 999}</span></p>
                     </div>
                     <div>
                         <a href="${r.url && r.url !== '#' ? r.url : 'javascript:void(0);'}" 
                            class="w-full inline-flex items-center justify-center text-center text-xs bg-black text-white font-extrabold py-3 px-4 rounded-md transition-colors tracking-widest uppercase shadow-sm bg-mustard-hover"
-                           ${r.url === '#' ? 'onclick="alert(\'Este reto no tiene un enlace configurado todavía.\')"' : ''}>
+                           ${(!r.url || r.url === '#') ? 'onclick="alert(\'Este reto no tiene un enlace configurado todavía.\')"' : ''}>
                            ⚡ IR AL RETO
                         </a>
                     </div>
@@ -295,7 +316,10 @@
 
         function construirGraficaHorizontal() {
             const ctx = document.getElementById('chart-rendimiento').getContext('2d');
-            const datosMes = datosDojo.dashboard[vistaMesSeleccionado] || {};
+            
+            // BLINDAJE 3: Control si la estructura de datos del dashboard no existe.
+            const baseDashboard = datosDojo.dashboard || { actual: {}, anterior: {} };
+            const datosMes = baseDashboard[vistaMesSeleccionado] || {};
             
             const labels = Object.keys(datosMes).sort();
             const puntuaciones = labels.map(alumno => datosMes[alumno] || 0);
@@ -321,9 +345,8 @@
                             borderColor: '#000000',     
                             borderWidth: 1.5,
                             borderRadius: 4,
-                            // Reducción del espacio de separación a la mitad:
-                            barThickness: 24,           // Incrementamos el grosor individual de la barra
-                            categoryPercentage: 0.85    // Expandimos la barra dentro de su zona asignada para recortar la brecha
+                            barThickness: 24,           
+                            categoryPercentage: 0.85    
                         }
                     ]
                 },
@@ -334,11 +357,11 @@
                     scales: {
                         x: { 
                             beginAtZero: true,
-                            max: 1000, // EJE X CON CONSTANTE FIJA DE 1,000 PUNTOS
+                            max: 1000, 
                             ticks: { 
                                 color: '#1a1a1a', 
                                 font: { size: 10, weight: 'bold' },
-                                stepSize: 100 // Divisiones claras cada 100 unidades
+                                stepSize: 100 
                             }, 
                             grid: { color: '#f4f4f5' } 
                         },

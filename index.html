@@ -79,7 +79,7 @@
                 select.innerHTML = '<option value="">-- Selecciona tu Nombre --</option>';
                 BD_GLOBAL.alumnos.forEach((alumno, index) => {
                     const option = document.createElement("option");
-                    option.value = index; // Guardamos el índice para recuperar el objeto completo
+                    option.value = index; 
                     option.textContent = alumno.nombre;
                     select.appendChild(option);
                 });
@@ -106,12 +106,12 @@
 
             // Recuperar datos del alumno seleccionado
             const alumno = BD_GLOBAL.alumnos[index];
-            const edad = calcularEdad(alumno.fechaNacimiento);
+            const edad = parsearYCalcularEdad(alumno.fechaNacimiento);
             const categoria = (edad <= 12) ? "infantil" : "juvenil"; // Umbral de categoría del dojo
 
             // Mostrar perfil en pantalla
             document.getElementById("lbl-nombre").textContent = alumno.nombre;
-            document.getElementById("lbl-edad").textContent = edad;
+            document.getElementById("lbl-edad").textContent = isNaN(edad) ? "Error" : edad;
             document.getElementById("lbl-categoria").textContent = categoria;
             perfil.classList.remove("hidden");
 
@@ -122,14 +122,38 @@
             contenedorRetos.classList.remove("hidden");
         });
 
-        // Función auxiliar para calcular la edad exacta a partir del formato de fecha de Sheets
-        function calcularEdad(fechaNacimientoString) {
-            const cumpleaños = new Date(fechaNacimientoString);
+        // NUEVA FUNCIÓN AUTOMÁTICA EXTRA FLEXIBLE PARA DETECTAR LA FECHA
+        function parsearYCalcularEdad(fechaString) {
+            if (!fechaString) return NaN;
+
+            let fechaObjeto = new Date(fechaString);
+
+            // Si falla el parseo directo (por el formato regional), lo rompemos manualmente por sus separadores / o -
+            if (isNaN(fechaObjeto.getTime())) {
+                // Limpiamos posibles horas añadidas al final
+                const fechaLimpia = fechaString.split(" ")[0];
+                const partes = fechaLimpia.split(/[-/]/); // Divide tanto por diagonales como por guiones
+                
+                if (partes.length === 3) {
+                    // Si el primer bloque tiene 4 dígitos, asumimos formato Año/Mes/Día (AAAA-MM-DD)
+                    if (partes[0].length === 4) {
+                        fechaObjeto = new Date(parseInt(partes[0]), parseInt(partes[1]) - 1, parseInt(partes[2]));
+                    } else {
+                        // De lo contrario, asumimos formato Latino Estándar: Día/Mes/Año (DD/MM/AAAA)
+                        fechaObjeto = new Date(parseInt(partes[2]), parseInt(partes[1]) - 1, parseInt(partes[0]));
+                    }
+                }
+            }
+
+            // Si después de los intentos sigue fallando, devolvemos NaN para control de errores
+            if (isNaN(fechaObjeto.getTime())) return NaN;
+
+            // Cálculo matemático exacto de la edad
             const hoy = new Date();
-            let edad = hoy.getFullYear() - cumpleaños.getFullYear();
-            const mes = hoy.getMonth() - cumpleaños.getMonth();
+            let edad = hoy.getFullYear() - fechaObjeto.getFullYear();
+            const mes = hoy.getMonth() - fechaObjeto.getMonth();
             
-            if (mes < 0 || (mes === 0 && hoy.getDate() < cumpleaños.getDate())) {
+            if (mes < 0 || (mes === 0 && hoy.getDate() < fechaObjeto.getDate())) {
                 edad--;
             }
             return edad;
@@ -138,7 +162,7 @@
         // Función para pintar en pantalla solo los retos adecuados
         function filtrarRetos(categoriaAlumno, nombreAlumno, edadAlumno) {
             const contenedor = document.getElementById("contenedor-retos");
-            contenedor.innerHTML = ""; // Limpiar retos anteriores
+            contenedor.innerHTML = ""; 
 
             // Filtrar los retos que coincidan con la categoría (infantil / juvenil)
             const retosFiltrados = BD_GLOBAL.retos.filter(reto => reto.categoria.toLowerCase() === categoriaAlumno);
@@ -149,10 +173,8 @@
             }
 
             retosFiltrados.forEach(reto => {
-                // Estructurar parámetros seguros para pasar a las Web Apps independientes de cada reto
                 const urlDestino = `${reto.url}?nombre=${encodeURIComponent(nombreAlumno)}&edad=${edadAlumno}&reto=${encodeURIComponent(reto.nombre)}`;
 
-                // Crear tarjeta del reto
                 const tarjeta = document.createElement("div");
                 tarjeta.className = "bg-white border-2 border-gray-200 rounded-lg p-5 shadow-sm hover:shadow-md transition-shadow flex flex-col justify-between";
                 tarjeta.innerHTML = `

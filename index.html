@@ -61,9 +61,9 @@
 
     <script>
         // URL de producción oficial provista para Senshi-Kan
-        const API_URL = "https://script.google.com/macros/s/AKfycby0K-KNgf9nWSqQsv6JBdcI3o1aXSX1UBg7np44kGGiybshfpTbqv2Aa01UD7E6fIZkWA/exec";
+        const API_URL = "https://script.google.com/macros/s/AKfycbyuzcCN4A8c2--kVnpSaNPQz-SyZy9q3QYnivTEGLHQ5BNVHzXL-N5CUkowijXy9Um0OQ/exec";
 
-        let BD_GLOBAL = { alumnos: [], retos: [] };
+        let BD_GLOBAL = { alumnos: [], retos: [], intentosHoy: {} };
 
         // Al cargar la página, traemos los datos desde tu Web App de Google
         document.addEventListener("DOMContentLoaded", async () => {
@@ -176,15 +176,41 @@
             retosFiltrados.forEach(reto => {
                 const urlDestino = `${reto.url}?nombre=${encodeURIComponent(nombreAlumno)}&edad=${edadAlumno}&reto=${encodeURIComponent(reto.nombre)}`;
                 
-                // Construir la cadena de estrellas repitiendo el emoji según el nivel de popularidad
+                // Construir las estrellas de popularidad
                 const numEstrellas = reto.popularidad || 1;
                 const estrellasHtml = "⭐".repeat(numEstrellas);
 
+                // CONTROL DE LÍMITES DIARIOS: Comprobar el mapa de ejecuciones enviado desde Google Apps Script
+                const llaveCombinada = `${nombreAlumno}_${reto.nombre}`;
+                const hechosHoy = BD_GLOBAL.intentosHoy[llaveCombinada] || 0;
+                const limiteMaximo = reto.limiteDiario;
+                
+                const yaLlegoAlLimite = hechosHoy >= limiteMaximo;
+
+                // Definir las propiedades del botón según su estatus de disponibilidad
+                let botonHtml = "";
+                if (yaLlegoAlLimite) {
+                    botonHtml = `
+                        <button disabled class="w-full text-center bg-gray-300 text-gray-500 font-bold py-3 px-4 rounded cursor-not-allowed uppercase text-sm tracking-wide border border-gray-400">
+                            Límite Diario Alcanzado
+                        </button>
+                    `;
+                } else {
+                    botonHtml = `
+                        <a href="${urlDestino}" class="block text-center bg-brand-black text-brand-gold font-bold py-3 px-4 rounded hover:bg-gray-800 transition-colors tracking-wide border border-brand-gold">
+                            INICIAR RETO
+                        </a>
+                    `;
+                }
+
+                // Texto informativo opcional para indicar los intentos consumidos
+                const infoIntentos = (limiteMaximo < 999) 
+                    ? `<p class="text-xs font-semibold mt-2 ${yaLlegoAlLimite ? 'text-red-600' : 'text-gray-500'}">Realizados hoy: ${hechosHoy} de ${limiteMaximo} permitidos</p>`
+                    : '';
+
                 const tarjeta = document.createElement("div");
-                // Agregamos la clase 'relative' a la tarjeta para poder posicionar las estrellas en la esquina de forma absoluta
                 tarjeta.className = "relative bg-white border-2 border-gray-200 rounded-lg p-5 shadow-sm hover:shadow-md transition-shadow flex flex-col justify-between";
                 tarjeta.innerHTML = `
-                    <!-- Contenedor absoluto para las estrellas en la esquina superior derecha -->
                     <div class="absolute top-3 right-3 text-sm select-none" title="Popularidad: ${numEstrellas} de 5">
                         ${estrellasHtml}
                     </div>
@@ -193,9 +219,10 @@
                         <h4 class="text-xl font-bold text-gray-800 mb-2 pr-16">${reto.nombre}</h4>
                         <p class="text-sm text-gray-600 mb-4">Completa esta actividad en casa para seguir acumulando puntos este mes.</p>
                     </div>
-                    <a href="${urlDestino}" class="block text-center bg-brand-black text-brand-gold font-bold py-3 px-4 rounded hover:bg-gray-800 transition-colors tracking-wide border border-brand-gold">
-                        INICIAR RETO
-                    </a>
+                    <div>
+                        ${botonHtml}
+                        ${infoIntentos}
+                    </div>
                 `;
                 contenedor.appendChild(tarjeta);
             });

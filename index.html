@@ -211,13 +211,30 @@
             document.getElementById("info-nombre").textContent = alumno.nombre || "SIN NOMBRE";
             document.getElementById("info-cat").textContent = cat;
             
-            // EXTRACCIÓN DIRECTA SEGURA: Lee directamente la propiedad o sus variantes comunes sin alterar el tipo de dato primitivo
-            let estRaw = alumno.Estatura_cm || alumno.estatura_cm || alumno.Estatura || alumno.estatura || "";
-            let pesoRaw = alumno.Peso_kg || alumno.peso_kg || alumno.Peso || alumno.peso || "";
+            // ESCANEO DINÁMICO TOLERANTE AL FORMATO DECIMAL DE GOOGLE SHEETS
+            let estaturaFinal = "--";
+            let pesoFinal = "--";
 
-            // Forzar renderizado limpio si el dato es numérico o string válido
-            document.getElementById("info-estatura").textContent = (estRaw !== undefined && estRaw !== null && estRaw !== "") ? estRaw : "0";
-            document.getElementById("info-peso").textContent = (pesoRaw !== undefined && pesoRaw !== null && pesoRaw !== "") ? pesoRaw : "0";
+            // Recorremos todas las llaves reales del objeto alumno que viene desde la hoja de cálculo
+            Object.keys(alumno).forEach(key => {
+                const llaveNormalizada = key.toLowerCase().trim();
+                const valorOriginal = alumno[key];
+
+                // Verificamos que el valor no sea nulo, indefinido ni una cadena vacía
+                if (valorOriginal !== null && valorOriginal !== undefined && valorOriginal.toString().trim() !== "") {
+                    // Si la columna contiene la palabra 'estatura' o 'altura'
+                    if (llaveNormalizada.includes("estatura") || llaveNormalizada.includes("altura")) {
+                        estaturaFinal = valorOriginal;
+                    }
+                    // Si la columna contiene la palabra 'peso'
+                    if (llaveNormalizada.includes("peso")) {
+                        pesoFinal = valorOriginal;
+                    }
+                }
+            });
+
+            document.getElementById("info-estatura").textContent = estaturaFinal;
+            document.getElementById("info-peso").textContent = pesoFinal;
             
             info.classList.remove("hidden");
 

@@ -60,7 +60,7 @@
     </main>
 
     <script>
-        // URL de producción de tu Google Apps Script
+        // URL de producción oficial provista para Senshi-Kan
         const API_URL = "https://script.google.com/macros/s/AKfycbxb7uRVsdBlnPoJwCQ34lQAX98-M4Cc4WK0XcgpTabsOhpFDp8_GKW0BibKnjujExqZ/exec";
 
         let BD_GLOBAL = { alumnos: [], retos: [] };
@@ -74,6 +74,14 @@
                 if (!response.ok) throw new Error("Error en la comunicación con el script de Google.");
                 
                 BD_GLOBAL = await response.json();
+                
+                // ORDENAR ALFABÉTICAMENTE ASCENDENTE (A a la Z)
+                if (BD_GLOBAL.alumnos && BD_GLOBAL.alumnos.length > 0) {
+                    BD_GLOBAL.alumnos.sort((a, b) => {
+                        // Compara 'a' contra 'b' para mantener el orden alfabético natural
+                        return a.nombre.localeCompare(b.nombre, 'es', { sensitivity: 'base' });
+                    });
+                }
                 
                 // Limpiar y llenar el select de alumnos
                 select.innerHTML = '<option value="">-- Selecciona tu Nombre --</option>';
@@ -122,33 +130,31 @@
             contenedorRetos.classList.remove("hidden");
         });
 
-        // NUEVA FUNCIÓN AUTOMÁTICA EXTRA FLEXIBLE PARA DETECTAR LA FECHA
+        // Función automática para procesar las fechas de Google Sheets
         function parsearYCalcularEdad(fechaString) {
             if (!fechaString) return NaN;
 
             let fechaObjeto = new Date(fechaString);
 
-            // Si falla el parseo directo (por el formato regional), lo rompemos manualmente por sus separadores / o -
+            // Si falla el parseo directo por configuración regional, dividimos la cadena por sus separadores
             if (isNaN(fechaObjeto.getTime())) {
-                // Limpiamos posibles horas añadidas al final
                 const fechaLimpia = fechaString.split(" ")[0];
-                const partes = fechaLimpia.split(/[-/]/); // Divide tanto por diagonales como por guiones
+                const partes = fechaLimpia.split(/[-/]/);
                 
                 if (partes.length === 3) {
-                    // Si el primer bloque tiene 4 dígitos, asumimos formato Año/Mes/Día (AAAA-MM-DD)
                     if (partes[0].length === 4) {
+                        // Formato Año/Mes/Día (AAAA-MM-DD)
                         fechaObjeto = new Date(parseInt(partes[0]), parseInt(partes[1]) - 1, parseInt(partes[2]));
                     } else {
-                        // De lo contrario, asumimos formato Latino Estándar: Día/Mes/Año (DD/MM/AAAA)
+                        // Formato Latino Estándar: Día/Mes/Año (DD/MM/AAAA)
                         fechaObjeto = new Date(parseInt(partes[2]), parseInt(partes[1]) - 1, parseInt(partes[0]));
                     }
                 }
             }
 
-            // Si después de los intentos sigue fallando, devolvemos NaN para control de errores
             if (isNaN(fechaObjeto.getTime())) return NaN;
 
-            // Cálculo matemático exacto de la edad
+            // Cálculo de edad exacta
             const hoy = new Date();
             let edad = hoy.getFullYear() - fechaObjeto.getFullYear();
             const mes = hoy.getMonth() - fechaObjeto.getMonth();
@@ -159,12 +165,12 @@
             return edad;
         }
 
-        // Función para pintar en pantalla solo los retos adecuados
+        // Función para inyectar en pantalla los retos de la categoría adecuada
         function filtrarRetos(categoriaAlumno, nombreAlumno, edadAlumno) {
             const contenedor = document.getElementById("contenedor-retos");
             contenedor.innerHTML = ""; 
 
-            // Filtrar los retos que coincidan con la categoría (infantil / juvenil)
+            // Filtrar los retos activos según la categoría calculada (infantil / juvenil)
             const retosFiltrados = BD_GLOBAL.retos.filter(reto => reto.categoria.toLowerCase() === categoriaAlumno);
 
             if (retosFiltrados.length === 0) {
@@ -173,6 +179,7 @@
             }
 
             retosFiltrados.forEach(reto => {
+                // Se construye la URL pasando los parámetros de forma segura al reto específico
                 const urlDestino = `${reto.url}?nombre=${encodeURIComponent(nombreAlumno)}&edad=${edadAlumno}&reto=${encodeURIComponent(reto.nombre)}`;
 
                 const tarjeta = document.createElement("div");

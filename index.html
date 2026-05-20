@@ -4,7 +4,9 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Senshi-Kan - Portal Reto del Mes</title>
+    <!-- Tailwind CSS para el estilizado institucional -->
     <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Chart.js para la gráfica de rendimiento -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <style>
         body {
@@ -27,20 +29,24 @@
 <body class="antialiased p-4 md:p-8 min-h-screen flex flex-col justify-between">
 
     <div class="max-w-6xl mx-auto w-full flex-grow">
+        <!-- Encabezado Principal Institucional -->
         <header class="text-center mb-8 border-b-2 border-black pb-6">
             <h1 class="text-3xl md:text-5xl font-black tracking-widest text-black uppercase">SENSHI-KAN</h1>
             <p class="text-xs md:text-sm mt-2 tracking-[0.3em] text-mustard font-bold uppercase">Portal Digital • Reto del Mes</p>
         </header>
 
+        <!-- Pantalla de Carga -->
         <div id="loading" class="flex flex-col items-center justify-center py-24">
             <div class="w-12 h-12 border-4 border-t-transparent border-mustard rounded-full animate-spin mb-4"></div>
             <p class="text-xs tracking-widest text-zinc-500 uppercase font-bold animate-pulse">Sincronizando datos del dojo...</p>
         </div>
 
+        <!-- Contenedor Principal de la Aplicación -->
         <div id="main-container" class="hidden space-y-6">
             
             <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
                 
+                <!-- Columna Izquierda: Identificación y Perfil -->
                 <div class="bg-zinc-50 p-6 rounded-xl border border-zinc-200 shadow-sm flex flex-col justify-between">
                     <div>
                         <h2 class="text-xs font-bold uppercase tracking-wider text-zinc-400 mb-4">Paso 1: Selección</h2>
@@ -56,29 +62,45 @@
                         </div>
                     </div>
 
+                    <!-- Ficha del Alumno Enriquecida -->
                     <div id="info-alumno" class="hidden mt-8 pt-6 border-t border-zinc-200 bg-white p-4 rounded-lg border border-zinc-100 shadow-inner">
                         <span class="text-[10px] tracking-widest text-zinc-400 uppercase font-bold block">Alumno Seleccionado</span>
                         <p id="info-nombre" class="text-lg font-black text-black uppercase truncate mt-0.5 tracking-wide"></p>
-                        <div class="inline-flex items-center mt-2 px-2.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-wide bg-zinc-100 text-black border border-zinc-300">
-                            <span id="info-cat"></span>
+                        
+                        <!-- Bloque de Etiquetas e Información Biométrica -->
+                        <div class="flex flex-wrap gap-2 mt-3">
+                            <div class="inline-flex items-center px-2.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-wide bg-zinc-100 text-black border border-zinc-300">
+                                <span id="info-cat"></span>
+                            </div>
+                            <div class="inline-flex items-center px-2.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-wide bg-zinc-100 text-black border border-zinc-300">
+                                📏 <span id="info-estatura" class="ml-1">--</span> cm
+                            </div>
+                            <div class="inline-flex items-center px-2.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-wide bg-zinc-100 text-black border border-zinc-300">
+                                ⚖️ <span id="info-peso" class="ml-1">--</span> kg
+                            </div>
                         </div>
                     </div>
                 </div>
 
+                <!-- Columna Derecha: Panel de Retos Disponibles -->
                 <div class="lg:col-span-2 bg-zinc-50 p-6 rounded-xl border border-zinc-200 shadow-sm flex flex-col">
                     <h2 class="text-xs font-bold uppercase tracking-wider text-zinc-400 mb-4">Paso 2: Retos Disponibles</h2>
 
+                    <!-- Mensaje Inicial -->
                     <div id="placeholder-retos" class="flex-grow flex flex-col items-center justify-center py-16 text-center">
                         <svg class="w-12 h-12 text-zinc-300 mb-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01"></path></svg>
                         <p class="text-sm text-zinc-400 italic">Elige tu nombre en el panel izquierdo para cargar tus retos asignados.</p>
                     </div>
 
+                    <!-- Listado Dinámico de Retos -->
                     <div id="retos-container" class="hidden grid grid-cols-1 sm:grid-cols-2 gap-4 overflow-y-auto max-h-[380px] pr-1">
-                        </div>
+                        <!-- Inserción vía JavaScript -->
+                    </div>
                 </div>
 
             </div>
 
+            <!-- Sección Inferior: Métricas e Historial General -->
             <div class="bg-zinc-50 p-6 rounded-xl border border-zinc-200 shadow-sm">
                 <div class="flex flex-col sm:flex-row sm:items-center justify-between border-b border-zinc-200 pb-4 mb-6 gap-4">
                     <div>
@@ -86,6 +108,7 @@
                         <h3 class="text-lg font-bold text-black">Tabla General de Rendimiento</h3>
                     </div>
                     
+                    <!-- Botones Selectores de Meses Claros -->
                     <div class="inline-flex rounded-md shadow-sm bg-white p-1 border border-zinc-200" role="group">
                         <button id="btn-mes-actual" onclick="cambiarMesGrafica('actual')" class="px-4 py-2 text-xs font-bold uppercase rounded-md transition-all bg-black text-white">
                             Mes Actual
@@ -96,7 +119,8 @@
                     </div>
                 </div>
                 
-                <div class="relative h-[380px] w-full bg-white p-2 rounded-lg border border-zinc-100 shadow-inner">
+                <!-- Área del Gráfico -->
+                <div class="relative h-[450px] w-full bg-white p-2 rounded-lg border border-zinc-100 shadow-inner">
                     <canvas id="chart-rendimiento"></canvas>
                 </div>
             </div>
@@ -104,17 +128,17 @@
         </div>
     </div>
 
+    <!-- Pie de página institucional -->
     <footer class="text-center text-[10px] text-zinc-400 tracking-widest mt-12 border-t border-zinc-200 pt-4 max-w-6xl mx-auto w-full font-bold uppercase">
         SENSHI-KAN © 2026 • HONOR • DISCIPLINA • CONSTANCIA
     </footer>
 
     <script>
-        // URL de tu Google Apps Script actualizado con la categoría "ambas"
         const API_URL = "https://script.google.com/macros/s/AKfycbyDB0Ynik_VWbOnboJE6ix9Xm1VRVMx1V1UoMREiHkCaBfOAWcOpJvfQN1I1y9WO8UqSQ/exec";
 
         let datosDojo = { alumnos: [], retos: [], intentosHoy: {}, dashboard: { actual: {}, anterior: {} } };
         let graficoRendimiento = null;
-        let vistaMesSeleccionado = 'actual'; // Estado inicial: Mes Actual
+        let vistaMesSeleccionado = 'actual';
 
         window.addEventListener("load", iniciarPortal);
 
@@ -169,8 +193,14 @@
             const alumno = datosDojo.alumnos.find(a => a.id === idAl);
             const cat = obtenerCategoriaPorEdad(alumno.fechaNacimiento);
 
+            // Inyección de datos principales e información biométrica (Estatura y Peso) desde Google Sheets
             document.getElementById("info-nombre").textContent = alumno.nombre;
             document.getElementById("info-cat").textContent = cat;
+            
+            // Mapeamos de forma segura las columnas correspondientes de la hoja Alumnos
+            document.getElementById("info-estatura").textContent = alumno.estatura || "--";
+            document.getElementById("info-peso").textContent = alumno.peso || "--";
+            
             info.classList.remove("hidden");
 
             desplegarRetosFiltrados(alumno.nombre, cat);
@@ -202,7 +232,6 @@
 
             const filtrados = datosDojo.retos.filter(r => {
                 const rCat = r.categoria.toLowerCase().trim();
-                // Se muestran si coinciden con la categoría del alumno o si está vacío/marcado como "ambas"
                 return rCat === "ambas" || rCat === "" || rCat === catAl.toLowerCase().trim();
             });
 
@@ -214,7 +243,6 @@
             filtrados.forEach(r => {
                 const hashHoy = `${nombreAl}_${r.nombre}`;
                 const realizados = datosDojo.intentosHoy[hashHoy] || 0;
-                const limiteAlcanzado = realizados >= r.limiteDiario;
 
                 let estrellasStr = "";
                 for(let s=0; s<5; s++) {
@@ -224,7 +252,6 @@
                 const card = document.createElement("div");
                 card.className = "bg-white p-5 rounded-lg border border-zinc-200 flex flex-col justify-between shadow-sm hover:border-zinc-400 transition-all group";
                 
-                // Se eliminó el botón estático de completado. El enlace ahora redirige limpiamente.
                 card.innerHTML = `
                     <div>
                         <div class="flex justify-between items-center text-[10px] mb-2">
@@ -248,7 +275,6 @@
             });
         }
 
-        // Manejador del cambio de mes mediante botones explícitos
         function cambiarMesGrafica(mes) {
             if (vistaMesSeleccionado === mes) return;
             vistaMesSeleccionado = mes;
@@ -269,11 +295,8 @@
 
         function construirGraficaHorizontal() {
             const ctx = document.getElementById('chart-rendimiento').getContext('2d');
-            
-            // Extraer conjunto de datos según el mes activo
             const datosMes = datosDojo.dashboard[vistaMesSeleccionado] || {};
             
-            // Ordenar los alumnos alfabéticamente para mantener constancia en el eje Y
             const labels = Object.keys(datosMes).sort();
             const puntuaciones = labels.map(alumno => datosMes[alumno] || 0);
 
@@ -286,31 +309,37 @@
                 graficoRendimiento.destroy();
             }
 
-            // Inicialización de la gráfica con tipo 'bar' e índice indexAxis: 'y' para invertirla a horizontal
             graficoRendimiento = new Chart(ctx, {
                 type: 'bar',
                 data: {
                     labels: labels.map(l => l.toUpperCase()),
                     datasets: [
                         {
-                            label: `PUNTOS (${vistaMesSeleccionado === 'actual' ? 'MES ACTUAL' : 'MES ANTERIOR'})`,
+                            label: `PUNTOS`,
                             data: puntuaciones,
-                            backgroundColor: '#e5a93c', // Oro institucional
-                            borderColor: '#000000',     // Borde negro limpio
+                            backgroundColor: '#e5a93c', 
+                            borderColor: '#000000',     
                             borderWidth: 1.5,
                             borderRadius: 4,
-                            barThickness: 18
+                            // Reducción del espacio de separación a la mitad:
+                            barThickness: 24,           // Incrementamos el grosor individual de la barra
+                            categoryPercentage: 0.85    // Expandimos la barra dentro de su zona asignada para recortar la brecha
                         }
                     ]
                 },
                 options: {
-                    indexAxis: 'y', // CRUCIAL: Vuelve las barras horizontales
+                    indexAxis: 'y', 
                     responsive: true,
                     maintainAspectRatio: false,
                     scales: {
                         x: { 
                             beginAtZero: true,
-                            ticks: { color: '#1a1a1a', font: { size: 10, weight: 'bold' } }, 
+                            max: 1000, // EJE X CON CONSTANTE FIJA DE 1,000 PUNTOS
+                            ticks: { 
+                                color: '#1a1a1a', 
+                                font: { size: 10, weight: 'bold' },
+                                stepSize: 100 // Divisiones claras cada 100 unidades
+                            }, 
                             grid: { color: '#f4f4f5' } 
                         },
                         y: { 
@@ -319,9 +348,7 @@
                         }
                     },
                     plugins: {
-                        legend: { 
-                            display: false
-                        }
+                        legend: { display: false }
                     }
                 }
             });

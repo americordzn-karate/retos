@@ -3,151 +3,151 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Senshi-Kan - Reto del Mes</title>
+    <title>Senshi-Kan - Portal Reto del Mes</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <style>
         body {
-            background-color: #000000;
-            color: #ffffff;
-            font-family: monospace;
+            background-color: #ffffff;
+            color: #1a1a1a;
+            font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
         }
-        .mustard-text { color: #e5a93c; }
-        .mustard-bg { background-color: #e5a93c; }
-        .mustard-border { border-color: #e5a93c; }
+        .text-mustard { color: #e5a93c; }
+        .bg-mustard { background-color: #e5a93c; }
+        .bg-mustard-hover:hover { background-color: #d4962b; }
+        .border-mustard { border-color: #e5a93c; }
+        
+        /* Estilos de scrollbar limpios */
+        ::-webkit-scrollbar { width: 6px; }
+        ::-webkit-scrollbar-track { background: #f4f4f5; }
+        ::-webkit-scrollbar-thumb { background: #d4d4d8; border-radius: 3px; }
+        ::-webkit-scrollbar-thumb:hover { background: #e5a93c; }
     </style>
 </head>
-<body class="p-6">
+<body class="antialiased p-4 md:p-8 min-h-screen flex flex-col justify-between">
 
-    <div class="max-w-4xl mx-auto">
-        <header class="text-center mb-8 border-b-2 mustard-border pb-4">
-            <h1 class="text-4xl font-bold tracking-widest">SENSHI-KAN KARATE DO</h1>
-            <p class="text-xl mt-2 font-semibold tracking-wider text-gray-300">RETO DEL MES</p>
+    <div class="max-w-6xl mx-auto w-full flex-grow">
+        <header class="text-center mb-8 border-b-2 border-black pb-6">
+            <h1 class="text-3xl md:text-5xl font-black tracking-widest text-black uppercase">SENSHI-KAN</h1>
+            <p class="text-xs md:text-sm mt-2 tracking-[0.3em] text-mustard font-bold uppercase">Portal Digital • Reto del Mes</p>
         </header>
 
-        <div id="loading" class="text-center text-xl my-12 mustard-text animate-pulse">
-            CONECTANDO CON EL DOJO...
+        <div id="loading" class="flex flex-col items-center justify-center py-24">
+            <div class="w-12 h-12 border-4 border-t-transparent border-mustard rounded-full animate-spin mb-4"></div>
+            <p class="text-xs tracking-widest text-zinc-500 uppercase font-bold animate-pulse">Sincronizando datos del dojo...</p>
         </div>
 
-        <div id="main-container" class="hidden">
-            <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+        <div id="main-container" class="hidden space-y-6">
+            
+            <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
                 
-                <!-- Selector de Alumnos -->
-                <div class="bg-[#111111] p-4 rounded border mustard-border">
-                    <h2 class="text-lg font-bold mb-3 uppercase tracking-wider text-center">Seleccionar Alumno</h2>
-                    <select id="alumno-select" class="w-full bg-[#222222] text-white p-2 border border-gray-600 rounded focus:outline-none focus:border-[#e5a93c]">
-                        <option value="">-- Elige un alumno --</option>
-                    </select>
+                <div class="bg-zinc-50 p-6 rounded-xl border border-zinc-200 shadow-sm flex flex-col justify-between">
+                    <div>
+                        <h2 class="text-xs font-bold uppercase tracking-wider text-zinc-400 mb-4">Paso 1: Selección</h2>
+                        <h3 class="text-lg font-bold text-black mb-3">Ingresa tu Nombre</h3>
+                        
+                        <div class="relative">
+                            <select id="alumno-select" class="w-full bg-white text-black p-3 pr-10 border border-zinc-300 rounded-lg appearance-none focus:outline-none focus:border-mustard transition-all text-sm cursor-pointer shadow-sm">
+                                <option value="">-- Selecciona de la lista --</option>
+                            </select>
+                            <div class="pointer-events-none absolute inset-y-0 right-0 flex items-center px-3 text-zinc-500">
+                                <svg class="fill-current h-4 w-4" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20"><path d="M9.293 12.95l.707.707L15.657 8l-1.414-1.414L10 10.828 5.757 6.586 4.343 8z"/></svg>
+                            </div>
+                        </div>
+                    </div>
 
-                    <div id="info-alumno" class="hidden mt-6 pt-4 border-t border-gray-700">
-                        <p class="text-xs text-gray-400">Alumno activo:</p>
-                        <p id="info-nombre" class="text-xl font-bold mustard-text uppercase mt-1"></p>
-                        <p id="info-cat" class="text-sm font-semibold tracking-wide uppercase mt-1 text-gray-300"></p>
+                    <div id="info-alumno" class="hidden mt-8 pt-6 border-t border-zinc-200 bg-white p-4 rounded-lg border border-zinc-100 shadow-inner">
+                        <span class="text-[10px] tracking-widest text-zinc-400 uppercase font-bold block">Alumno Seleccionado</span>
+                        <p id="info-nombre" class="text-lg font-black text-black uppercase truncate mt-0.5 tracking-wide"></p>
+                        <div class="inline-flex items-center mt-2 px-2.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-wide bg-zinc-100 text-black border border-zinc-300">
+                            <span id="info-cat"></span>
+                        </div>
                     </div>
                 </div>
 
-                <!-- Panel de Retos -->
-                <div class="md:col-span-2 bg-[#111111] p-4 rounded border border-gray-800">
-                    <h2 class="text-lg font-bold mb-3 uppercase tracking-wider text-center text-gray-200">Panel de Entrenamiento</h2>
-                    
-                    <div id="placeholder-retos" class="text-center py-12 text-gray-500 italic text-sm">
-                        Por favor, selecciona tu nombre para visualizar los retos asignados.
+                <div class="lg:col-span-2 bg-zinc-50 p-6 rounded-xl border border-zinc-200 shadow-sm flex flex-col">
+                    <h2 class="text-xs font-bold uppercase tracking-wider text-zinc-400 mb-4">Paso 2: Retos Disponibles</h2>
+
+                    <div id="placeholder-retos" class="flex-grow flex flex-col items-center justify-center py-16 text-center">
+                        <svg class="w-12 h-12 text-zinc-300 mb-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01"></path></svg>
+                        <p class="text-sm text-zinc-400 italic">Elige tu nombre en el panel izquierdo para cargar tus retos asignados.</p>
                     </div>
 
-                    <div id="retos-container" class="hidden grid grid-cols-1 sm:grid-cols-2 gap-4">
-                        <!-- Tarjetas dinámicas -->
-                    </div>
+                    <div id="retos-container" class="hidden grid grid-cols-1 sm:grid-cols-2 gap-4 overflow-y-auto max-h-[380px] pr-1">
+                        </div>
                 </div>
+
             </div>
 
-            <!-- Gráfica de Rendimiento -->
-            <div class="bg-[#111111] p-4 rounded border border-gray-800">
-                <h2 class="text-lg font-bold mb-4 uppercase tracking-wider text-center mustard-text">Tabla General de Rendimiento</h2>
-                <div class="relative h-[350px]">
+            <div class="bg-zinc-50 p-6 rounded-xl border border-zinc-200 shadow-sm">
+                <div class="flex flex-col sm:flex-row sm:items-center justify-between border-b border-zinc-200 pb-4 mb-6 gap-4">
+                    <div>
+                        <h2 class="text-xs font-bold uppercase tracking-wider text-zinc-400 mb-1">Métricas del Dojo</h2>
+                        <h3 class="text-lg font-bold text-black">Tabla General de Rendimiento</h3>
+                    </div>
+                    
+                    <div class="inline-flex rounded-md shadow-sm bg-white p-1 border border-zinc-200" role="group">
+                        <button id="btn-mes-actual" onclick="cambiarMesGrafica('actual')" class="px-4 py-2 text-xs font-bold uppercase rounded-md transition-all bg-black text-white">
+                            Mes Actual
+                        </button>
+                        <button id="btn-mes-anterior" onclick="cambiarMesGrafica('anterior')" class="px-4 py-2 text-xs font-bold uppercase rounded-md transition-all text-zinc-600 hover:text-black">
+                            Mes Anterior
+                        </button>
+                    </div>
+                </div>
+                
+                <div class="relative h-[380px] w-full bg-white p-2 rounded-lg border border-zinc-100 shadow-inner">
                     <canvas id="chart-rendimiento"></canvas>
                 </div>
             </div>
+
         </div>
     </div>
 
+    <footer class="text-center text-[10px] text-zinc-400 tracking-widest mt-12 border-t border-zinc-200 pt-4 max-w-6xl mx-auto w-full font-bold uppercase">
+        SENSHI-KAN © 2026 • HONOR • DISCIPLINA • CONSTANCIA
+    </footer>
+
     <script>
+        // URL de tu Google Apps Script actualizado con la categoría "ambas"
         const API_URL = "https://script.google.com/macros/s/AKfycbyDB0Ynik_VWbOnboJE6ix9Xm1VRVMx1V1UoMREiHkCaBfOAWcOpJvfQN1I1y9WO8UqSQ/exec";
 
-        // Estructura base de respaldo
         let datosDojo = { alumnos: [], retos: [], intentosHoy: {}, dashboard: { actual: {}, anterior: {} } };
-        let listaAlumnosProcesada = [];
         let graficoRendimiento = null;
+        let vistaMesSeleccionado = 'actual'; // Estado inicial: Mes Actual
 
         window.addEventListener("load", iniciarPortal);
 
         async function iniciarPortal() {
             try {
                 const response = await fetch(API_URL);
-                if (!response.ok) throw new Error("Error en la conexión de red");
+                if (!response.ok) throw new Error("Error en la conexión con el servidor");
                 
-                const jsonRecibido = await response.json();
-                console.log("Datos crudos recibidos del Sheets:", jsonRecibido);
-
-                // CONTROL DE ROBUSTEZ: Detecta la ubicación real de la lista de alumnos sin importar la propiedad
-                if (Array.isArray(jsonRecibido)) {
-                    listaAlumnosProcesada = jsonRecibido;
-                } else if (jsonRecibido.alumnos && Array.isArray(jsonRecibido.alumnos)) {
-                    datosDojo = jsonRecibido;
-                    listaAlumnosProcesada = jsonRecibido.alumnos;
-                } else if (jsonRecibido.datos && Array.isArray(jsonRecibido.datos)) {
-                    listaAlumnosProcesada = jsonRecibido.datos;
-                    datosDojo = jsonRecibido;
-                } else {
-                    // Fallback por si los datos vienen en otra propiedad del objeto raíz
-                    for (let clave in jsonRecibido) {
-                        if (Array.isArray(jsonRecibido[clave])) {
-                            listaAlumnosProcesada = jsonRecibido[clave];
-                            datosDojo = jsonRecibido;
-                            break;
-                        }
-                    }
-                }
-
+                datosDojo = await response.json();
+                
                 document.getElementById("loading").classList.add("hidden");
                 document.getElementById("main-container").classList.remove("hidden");
 
                 cargarListaAlumnos();
-                construirGrafica();
+                construirGraficaHorizontal();
             } catch (err) {
-                console.error("Error al iniciar el portal:", err);
-                document.getElementById("loading").textContent = "⚠️ ERROR AL CARGAR LOS DATOS. REINTENTA MÁS TARDE.";
+                console.error(err);
+                document.getElementById("loading").innerHTML = `
+                    <p class="text-red-600 font-bold text-sm tracking-wide">⚠️ ERROR DE ENLACE CON LA BASE DE DATOS</p>
+                    <p class="text-xs text-zinc-400 mt-1">Verifica la conexión a internet o el estado de la implementación.</p>
+                `;
             }
         }
 
         function cargarListaAlumnos() {
             const select = document.getElementById("alumno-select");
+            datosDojo.alumnos.sort((a, b) => a.nombre.localeCompare(b.nombre));
             
-            if (!listaAlumnosProcesada || listaAlumnosProcesada.length === 0) {
-                console.warn("No se encontraron alumnos en la estructura del JSON.");
-                const optError = document.createElement("option");
-                optError.textContent = "Error: Sin alumnos en base de datos";
-                select.appendChild(optError);
-                return;
-            }
-
-            // Ordenamiento alfabético por nombre seguro
-            listaAlumnosProcesada.sort((a, b) => {
-                const nameA = a.nombre || a.Nombre || "";
-                const nameB = b.nombre || b.Nombre || "";
-                return nameA.localeCompare(nameB);
-            });
-            
-            listaAlumnosProcesada.forEach(al => {
-                // Validación para aceptar 'id' o 'ID', y 'nombre' o 'Nombre'
-                const idFinal = al.id || al.ID || al.idAlumno;
-                const nombreFinal = al.nombre || al.Nombre;
-                
-                if (nombreFinal) {
-                    const opt = document.createElement("option");
-                    opt.value = idFinal;
-                    opt.textContent = nombreFinal;
-                    select.appendChild(opt);
-                }
+            datosDojo.alumnos.forEach(al => {
+                const opt = document.createElement("option");
+                opt.value = al.id;
+                opt.textContent = al.nombre.toUpperCase();
+                select.appendChild(opt);
             });
 
             select.addEventListener("change", seleccionarAlumno);
@@ -166,15 +166,14 @@
                 return;
             }
 
-            const alumno = listaAlumnosProcesada.find(a => (a.id || a.ID || a.idAlumno) === idAl);
-            const fechaNac = alumno.fechaNacimiento || alumno.FechaNacimiento || alumno.fecha;
-            const cat = obtenerCategoriaPorEdad(fechaNac);
+            const alumno = datosDojo.alumnos.find(a => a.id === idAl);
+            const cat = obtenerCategoriaPorEdad(alumno.fechaNacimiento);
 
-            document.getElementById("info-nombre").textContent = alumno.nombre || alumno.Nombre;
-            document.getElementById("info-cat").textContent = `Categoría: ${cat}`;
+            document.getElementById("info-nombre").textContent = alumno.nombre;
+            document.getElementById("info-cat").textContent = cat;
             info.classList.remove("hidden");
 
-            desplegarRetosFiltrados(alumno.nombre || alumno.Nombre, cat);
+            desplegarRetosFiltrados(alumno.nombre, cat);
             
             placeholder.classList.add("hidden");
             contenedor.classList.remove("hidden");
@@ -201,148 +200,128 @@
             const contenedor = document.getElementById("retos-container");
             contenedor.innerHTML = "";
 
-            const listaRetos = datosDojo.retos || [];
-            const filtrados = listaRetos.filter(r => {
-                const categoriaReto = r.categoria || r.Categoria || "";
-                const rCat = categoriaReto.toLowerCase().trim();
-                return rCat === "todas" || rCat === catAl.toLowerCase().trim();
+            const filtrados = datosDojo.retos.filter(r => {
+                const rCat = r.categoria.toLowerCase().trim();
+                // Se muestran si coinciden con la categoría del alumno o si está vacío/marcado como "ambas"
+                return rCat === "ambas" || rCat === "" || rCat === catAl.toLowerCase().trim();
             });
 
             if (filtrados.length === 0) {
-                contenedor.innerHTML = `<p class="col-span-2 text-center text-gray-500 py-6">No hay retos para tu categoría.</p>`;
+                contenedor.innerHTML = `<p class="col-span-full text-center text-zinc-400 py-12 text-xs italic">No hay retos asignados para tu grupo este mes.</p>`;
                 return;
             }
 
             filtrados.forEach(r => {
-                const rNombre = r.nombre || r.Nombre;
-                const rLimite = r.limiteDiario || r.LimiteDiario || r.limite || 1;
-                const rPopularidad = r.popularidad || r.Popularidad || 5;
-                const rUrl = r.url || r.Url || r.URL;
-
-                const hashHoy = `${nombreAl}_${rNombre}`;
-                const intentos = datosDojo.intentosHoy || {};
-                const realizados = intentos[hashHoy] || 0;
-                const limiteAlcanzado = realizados >= rLimite;
+                const hashHoy = `${nombreAl}_${r.nombre}`;
+                const realizados = datosDojo.intentosHoy[hashHoy] || 0;
+                const limiteAlcanzado = realizados >= r.limiteDiario;
 
                 let estrellasStr = "";
                 for(let s=0; s<5; s++) {
-                    estrellasStr += s < rPopularidad ? "★" : "☆";
+                    estrellasStr += s < r.popularidad ? "★" : "☆";
                 }
 
                 const card = document.createElement("div");
-                card.className = "bg-[#1a1a1a] p-4 rounded border border-gray-800 flex flex-col justify-between";
+                card.className = "bg-white p-5 rounded-lg border border-zinc-200 flex flex-col justify-between shadow-sm hover:border-zinc-400 transition-all group";
                 
+                // Se eliminó el botón estático de completado. El enlace ahora redirige limpiamente.
                 card.innerHTML = `
                     <div>
-                        <div class="flex justify-between text-xs text-gray-500 mb-1">
-                            <span class="uppercase tracking-wider font-bold text-gray-400">${r.categoria || 'General'}</span>
-                            <span class="mustard-text">${estrellasStr}</span>
+                        <div class="flex justify-between items-center text-[10px] mb-2">
+                            <span class="uppercase tracking-widest font-extrabold ${(r.categoria === 'ambas' || r.categoria === '') ? 'text-zinc-400' : 'text-mustard'}">
+                                ${(r.categoria === 'ambas' || r.categoria === '') ? 'General' : r.categoria}
+                            </span>
+                            <span class="text-mustard font-bold tracking-tighter">${estrellasStr}</span>
                         </div>
-                        <h3 class="font-bold text-sm text-white uppercase tracking-wide mb-1">${rNombre}</h3>
-                        <p class="text-xs text-gray-400 mb-4">Completados hoy: ${realizados}/${rLimite}</p>
+                        <h3 class="font-black text-base text-black uppercase tracking-wide mb-1 group-hover:text-mustard transition-colors">${r.nombre}</h3>
+                        <p class="text-xs text-zinc-400 mb-6">Completados hoy: <span class="font-bold text-zinc-700">${realizados}</span> de <span class="font-bold text-zinc-700">${r.limiteDiario}</span></p>
                     </div>
                     <div>
-                        ${rUrl && rUrl !== "#" ? `
-                            <a href="${rUrl}" target="_blank" class="block text-center text-xs bg-zinc-800 text-white py-1 rounded mb-2 hover:bg-zinc-700 transition-colors">
-                                VER TUTORIAL
-                            </a>
-                        ` : ''}
-                        <button 
-                            onclick="marcarReto('${nombreAl}', '${rNombre}')"
-                            ${limiteAlcanzado ? 'disabled class="w-full text-xs bg-zinc-900 text-zinc-600 py-1.5 rounded cursor-not-allowed"' : 'class="w-full text-xs mustard-bg text-black font-bold py-1.5 rounded hover:bg-yellow-600 transition-colors"'}
-                        >
-                            ${limiteAlcanzado ? 'LÍMITE ALCANZADO' : 'COMPLETADO'}
-                        </button>
+                        <a href="${r.url && r.url !== '#' ? r.url : 'javascript:void(0);'}" 
+                           class="w-full inline-flex items-center justify-center text-center text-xs bg-black text-white font-extrabold py-3 px-4 rounded-md transition-colors tracking-widest uppercase shadow-sm bg-mustard-hover"
+                           ${r.url === '#' ? 'onclick="alert(\'Este reto no tiene un enlace configurado todavía.\')"' : ''}>
+                           ⚡ IR AL RETO
+                        </a>
                     </div>
                 `;
                 contenedor.appendChild(card);
             });
         }
 
-        async function marcarReto(nombre, retoNombre) {
-            if (!confirm(`¿Registrar reto "${retoNombre}"?`)) return;
+        // Manejador del cambio de mes mediante botones explícitos
+        function cambiarMesGrafica(mes) {
+            if (vistaMesSeleccionado === mes) return;
+            vistaMesSeleccionado = mes;
 
-            try {
-                document.getElementById("main-container").style.opacity = "0.4";
+            const btnActual = document.getElementById("btn-mes-actual");
+            const btnAnterior = document.getElementById("btn-mes-anterior");
 
-                const data = {
-                    nombreAlumno: nombre,
-                    nombreReto: retoNombre,
-                    puntos: 10,
-                    edad: 0
-                };
-
-                await fetch(API_URL, {
-                    method: "POST",
-                    mode: "no-cors",
-                    headers: { "Content-Type": "application/json" },
-                    body: JSON.stringify(data)
-                });
-
-                alert("Reto enviado correctamente.");
-                window.location.reload();
-            } catch (e) {
-                console.error(e);
-                alert("Error al enviar el registro.");
-                document.getElementById("main-container").style.opacity = "1";
+            if (mes === 'actual') {
+                btnActual.className = "px-4 py-2 text-xs font-bold uppercase rounded-md transition-all bg-black text-white";
+                btnAnterior.className = "px-4 py-2 text-xs font-bold uppercase rounded-md transition-all text-zinc-600 hover:text-black";
+            } else {
+                btnAnterior.className = "px-4 py-2 text-xs font-bold uppercase rounded-md transition-all bg-black text-white";
+                btnActual.className = "px-4 py-2 text-xs font-bold uppercase rounded-md transition-all text-zinc-600 hover:text-black";
             }
+
+            construirGraficaHorizontal();
         }
 
-        function construirGrafica() {
+        function construirGraficaHorizontal() {
             const ctx = document.getElementById('chart-rendimiento').getContext('2d');
-            const dash = datosDojo.dashboard || { actual: {}, anterior: {} };
-            const actual = dash.actual || {};
-            const anterior = dash.anterior || {};
-
-            const alumnosSet = new Set([
-                ...Object.keys(actual),
-                ...Object.keys(anterior)
-            ]);
-
-            const labels = Array.from(alumnosSet).sort();
-            const actualData = labels.map(a => actual[a] || 0);
-            const anteriorData = labels.map(a => anterior[a] || 0);
+            
+            // Extraer conjunto de datos según el mes activo
+            const datosMes = datosDojo.dashboard[vistaMesSeleccionado] || {};
+            
+            // Ordenar los alumnos alfabéticamente para mantener constancia en el eje Y
+            const labels = Object.keys(datosMes).sort();
+            const puntuaciones = labels.map(alumno => datosMes[alumno] || 0);
 
             if(labels.length === 0) {
-                labels.push("Sin registros");
-                actualData.push(0);
-                anteriorData.push(0);
+                labels.push("SIN REGISTROS ESTE MES");
+                puntuaciones.push(0);
             }
 
             if (graficoRendimiento) {
                 graficoRendimiento.destroy();
             }
 
+            // Inicialización de la gráfica con tipo 'bar' e índice indexAxis: 'y' para invertirla a horizontal
             graficoRendimiento = new Chart(ctx, {
                 type: 'bar',
                 data: {
-                    labels: labels,
+                    labels: labels.map(l => l.toUpperCase()),
                     datasets: [
                         {
-                            label: 'Mes Actual',
-                            data: actualData,
-                            backgroundColor: '#e5a93c',
-                            borderColor: '#e5a93c',
-                            borderWidth: 1
-                        },
-                        {
-                            label: 'Mes Anterior',
-                            data: anteriorData,
-                            backgroundColor: '#333333',
-                            borderColor: '#444444',
-                            borderWidth: 1
+                            label: `PUNTOS (${vistaMesSeleccionado === 'actual' ? 'MES ACTUAL' : 'MES ANTERIOR'})`,
+                            data: puntuaciones,
+                            backgroundColor: '#e5a93c', // Oro institucional
+                            borderColor: '#000000',     // Borde negro limpio
+                            borderWidth: 1.5,
+                            borderRadius: 4,
+                            barThickness: 18
                         }
                     ]
                 },
                 options: {
+                    indexAxis: 'y', // CRUCIAL: Vuelve las barras horizontales
                     responsive: true,
                     maintainAspectRatio: false,
                     scales: {
-                        x: { ticks: { color: '#ffffff' }, grid: { color: '#111111' } },
-                        y: { beginAtZero: true, ticks: { color: '#ffffff' }, grid: { color: '#111111' } }
+                        x: { 
+                            beginAtZero: true,
+                            ticks: { color: '#1a1a1a', font: { size: 10, weight: 'bold' } }, 
+                            grid: { color: '#f4f4f5' } 
+                        },
+                        y: { 
+                            ticks: { color: '#1a1a1a', font: { size: 10, weight: 'bold' } }, 
+                            grid: { display: false } 
+                        }
                     },
                     plugins: {
-                        legend: { labels: { color: '#ffffff' } }
+                        legend: { 
+                            display: false
+                        }
                     }
                 }
             });

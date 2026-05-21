@@ -134,7 +134,7 @@
         let baseDatosAlumnos = [];
         let baseDatosRetos = [];
         let datosDashboard = { actual: {}, anterior: {} };
-        let ultimaFechaRegistroAlumnos = {}; // Guarda la marca de tiempo de la última actividad del alumno
+        let ultimaFechaRegistroAlumnos = {}; // Mapeo auxiliar seguro de la última marca de tiempo por alumno
         let mesSeleccionadoGrafica = "actual";
 
         // Elementos del DOM recuperados
@@ -173,7 +173,7 @@
                 baseDatosRetos   = datos.retos || [];
                 datosDashboard   = datos.dashboard || { actual: {}, anterior: {} };
                 
-                // Mapear el historial para encontrar la fecha del último registro de cada alumno
+                // Mapear el historial interpretando las fechas de forma segura y robusta
                 analizarUltimasFechasDeLog(datos.historialLog || []);
 
                 if (baseDatosAlumnos.length === 0) {
@@ -200,21 +200,51 @@
             }
         }
 
-        // IDENTIFICA LA FECHA DEL REGISTRO MÁS RECIENTE (ÚLTIMO REGISTRO) DE CADA ALUMNO
+        // CONVIERTE CUALQUIER FORMATO DE FECHA/HORA DE SHEETS A UN TIMESTAMP SEGURO PARA EL ORDENAMIENTO
         function analizarUltimasFechasDeLog(logs) {
             ultimaFechaRegistroAlumnos = {};
             if (!Array.isArray(logs)) return;
 
-            // Ordenamos los registros cronológicamente de forma ascendente (del más antiguo al más reciente)
-            const logsOrdenados = [...logs].sort((a, b) => new Date(a.fecha) - new Date(b.fecha));
-
-            logsOrdenados.forEach(log => {
-                if (log.nombre_alumno && log.fecha) {
-                    const nombreClave = log.nombre_alumno.trim().toLowerCase();
-                    // Al recorrer de antiguo a reciente, el registro más nuevo del mes 
-                    // sobrescribe a los anteriores, quedando guardada la fecha de su ÚLTIMA actividad.
-                    ultimaFechaRegistroAlumnos[nombreClave] = new Date(log.fecha).getTime();
+            function parsearFechaSegura(fechaStr) {
+                if (!fechaStr) return null;
+                if (fechaStr instanceof Date) return fechaStr.getTime();
+                
+                try {
+                    let texto = fechaStr.toString().trim();
+                    let partes = texto.split(" ");
+                    let parteFecha = partes[0]; 
+                    let parteHora = partes[1] || "00:00:00"; 
+                    
+                    let componentesFecha = parteFecha.split(/[-/]/);
+                    if (componentesFecha.length !== 3) return null;
+                    
+                    let dia = parseInt(componentesFecha[0], 10);
+                    let mes = parseInt(componentesFecha[1], 10) - 1; 
+                    let anio = parseInt(componentesFecha[2], 10);
+                    
+                    let componentesHora = parteHora.split(":");
+                    let hora = parseInt(componentesHora[0], 10) || 0;
+                    let minuto = parseInt(componentesHora[1], 10) || 0;
+                    let segundo = parseInt(componentesHora[2], 10) || 0;
+                    
+                    let fechaObjeto = new Date(anio, mes, dia, hora, minuto, segundo);
+                    return isNaN(fechaObjeto.getTime()) ? null : fechaObjeto.getTime();
+                } catch (e) {
+                    return null;
                 }
+            }
+
+            // Procesamos los logs y los ordenamos cronológicamente de forma ascendente
+            const logsProcesados = logs.map(log => ({
+                nombre: log.nombre_alumno ? log.nombre_alumno.trim().toLowerCase() : "",
+                timestamp: parsearFechaSegura(log.fecha)
+            })).filter(log => log.nombre !== "" && log.timestamp !== null);
+
+            logsProcesados.sort((a, b) => a.timestamp - b.timestamp);
+
+            // Al ir de antiguo a reciente, la última coincidencia del mes se queda guardada definitivamente
+            logsProcesados.forEach(log => {
+                ultimaFechaRegistroAlumnos[log.nombre] = log.timestamp;
             });
         }
 
@@ -349,7 +379,7 @@
             return edad;
         }
 
-        // LÓGICA DE ORDENAMIENTO DE ACUERDO A TUS DOS CRITERIOS
+        // ORDENAMIENTO EN BASE A LOS DOS CRITERIOS SOLICITADOS
         function construirGraficaDesempeño() {
             contenedorGrafica.innerHTML = "";
             const origenDatos = mesSeleccionadoGrafica === "actual" ? datosDashboard.actual : datosDashboard.anterior;
@@ -363,7 +393,7 @@
                 .map(nombre => {
                     const nombreLimpio = nombre.trim();
                     const claveBusqueda = nombreLimpio.toLowerCase();
-                    // Si el alumno no tiene registros de actividad en el log, se usa la fecha actual como valor de seguridad
+                    // Si el alumno está en la lista pero no tiene actividades, se le asigna una fecha muy lejana
                     const timestampUltimoRegistro = ultimaFechaRegistroAlumnos[claveBusqueda] || Date.now();
                     
                     return { 
@@ -380,8 +410,8 @@
                 if (b.puntos !== a.puntos) {
                     return b.puntos - a.puntos; 
                 }
-                // Criterio 2: En caso de empate, el que completó esos puntos primero 
-                // (Es decir, el que tenga la fecha de su ÚLTIMO registro más temprana)
+                // Criterio 2: En caso de empate, el primero que completó esos puntos va ARRIBA.
+                // Si la fecha de 'a' es menor (más antigua), la resta da negativo y 'a' sube en el ranking.
                 return a.ultimaActividad - b.ultimaActividad; 
             });
 
@@ -432,19 +462,12 @@
 
             retosFiltrados.forEach(reto => {
                 const urlDestino = `${reto.url}?nombre=${encodeURIComponent(nombreAlumno)}&edad=${edadAlumno}&reto=${encodeURIComponent(reto.nombre)}`;
-                const valorPopularidad = parseInt(reto.popularidad) || 0;
-                const estrellasHtml = "⭐".repeat(valorPopularidad);
 
                 const tarjeta = document.createElement("div");
-                tarjeta.className = "bg-white border-2 border-gray-200 rounded-lg p-5 shadow-sm hover:shadow-md transition-shadow flex flex-col justify-between relative";
+                tarjeta.className = "bg-white border-2 border-gray-200 rounded-lg p-5 shadow-sm hover:shadow-md transition-shadow flex flex-col justify-between";
                 tarjeta.innerHTML = `
                     <div>
-                        <span class="inline-block text-xs font-semibold px-2 py-1 rounded bg-amber-100 text-amber-800 uppercase mb-2">${reto.categoria || 'Universal'}</span>
-                        
-                        <div class="absolute top-5 right-5 flex gap-0.5 text-sm" title="Popularidad: ${valorPopularidad} estrellas">
-                            ${estrellasHtml}
-                        </div>
-                        
+                        <span class="inline-block text-xs font-semibold px-2 py-1 rounded bg-amber-100 text-amber-800 uppercase mb-2">${reto.categoria}</span>
                         <h4 class="text-xl font-bold text-gray-800 mb-2">${reto.nombre}</h4>
                         <p class="text-sm text-gray-600 mb-4">Ingresa y completa las actividades dinámicas para sumar puntos para los premios del mes.</p>
                     </div>

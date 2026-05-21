@@ -134,7 +134,7 @@
         let baseDatosAlumnos = [];
         let baseDatosRetos = [];
         let datosDashboard = { actual: {}, anterior: {} };
-        let registroFechasAlumnos = {}; // Mapeo auxiliar de la primera fecha de registro por alumno
+        let ultimaFechaRegistroAlumnos = {}; // Mapeo auxiliar de la ÚLTIMA fecha de registro por alumno
         let mesSeleccionadoGrafica = "actual";
 
         // Elementos del DOM recuperados
@@ -173,8 +173,8 @@
                 baseDatosRetos   = datos.retos || [];
                 datosDashboard   = datos.dashboard || { actual: {}, anterior: {} };
                 
-                // Mapear el historial de logs para indexar cuándo cumplió cada alumno por primera vez
-                analizarFechasDeLog(datos.historialLog || []);
+                // Mapear el historial de logs para indexar el momento del ÚLTIMO registro de cada alumno
+                analizarUltimasFechasDeLog(datos.historialLog || []);
 
                 if (baseDatosAlumnos.length === 0) {
                     mostrarAlerta("No hay alumnos vigentes registrados en la tabla de Sheets.");
@@ -200,21 +200,20 @@
             }
         }
 
-        // PROCESA EL HISTORIAL DE COMPETICIÓN PARA CALCULAR LA CRONOLOGÍA DE DESEMPATE
-        function analizarFechasDeLog(logs) {
-            registroFechasAlumnos = {};
+        // DETERMINA EL MOMENTO EXACTO DEL ÚLTIMO REGISTRO DE CADA COMPETIDOR
+        function analizarUltimasFechasDeLog(logs) {
+            ultimaFechaRegistroAlumnos = {};
             if (!Array.isArray(logs)) return;
 
-            // Ordenamos los logs de Sheets cronológicamente de forma ascendente (el más antiguo primero)
+            // Ordenamos los registros cronológicamente de forma ascendente (del más antiguo al más reciente)
             const logsOrdenados = [...logs].sort((a, b) => new Date(a.fecha) - new Date(b.fecha));
 
             logsOrdenados.forEach(log => {
                 if (log.nombre_alumno && log.fecha) {
                     const nombreClave = log.nombre_alumno.trim().toLowerCase();
-                    // Guardamos únicamente el primer momento histórico en el que registró puntos este mes
-                    if (!registroFechasAlumnos[nombreClave]) {
-                        registroFechasAlumnos[nombreClave] = new Date(log.fecha).getTime();
-                    }
+                    // Al ir de antiguo a reciente, cada nueva coincidencia reemplaza a la anterior, 
+                    // quedando guardado de manera definitiva el ÚLTIMO registro del alumno.
+                    ultimaFechaRegistroAlumnos[nombreClave] = new Date(log.fecha).getTime();
                 }
             });
         }
@@ -350,7 +349,7 @@
             return edad;
         }
 
-        // LÓGICA DE ORDENAMIENTO DE DOBLE CRITERIO (PUNTOS DESCENDENTE -> FECHA ASCENDENTE)
+        // LÓGICA DE ORDENAMIENTO AVANZADO: PUNTOS (MAYOR A MENOR) -> ÚLTIMO REGISTRO (MÁS TEMPRANO A MÁS TARDÍO)
         function construirGraficaDesempeño() {
             contenedorGrafica.innerHTML = "";
             const origenDatos = mesSeleccionadoGrafica === "actual" ? datosDashboard.actual : datosDashboard.anterior;
@@ -364,23 +363,23 @@
                 .map(nombre => {
                     const nombreLimpio = nombre.trim();
                     const claveBusqueda = nombreLimpio.toLowerCase();
-                    // Si no tiene fecha registrada en el log, se le asigna por defecto el momento actual en milisegundos
-                    const timestampFecha = registroFechasAlumnos[claveBusqueda] || Date.now();
+                    // Si el alumno no registra actividades, se asigna el tiempo actual como comodín
+                    const timestampUltimaFecha = ultimaFechaRegistroAlumnos[claveBusqueda] || Date.now();
                     
                     return { 
                         nombre: nombreLimpio, 
                         puntos: parseInt(origenDatos[nombre]) || 0,
-                        fechaRegistro: timestampFecha
+                        ultimaFecha: timestampUltimaFecha
                     };
                 })
                 .filter(item => item.puntos > 0);
 
-            // APLICACIÓN DEL ALGORITMO DE DOBLE FILTRO
+            // APLICACIÓN DEL ALGORITMO CORREGIDO DE DESEMPATE
             listaRanking.sort((a, b) => {
                 if (b.puntos !== a.puntos) {
-                    return b.puntos - a.puntos; // Criterio 1: Mayor Puntaje va arriba
+                    return b.puntos - a.puntos; // Criterio 1: Mayor puntaje va arriba
                 }
-                return a.fechaRegistro - b.fechaRegistro; // Criterio 2: El que registró primero (fecha menor/más antigua) va arriba
+                return a.ultimaFecha - b.ultimaFecha; // Criterio 2: El último registro realizado MÁS TEMPRANO va arriba
             });
 
             if (listaRanking.length === 0) {

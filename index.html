@@ -371,10 +371,12 @@
                     }
                 }
 
-                // Corregido: Mapeo exacto usando la propiedad original enviada desde Apps Script
                 const hashClave = `${nombreAlumno}_${reto.nombre}`;
                 const realizadosHoy = intentosHoy[hashClave] || 0;
-                const limiteMaximo  = parseInt(reto.diario_permitido) || 999; 
+                
+                // Flexibilidad de lectura: Intenta leer en minúsculas o con la nomenclatura exacta "Diario_Permitido"
+                const rawLimite = reto.diario_permitido !== undefined ? reto.diario_permitido : reto.Diario_Permitido;
+                const limiteMaximo  = parseInt(rawLimite) || 999; 
                 
                 let botonHTML = "";
                 if (realizadosHoy >= limiteMaximo) {

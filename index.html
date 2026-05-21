@@ -216,7 +216,6 @@
             let pesoFinal = "--";
 
             try {
-                // 1. Intento por mapeo de índices directo si los datos vienen mapeados como array de columnas
                 if (Array.isArray(alumno.datosFila)) {
                     if (alumno.datosFila[16] !== undefined && alumno.datosFila[16] !== null && alumno.datosFila[16].toString().trim() !== "") {
                         estaturaFinal = alumno.datosFila[16];
@@ -226,7 +225,6 @@
                     }
                 } 
                 
-                // 2. Respaldo por escaneo de llaves si el backend envía objetos con nombres de propiedades
                 if (estaturaFinal === "--" || pesoFinal === "--") {
                     Object.keys(alumno).forEach(key => {
                         const llaveNormalizada = key.toLowerCase().trim();
@@ -369,8 +367,17 @@
             const baseDashboard = datosDojo.dashboard || { actual: {}, anterior: {} };
             const datosMes = baseDashboard[vistaMesSeleccionado] || {};
             
-            const labels = Object.keys(datosMes).sort();
-            const puntuaciones = labels.map(alumno => datosMes[alumno] || 0);
+            // SANITIZACIÓN ROBUSTA ANTE CELDAS VACÍAS
+            // Filtramos las llaves para omitir registros con nombres indefinidos, vacíos o corruptos
+            const labels = Object.keys(datosMes)
+                .filter(alumno => alumno && alumno.toString().trim() !== "" && alumno !== "undefined")
+                .sort();
+                
+            // Mapeamos los puntajes asegurando que cualquier celda vacía/nula se convierta en un 0 numérico limpio
+            const puntuaciones = labels.map(alumno => {
+                const puntos = parseInt(datosMes[alumno]);
+                return isNaN(puntos) ? 0 : puntos;
+            });
 
             if(labels.length === 0) {
                 labels.push("SIN REGISTROS ESTE MES");

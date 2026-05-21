@@ -127,14 +127,15 @@
     </main>
 
     <script>
-        const WEB_APP_URL = "https://script.google.com/macros/s/AKfycbzuiaSD1HuWO_1xqMNpLL6519ZKsS1jeOkDEgL9OmvZxq889918sYw9HKpnSXDbcxDmQA/exec";
+        // URL de tu Web App de Google Apps Script
+        const WEB_APP_URL = "https://script.google.com/macros/s/AKfycbwMxD4OjrH1UE2jSeJF9TVWr092Z_6zRQPQICQ9pftmBKqzru6Uy5T2RBUSXaWw9wDLCQ/exec";
 
         let baseDatosAlumnos = [];
         let baseDatosRetos = [];
         let datosDashboard = { actual: {}, anterior: {} };
         let ultimaFechaRegistroAlumnos = {}; 
         let textoFechaLegibleAlumnos = {};   
-        let estatusServidorLog = "pendiente"; // Estado de control de la carga del historial
+        let estatusServidorLog = "pendiente"; 
         let mesSeleccionadoGrafica = "actual";
 
         const buscadorAlumno         = document.getElementById("buscadorAlumno");
@@ -168,16 +169,11 @@
                 
                 const datos = await respuesta.json();
                 
-                // === AUDITORÍA TOTAL DE RESPUESTA EN CONSOLA (F12) ===
-                console.log("=== AUDITORÍA DE DATOS RECIBIDOS ===");
-                console.log("Llaves del JSON principal:", Object.keys(datos));
-                console.log("Datos del historialLog recibido:", datos.historialLog);
-
                 baseDatosAlumnos = datos.alumnos || [];
                 baseDatosRetos   = datos.retos || [];
                 datosDashboard   = datos.dashboard || { actual: {}, anterior: {} };
                 
-                // Analizar el log enviado
+                // Analizar el historial recién añadido al backend
                 analizarUltimasFechasDeLog(datos.historialLog);
 
                 if (baseDatosAlumnos.length === 0) {
@@ -209,77 +205,51 @@
             
             if (!logs || !Array.isArray(logs) || logs.length === 0) {
                 estatusServidorLog = "vacio";
-                console.warn("ADVERTENCIA: 'historialLog' vino vacío o no existe en la respuesta del Apps Script.");
                 return;
             }
 
             estatusServidorLog = "ok";
-            console.log("Ejemplo del primer renglón de log interpretado:", logs[0]);
 
-            function parsearFechaSegura(fechaStr) {
-                if (!fechaStr) return null;
-                if (fechaStr instanceof Date) return fechaStr.getTime();
-                
-                try {
-                    let texto = fechaStr.toString().trim();
-                    let partes = texto.split(" ");
-                    let parteFecha = partes[0]; 
-                    let parteHora = partes[1] || "00:00:00"; 
-                    
-                    let componentesFecha = parteFecha.split(/[-/]/);
-                    if (componentesFecha.length !== 3) return null;
-                    
-                    let dia = parseInt(componentesFecha[0], 10);
-                    let mes = parseInt(componentesFecha[1], 10) - 1; 
-                    let anio = parseInt(componentesFecha[2], 10);
-                    
-                    let componentesHora = parteHora.split(":");
-                    let hora = parseInt(componentesHora[0], 10) || 0;
-                    let minuto = parseInt(componentesHora[1], 10) || 0;
-                    let segundo = parseInt(componentesHora[2], 10) || 0;
-                    
-                    let fechaObjeto = new Date(anio, mes, dia, hora, minuto, segundo);
-                    return isNaN(fechaObjeto.getTime()) ? null : fechaObjeto.getTime();
-                } catch (e) {
-                    return null;
-                }
+            // Formateador limpio para pintar la fecha de forma humana (DD/MM/YYYY HH:MM:SS)
+            function formatearFechaLegible(objetoFecha) {
+                const dia = String(objetoFecha.getDate()).padStart(2, '0');
+                const mes = String(objetoFecha.getMonth() + 1).padStart(2, '0');
+                const anio = objetoFecha.getFullYear();
+                const horas = String(objetoFecha.getHours()).padStart(2, '0');
+                const minutos = String(objetoFecha.getMinutes()).padStart(2, '0');
+                const segundos = String(objetoFecha.getSeconds()).padStart(2, '0');
+                return `${dia}/${mes}/${anio} ${horas}:${minutos}:${segundos}`;
             }
 
             const logsProcesados = logs.map(log => {
-                let nombre = "";
-                let rawFecha = null;
+                const nombre = log.nombre_alumno || "";
+                const rawFecha = log.fecha_reto || null;
+                let timestamp = 0;
+                let stringFormateado = "";
 
-                // Escaneo ultra-agresivo de llaves
-                for (let llave in log) {
-                    const llaveNorm = llave.toLowerCase().trim();
-                    if (llaveNorm.includes("alumno") || llaveNorm.includes("nombre")) {
-                        nombre = log[llave];
-                    }
-                    if (llaveNorm.includes("fecha") || llaveNorm.includes("time") || llaveNorm.includes("reto")) {
-                        // Evitamos agarrar el nombre del reto por accidente como fecha
-                        if (!llaveNorm.includes("nombre_reto")) {
-                            rawFecha = log[llave];
-                        }
+                if (rawFecha) {
+                    const de = new Date(rawFecha);
+                    if (!isNaN(de.getTime())) {
+                        timestamp = de.getTime();
+                        stringFormateado = formatearFechaLegible(de);
                     }
                 }
                 
                 return {
-                    nombre: nombre ? nombre.toString().trim().toLowerCase() : "",
-                    rawFechaOriginal: rawFecha ? rawFecha.toString().trim() : "",
-                    timestamp: parsearFechaSegura(rawFecha)
+                    nombre: nombre.toString().trim().toLowerCase(),
+                    rawFechaOriginal: stringFormateado,
+                    timestamp: timestamp
                 };
-            }).filter(log => log.nombre !== "" && log.timestamp !== null);
+            }).filter(log => log.nombre !== "" && log.timestamp > 0);
 
-            // Ordenación ascendente cronológica (viejos a nuevos)
+            // Ordenación cronológica ascendente (viejos a nuevos)
             logsProcesados.sort((a, b) => a.timestamp - b.timestamp);
 
-            // Mapeamos para que el último (el más nuevo del alumno) sea el definitivo
+            // Guardamos en memoria (el último registro machaca los anteriores, quedando el más nuevo de ese alumno)
             logsProcesados.forEach(log => {
                 ultimaFechaRegistroAlumnos[log.nombre] = log.timestamp;
                 textoFechaLegibleAlumnos[log.nombre] = log.rawFechaOriginal;
             });
-            
-            console.log("Mapeo de fechas de actividad completado con éxito para", Object.keys(textoFechaLegibleAlumnos).length, "alumnos únicos.");
         }
 
         function manejarEscrituraBuscador() {
@@ -358,7 +328,7 @@
             txtEstatura.textContent     = alumno.estatura || "N/A";
             txtPeso.textContent         = alumno.peso || "N/A";
 
-            // Inyección y diagnóstico del último registro en pantalla
+            // Inyección limpia y formateada del último registro
             if (estatusServidorLog === "vacio") {
                 txtUltimoRegistroAlumno.textContent = "Error: El servidor no envió el historial de retos (historialLog vacío)";
                 txtUltimoRegistroAlumno.className = "text-red-400 text-xs mt-1 font-semibold";
@@ -452,6 +422,7 @@
                 })
                 .filter(item => item.puntos > 0);
 
+            // ORDENAMIENTO ABSOLUTO CON DESEMPATE POR TIEMPO
             listaRanking.sort((a, b) => {
                 if (b.puntos !== a.puntos) {
                     return b.puntos - a.puntos; 

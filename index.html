@@ -125,6 +125,7 @@
         let baseDatosAlumnos = [];
         let baseDatosRetos = [];
         let datosDashboard = { actual: {}, anterior: {} };
+        let intentosHoy = {}; // Almacena el conteo de intentos del día actual
         let mesSeleccionadoGrafica = "actual";
 
         const buscadorAlumno         = document.getElementById("buscadorAlumno");
@@ -160,6 +161,7 @@
                 baseDatosAlumnos = datos.alumnos || [];
                 baseDatosRetos   = datos.retos || [];
                 datosDashboard   = datos.dashboard || { actual: {}, anterior: {} };
+                intentosHoy      = datos.intentosHoy || {}; // Vinculación directa con el mapa del backend
 
                 if (baseDatosAlumnos.length === 0) {
                     mostrarAlerta("Atención: El servidor respondió, pero la lista de alumnos vigentes está vacía.");
@@ -359,7 +361,6 @@
             retosFiltrados.forEach(reto => {
                 const urlDestino = `${reto.url}?nombre=${encodeURIComponent(nombreAlumno)}&edad=${edadAlumno}&reto=${encodeURIComponent(reto.nombre)}`;
                 
-                // Modificación exclusiva para renderizar estrellas por default blancas y activas en dorado
                 const numEstrellas = parseInt(reto.popularidad) || 0;
                 let estrellasHTML = "";
                 for (let i = 0; i < 5; i++) {
@@ -368,6 +369,20 @@
                     } else {
                         estrellasHTML += `<span class="text-white text-lg drop-shadow-[0_1px_1px_rgba(0,0,0,0.2)]" style="-webkit-text-stroke: 1px #d1d5db;">★</span>`;
                     }
+                }
+
+                // --- VALIDACIÓN DE LÍMITE DIARIO DE INTENTOS ---
+                const hashClave = `${nombreAlumno}_${reto.nombre}`;
+                const realizadosHoy = intentosHoy[hashClave] || 0;
+                const limiteMaximo  = parseInt(reto.limiteDiario) || 999;
+                
+                let botonHTML = "";
+                if (realizadosHoy >= limiteMaximo) {
+                    // Botón bloqueado visual y funcionalmente
+                    botonHTML = `<button disabled class="w-full text-center bg-gray-300 text-gray-500 font-bold py-3 px-4 rounded tracking-wide border border-gray-400 cursor-not-allowed uppercase text-xs">LÍMITE DIARIO ALCANZADO</button>`;
+                } else {
+                    // Botón activo normal
+                    botonHTML = `<a href="${urlDestino}" class="block text-center bg-brand-black text-brand-gold font-bold py-3 px-4 rounded tracking-wide border border-brand-gold">INICIAR RETO</a>`;
                 }
 
                 const tarjeta = document.createElement("div");
@@ -381,7 +396,7 @@
                         <h4 class="text-xl font-bold text-gray-800 mb-2">${reto.nombre}</h4>
                         <p class="text-sm text-gray-600 mb-4">Completa las actividades para sumar puntos.</p>
                     </div>
-                    <a href="${urlDestino}" class="block text-center bg-brand-black text-brand-gold font-bold py-3 px-4 rounded tracking-wide border border-brand-gold">INICIAR RETO</a>
+                    ${botonHTML}
                 `;
                 contenedorRetos.appendChild(tarjeta);
             });

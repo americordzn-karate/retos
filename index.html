@@ -11,6 +11,13 @@
         .text-brand-gold { color: #d4af37; }
         .bg-brand-gold { background-color: #d4af37; }
         .border-brand-gold { border-color: #d4af37; }
+        
+        /* Estilo personalizado para el menú desplegable flotante de autocompletado */
+        .sugerencias-lista {
+            max-height: 200px;
+            overflow-y: auto;
+            z-index: 50;
+        }
     </style>
 </head>
 <body class="bg-gray-100 min-h-screen font-sans">
@@ -26,18 +33,19 @@
             <h2 class="text-xl font-bold text-gray-800 mb-2 flex items-center gap-2">
                 🥋 <span class="tracking-wide">IDENTIFICACIÓN DEL ALUMNO</span>
             </h2>
-            <p class="text-gray-600 text-sm mb-4">Empieza a escribir tu nombre en la caja de texto y selecciónalo de la lista para cargar tus retos activos.</p>
+            <p class="text-gray-600 text-sm mb-4">Empieza a escribir tu nombre para ver las sugerencias y selecciónalo para ingresar.</p>
             
-            <div class="flex flex-col md:flex-row gap-4 items-end">
-                <div class="flex-1 w-full">
+            <div class="flex flex-col md:flex-row gap-4 items-end relative">
+                <div class="flex-1 w-full relative">
                     <label for="buscadorAlumno" class="block text-xs font-bold text-gray-700 uppercase mb-1 tracking-wider">Escribe tu Nombre:</label>
                     <input 
-                        list="listaAlumnosDatalist" 
+                        type="text"
                         id="buscadorAlumno" 
-                        placeholder="Escribe para buscar tu nombre..." 
+                        autocomplete="off"
+                        placeholder="Escribe tu nombre aquí..." 
                         class="w-full border-2 border-gray-300 rounded px-3 py-2 focus:outline-none focus:border-brand-black transition-colors"
                     >
-                    <datalist id="listaAlumnosDatalist"></datalist>
+                    <div id="contenedorSugerencias" class="hidden absolute left-0 right-0 mt-1 bg-white border border-gray-300 rounded shadow-lg sugerencias-lista"></div>
                 </div>
                 <button id="btnCargarAlumno" class="w-full md:w-auto bg-brand-gold hover:bg-yellow-600 text-black font-bold py-2 px-6 rounded transition-colors tracking-wide border border-yellow-700">
                     INGRESAR
@@ -51,7 +59,7 @@
             <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
                 <div>
                     <h3 class="text-2xl font-bold text-brand-gold tracking-wide">¡Hola, <span id="txtNombreAlumno">---</span>!</h3>
-                    <p class="text-gray-400 text-xs mt-1">Sesión activa en este dispositivo. Tus datos antropométricos se cargaron con éxito.</p>
+                    <p class="text-gray-400 text-xs mt-1">Sesión activa. Tus datos antropométricos se cargaron con éxito.</p>
                 </div>
                 <div class="flex gap-6 bg-neutral-800 px-4 py-2 rounded border border-neutral-700 w-full md:w-auto justify-around">
                     <div class="text-center">
@@ -62,6 +70,24 @@
                         <span class="block text-xs text-gray-400 uppercase tracking-widest">Peso</span>
                         <span class="text-lg font-bold text-brand-gold"><span id="txtPeso">0</span> kg</span>
                     </div>
+                </div>
+            </div>
+        </section>
+
+        <section id="seccionTablero" class="hidden bg-white rounded-lg p-6 shadow-sm mb-8 border-t-4 border-brand-gold">
+            <h2 class="text-xl font-bold text-gray-800 mb-4 tracking-wide flex items-center gap-2">
+                📊 <span>TU RENDIMIENTO DE PUNTOS</span>
+            </h2>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div class="bg-gray-50 border border-gray-200 p-4 rounded-lg text-center shadow-inner">
+                    <h3 class="text-sm font-semibold text-gray-500 uppercase tracking-wider">Puntos Acumulados (Mes Actual)</h3>
+                    <p id="puntosMesActual" class="text-4xl font-extrabold text-brand-black mt-2">0</p>
+                    <span class="text-xs text-gray-400 block mt-1">Suma de todos tus retos completados en este ciclo</span>
+                </div>
+                <div class="bg-gray-50 border border-gray-200 p-4 rounded-lg text-center shadow-inner">
+                    <h3 class="text-sm font-semibold text-gray-500 uppercase tracking-wider">Historial (Mes Anterior)</h3>
+                    <p id="puntosMesAnterior" class="text-4xl font-extrabold text-neutral-500 mt-2">0</p>
+                    <span class="text-xs text-gray-400 block mt-1">Puntos oficiales del cierre del mes pasado</span>
                 </div>
             </div>
         </section>
@@ -77,131 +103,177 @@
     </main>
 
     <script>
-        // URL de tu Web App de Google Apps Script (Mantenida exactamente igual)
+        // URL de tu Web App de Google Apps Script (Exactamente la tuya)
         const WEB_APP_URL = "https://script.google.com/macros/s/AKfycbzuiaSD1HuWO_1xqMNpLL6519ZKsS1jeOkDEgL9OmvZxq889918sYw9HKpnSXDbcxDmQA/exec";
 
-        // Almacenamiento en memoria de los datos descargados del servidor
+        // Estructuras de datos en memoria masiva descargada del Servidor
         let baseDatosAlumnos = [];
         let baseDatosRetos = [];
+        let datosDashboard = { actual: {}, anterior: {} };
 
-        // Elementos de la interfaz recuperados del DOM
-        const buscadorAlumno       = document.getElementById("buscadorAlumno");
-        const listaAlumnosDatalist = document.getElementById("listaAlumnosDatalist");
+        // Elementos del DOM recuperados
+        const buscadorAlumno         = document.getElementById("buscadorAlumno");
+        const contenedorSugerencias  = document.getElementById("contenedorSugerencias");
         const btnCargarAlumno      = document.getElementById("btnCargarAlumno");
         const alertaAlumno         = document.getElementById("alertaAlumno");
         const panelBienvenida      = document.getElementById("panelBienvenida");
+        const seccionTablero       = document.getElementById("seccionTablero");
         const seccionRetos         = document.getElementById("seccionRetos");
         const contenedorRetos      = document.getElementById("contenedorRetos");
         
         const txtNombreAlumno      = document.getElementById("txtNombreAlumno");
         const txtEstatura          = document.getElementById("txtEstatura");
         const txtPeso              = document.getElementById("txtPeso");
+        const puntosMesActual      = document.getElementById("puntosMesActual");
+        const puntosMesAnterior    = document.getElementById("puntosMesAnterior");
 
-        // Al cargar la página web, inicializamos la descarga de datos desde Sheets
+        // Al iniciar, descargamos los datos desde Google Sheets
         window.addEventListener("DOMContentLoaded", () => {
             inicializarPortal();
         });
 
         async function inicializarPortal() {
             try {
-                // Descarga de datos asíncrona desde Google Apps Script
                 const respuesta = await fetch(WEB_APP_URL);
-                if (!respuesta.ok) throw new Error("Error en la respuesta del servidor de Google Sheets.");
+                if (!respuesta.ok) throw new Error("Error al consultar el script de Google.");
                 
                 const datos = await respuesta.json();
                 
                 baseDatosAlumnos = datos.alumnos || [];
                 baseDatosRetos   = datos.retos || [];
+                datosDashboard   = datos.dashboard || { actual: {}, anterior: {} };
 
-                // Validamos si se recibieron alumnos vigentes
                 if (baseDatosAlumnos.length === 0) {
-                    mostrarAlerta("No se encontraron alumnos vigentes en el dojo o la base de datos está vacía.");
+                    mostrarAlerta("No hay alumnos vigentes registrados en la tabla de Sheets.");
                     return;
                 }
 
-                // Llenamos el componente datalist con los nombres de los alumnos
-                listaAlumnosDatalist.innerHTML = "";
-                baseDatosAlumnos.forEach(alumno => {
-                    const option = document.createElement("option");
-                    option.value = alumno.nombre; // El valor que el navegador usará para autocompletar
-                    listaAlumnosDatalist.appendChild(option);
+                // Escuchamos lo que escribe el alumno para filtrar en tiempo real
+                buscadorAlumno.addEventListener("input", manejarEscrituraBuscador);
+                
+                // Cerrar las sugerencias si hacen clic fuera del input
+                document.addEventListener("click", (e) => {
+                    if (e.target !== buscadorAlumno && e.target !== contenedorSugerencias) {
+                        contenedorSugerencias.classList.add("hidden");
+                    }
                 });
 
-                // Si ya había un alumno guardado en la sesión del navegador, lo rehidratamos automáticamente
+                // Restaurar sesión previa si existe
                 verificarSesionExistente();
 
             } catch (error) {
-                console.error("Error inicializando el portal:", error);
-                mostrarAlerta("Error de conexión al cargar la base de datos de alumnos. Por favor, refresca la página.");
+                console.error("Error cargando portal:", error);
+                mostrarAlerta("Error al conectar con la base de datos de Karate. Recarga la página.");
             }
         }
 
-        // Manejador del botón de Ingreso (Acepta el nombre escrito en el buscador)
+        // LÓGICA FILTRADO DE AUTOCOMPLETADO ESTRICTO
+        function manejarEscrituraBuscador() {
+            const textoBuscar = buscadorAlumno.value.trim().toLowerCase();
+            contenedorSugerencias.innerHTML = "";
+
+            // REGLA 1: Si no hay texto, no se despliega ninguna lista
+            if (textoBuscar === "") {
+                contenedorSugerencias.classList.add("hidden");
+                return;
+            }
+
+            // Filtrar alumnos que contengan los caracteres ingresados
+            const alumnosFiltrados = baseDatosAlumnos.filter(alumno => 
+                alumno.nombre.toLowerCase().includes(textoBuscar)
+            );
+
+            if (alumnosFiltrados.length === 0) {
+                contenedorSugerencias.classList.add("hidden");
+                return;
+            }
+
+            // Construir dinámicamente el menú desplegable flotante
+            alumnosFiltrados.forEach(alumno => {
+                const divOpcion = document.createElement("div");
+                divOpcion.className = "px-4 py-2 hover:bg-gray-100 cursor-pointer text-sm text-gray-700 transition-colors border-b last:border-b-0";
+                divOpcion.textContent = alumno.nombre;
+                
+                // Al dar clic sobre una sugerencia, se autocompleta el input y se cierra la lista
+                divOpcion.addEventListener("click", () => {
+                    buscadorAlumno.value = alumno.nombre;
+                    contenedorSugerencias.classList.add("hidden");
+                });
+                
+                contenedorSugerencias.appendChild(divOpcion);
+            });
+
+            contenedorSugerencias.classList.remove("hidden");
+        }
+
+        // CONTROLADOR DEL BOTÓN INGRESAR
         btnCargarAlumno.addEventListener("click", () => {
             const nombreSeleccionado = buscadorAlumno.value.trim();
             
             if (nombreSeleccionado === "") {
-                mostrarAlerta("Por favor, escribe y selecciona un nombre válido.");
+                mostrarAlerta("Por favor, ingresa tu nombre en la caja de texto.");
                 return;
             }
 
-            // Buscamos al alumno en la lista descargada haciendo una coincidencia exacta de texto
             const alumnoEncontrado = baseDatosAlumnos.find(
                 a => a.nombre.toLowerCase() === nombreSeleccionado.toLowerCase()
             );
 
             if (!alumnoEncontrado) {
-                mostrarAlerta("El nombre escrito no coincide con ningún alumno vigente de la lista. Revisa la ortografía.");
-                ocultarPanelesDeRetos();
+                mostrarAlerta("El nombre ingresado no coincide con ningún alumno activo de la lista.");
+                ocultarModulos();
                 return;
             }
 
-            // Ocultamos alertas previas si todo es correcto
             alertaAlumno.classList.add("hidden");
 
-            // Persistencia obligatoria de datos en sessionStorage para las Apps de Medición de Cámara
+            // Guardado persistente obligatorio de datos de sesión
             sessionStorage.setItem("nombreAlumno", alumnoEncontrado.nombre);
             sessionStorage.setItem("estaturaAlumno", alumnoEncontrado.estatura);
             sessionStorage.setItem("pesoAlumno", alumnoEncontrado.peso);
 
-            // Desplegar la información en el Front-End
+            // Activación y despliegue de la interfaz
             activarInterfazAlumno(alumnoEncontrado);
         });
 
         function verificarSesionExistente() {
-            const nombreGuardado   = sessionStorage.getItem("nombreAlumno");
-            const estaturaGuardada = sessionStorage.getItem("estaturaAlumno");
-            const pesoGuardada     = sessionStorage.getItem("pesoAlumno");
-
+            const nombreGuardado = sessionStorage.getItem("nombreAlumno");
             if (nombreGuardado) {
-                // Buscamos si sigue estando vigente en el corte actual
                 const sigueVigente = baseDatosAlumnos.find(a => a.nombre.toLowerCase() === nombreGuardado.toLowerCase());
                 if (sigueVigente) {
                     buscadorAlumno.value = sigueVigente.nombre;
                     activarInterfazAlumno(sigueVigente);
                 } else {
-                    // Si ya no está vigente, limpiamos la sesión anterior
                     sessionStorage.clear();
                 }
             }
         }
 
         function activarInterfazAlumno(alumno) {
-            // Inyección de textos en el Panel de Bienvenida
+            // Asignación de datos antropométricos
             txtNombreAlumno.textContent = alumno.nombre;
             txtEstatura.textContent     = alumno.estatura || "N/A";
             txtPeso.textContent         = alumno.peso || "N/A";
 
-            // Mostrar secciones ocultas con transiciones
+            // Extracción y cálculo de puntajes del Dashboard desde el JSON del backend
+            const ptsActual   = datosDashboard.actual[alumno.nombre] || 0;
+            const ptsAnterior = datosDashboard.anterior[alumno.nombre] || 0;
+            
+            puntosMesActual.textContent   = ptsActual;
+            puntosMesAnterior.textContent = ptsAnterior;
+
+            // REGLA CRÍTICA: Mostrar módulos únicamente al seleccionar el alumno
             panelBienvenida.classList.remove("hidden");
+            seccionTablero.classList.remove("hidden");
             seccionRetos.classList.remove("hidden");
 
-            // Renderizado de las tarjetas de retos
+            // Cargar los retos específicos por edad
             construirTarjetasRetos(alumno.nombre, alumno.fechaNacimiento);
         }
 
-        function ocultarPanelesDeRetos() {
+        function ocultarModulos() {
             panelBienvenida.classList.add("hidden");
+            seccionTablero.classList.add("hidden");
             seccionRetos.classList.add("hidden");
         }
 
@@ -211,7 +283,7 @@
         }
 
         function calcularEdad(fechaNacimientoStr) {
-            if (!fechaNacimientoStr) return 15; // Edad estándar por defecto si no está capturada
+            if (!fechaNacimientoStr) return 15;
             const fechaNac = new Date(fechaNacimientoStr);
             if (isNaN(fechaNac.getTime())) return 15;
             
@@ -228,7 +300,6 @@
             contenedorRetos.innerHTML = "";
             const edadAlumno = calcularEdad(fechaNacimiento);
 
-            // Filtrado de retos según las reglas de edad del Dojo
             const retosFiltrados = baseDatosRetos.filter(reto => {
                 const categoria = reto.categoria.toLowerCase();
                 if (edadAlumno < 13) {
@@ -239,15 +310,13 @@
             });
 
             if (retosFiltrados.length === 0) {
-                contenedorRetos.innerHTML = `<p class="text-gray-500 col-span-2 text-center py-4 bg-white rounded border">No hay retos específicos disponibles para tu categoría de edad en este ciclo.</p>`;
+                contenedorRetos.innerHTML = `<p class="text-gray-500 col-span-2 text-center py-4 bg-white rounded border">No hay retos disponibles para tu categoría de edad en este ciclo.</p>`;
                 return;
             }
 
             retosFiltrados.forEach(reto => {
-                // Sanitizar y codificar los datos para pasarlos de forma segura por la URL hacia las Apps de Visión Artificial
                 const urlDestino = `${reto.url}?nombre=${encodeURIComponent(nombreAlumno)}&edad=${edadAlumno}&reto=${encodeURIComponent(reto.nombre)}`;
 
-                // Crear tarjeta HTML responsiva
                 const tarjeta = document.createElement("div");
                 tarjeta.className = "bg-white border-2 border-gray-200 rounded-lg p-5 shadow-sm hover:shadow-md transition-shadow flex flex-col justify-between";
                 tarjeta.innerHTML = `

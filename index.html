@@ -3,367 +3,230 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Senshi-Kan - Portal Reto del Mes</title>
+    <title>Portal Reto del Mes - Senshi-Kan</title>
     <script src="https://cdn.tailwindcss.com"></script>
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <style>
-        body {
-            background-color: #ffffff;
-            color: #1a1a1a;
-            font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
-        }
-        .text-mustard { color: #e5a93c; }
-        .bg-mustard { background-color: #e5a93c; }
-        .bg-mustard-hover:hover { background-color: #d4962b; }
-        .border-mustard { border-color: #e5a93c; }
-        ::-webkit-scrollbar { width: 6px; }
-        ::-webkit-scrollbar-track { background: #f4f4f5; }
-        ::-webkit-scrollbar-thumb { background: #d4d4d8; border-radius: 3px; }
-        ::-webkit-scrollbar-thumb:hover { background: #e5a93c; }
+        /* Personalización de colores institucionales de la academia */
+        .bg-brand-black { background-color: #1a1a1a; }
+        .text-brand-gold { color: #d4af37; }
+        .bg-brand-gold { background-color: #d4af37; }
+        .border-brand-gold { border-color: #d4af37; }
     </style>
 </head>
-<body class="antialiased p-4 md:p-8 min-h-screen flex flex-col justify-between">
+<body class="bg-gray-100 min-h-screen font-sans">
 
-    <div class="max-w-6xl mx-auto w-full flex-grow">
-        <!-- Encabezado Principal Institucional -->
-        <header class="text-center mb-8 border-b-2 border-black pb-6">
-            <h1 class="text-3xl md:text-5xl font-black tracking-widest text-black uppercase">SENSHI-KAN</h1>
-            <p class="text-xs md:text-sm mt-2 tracking-[0.3em] text-mustard font-bold uppercase">Portal Digital • Reto del Mes</p>
-        </header>
+    <header class="bg-brand-black text-white py-6 shadow-md text-center border-b-4 border-brand-gold">
+        <h1 class="text-3xl font-bold tracking-wider text-brand-gold text-center">RETO DEL MES</h1>
+        <p class="text-gray-400 text-sm mt-1">Academia de Karate-Do</p>
+    </header>
 
-        <!-- Pantalla de Carga -->
-        <div id="loading" class="flex flex-col items-center justify-center py-24">
-            <div class="w-12 h-12 border-4 border-t-transparent border-mustard rounded-full animate-spin mb-4"></div>
-            <p class="text-xs tracking-widest text-zinc-500 uppercase font-bold animate-pulse">Sincronizando datos del dojo...</p>
-        </div>
-
-        <!-- Contenedor Principal de la Aplicación -->
-        <div id="main-container" class="hidden space-y-6">
+    <main class="max-w-4xl mx-auto px-4 py-8">
+        
+        <section class="bg-white p-6 rounded-lg shadow-md mb-8 border border-gray-200">
+            <h2 class="text-xl font-bold text-gray-800 mb-4 text-center uppercase tracking-wide">Gráfica de Desempeño General (Mes Actual)</h2>
             
-            <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
-                
-                <!-- Columna Izquierda: Selección -->
-                <div class="bg-zinc-50 p-6 rounded-xl border border-zinc-200 shadow-sm flex flex-col justify-between">
-                    <div>
-                        <h2 class="text-xs font-bold uppercase tracking-wider text-zinc-400 mb-4">Paso 1: Selección</h2>
-                        <h3 class="text-lg font-bold text-black mb-3">Ingresa tu Nombre</h3>
-                        
-                        <div class="relative">
-                            <select id="alumno-select" class="w-full bg-white text-black p-3 pr-10 border border-zinc-300 rounded-lg appearance-none focus:outline-none focus:border-mustard transition-all text-sm cursor-pointer shadow-sm">
-                                <option value="">-- Selecciona de la lista --</option>
-                            </select>
-                            <div class="pointer-events-none absolute inset-y-0 right-0 flex items-center px-3 text-zinc-500">
-                                <svg class="fill-current h-4 w-4" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20"><path d="M9.293 12.95l.707.707L15.657 8l-1.414-1.414L10 10.828 5.757 6.586 4.343 8z"/></svg>
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- Ficha del Alumno -->
-                    <div id="info-alumno" class="hidden mt-8 pt-6 border-t border-zinc-200 bg-white p-4 rounded-lg border border-zinc-100 shadow-inner">
-                        <span class="text-[10px] tracking-widest text-zinc-400 uppercase font-bold block">Alumno Seleccionado</span>
-                        <p id="info-nombre" class="text-lg font-black text-black uppercase truncate mt-0.5 tracking-wide"></p>
-                        
-                        <div class="flex flex-wrap gap-2 mt-3">
-                            <div class="inline-flex items-center px-2.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-wide bg-zinc-100 text-black border border-zinc-300">
-                                <span id="info-cat"></span>
-                            </div>
-                            <div class="inline-flex items-center px-2.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-wide bg-zinc-100 text-black border border-zinc-300">
-                                📏 <span id="info-estatura" class="ml-1">--</span> cm
-                            </div>
-                            <div class="inline-flex items-center px-2.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-wide bg-zinc-100 text-black border border-zinc-300">
-                                ⚖️ <span id="info-peso" class="ml-1">--</span> kg
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Columna Derecha: Catálogo de Retos -->
-                <div class="lg:col-span-2 bg-zinc-50 p-6 rounded-xl border border-zinc-200 shadow-sm flex flex-col">
-                    <h2 class="text-xs font-bold uppercase tracking-wider text-zinc-400 mb-4">Paso 2: Retos Disponibles</h2>
-
-                    <div id="placeholder-retos" class="flex-grow flex flex-col items-center justify-center py-16 text-center">
-                        <svg class="w-12 h-12 text-zinc-300 mb-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01"></path></svg>
-                        <p class="text-sm text-zinc-400 italic">Elige tu nombre en el panel izquierdo para cargar tus retos asignados.</p>
-                    </div>
-
-                    <div id="retos-container" class="hidden grid grid-cols-1 sm:grid-cols-2 gap-4 overflow-y-auto max-h-[380px] pr-1">
-                        <!-- Carga dinámica -->
-                    </div>
-                </div>
-
+            <div id="contenedor-grafica" class="space-y-4">
+                <p class="text-center text-gray-500">Cargando gráfica de rendimiento...</p>
             </div>
+            
+            <div class="mt-4 pt-2 border-t border-gray-300 flex justify-between text-xs font-bold text-gray-500 px-1">
+                <span>0 pts</span>
+                <span class="hidden sm:inline">250 pts</span>
+                <span>500 pts</span>
+                <span class="hidden sm:inline">750 pts</span>
+                <span>1,000 pts</span>
+            </div>
+        </section>
 
-            <!-- Tabla General de Rendimiento -->
-            <div class="bg-zinc-50 p-6 rounded-xl border border-zinc-200 shadow-sm">
-                <div class="flex flex-col sm:flex-row sm:items-center justify-between border-b border-zinc-200 pb-4 mb-6 gap-4">
-                    <div>
-                        <h2 class="text-xs font-bold uppercase tracking-wider text-zinc-400 mb-1">Métricas del Dojo</h2>
-                        <h3 class="text-lg font-bold text-black">Tabla General de Rendimiento</h3>
-                    </div>
-                    
-                    <div class="inline-flex rounded-md shadow-sm bg-white p-1 border border-zinc-200" role="group">
-                        <button id="btn-mes-actual" onclick="cambiarMesGrafica('actual')" class="px-4 py-2 text-xs font-bold uppercase rounded-md transition-all bg-black text-white">
-                            Mes Actual
-                        </button>
-                        <button id="btn-mes-anterior" onclick="cambiarMesGrafica('anterior')" class="px-4 py-2 text-xs font-bold uppercase rounded-md transition-all text-zinc-600 hover:text-black">
-                            Mes Anterior
-                        </button>
-                    </div>
-                </div>
-                
-                <div class="w-full bg-white p-2 rounded-lg border border-zinc-100 shadow-inner overflow-y-auto max-h-[500px]">
-                    <div id="canvas-container" class="relative w-full">
-                        <canvas id="chart-rendimiento"></canvas>
-                    </div>
+        <section class="bg-white p-6 rounded-lg shadow-md mb-8 border border-gray-200">
+            <h2 class="text-xl font-bold text-gray-800 mb-4 text-center">¡Bienvenido! Selecciona tu nombre para empezar</h2>
+            
+            <div class="flex flex-col md:flex-row gap-4 justify-center items-center">
+                <div class="w-full md:w-2/3">
+                    <label for="select-alumnos" class="block text-sm font-medium text-gray-700 mb-1">Lista de Alumnos Activos:</label>
+                    <select id="select-alumnos" class="w-full p-3 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-amber-500 bg-gray-50 text-gray-800 text-lg">
+                        <option value="">Cargando alumnos del dojo...</option>
+                    </select>
                 </div>
             </div>
 
-        </div>
-    </div>
+            <div id="perfil-alumno" class="hidden mt-6 pt-4 border-t border-gray-200 text-center">
+                <p class="text-lg text-gray-700">Hola, <span id="lbl-nombre" class="font-bold text-gray-900"></span></p>
+                <p class="text-sm text-gray-500">Edad calculada: <span id="lbl-edad" class="font-bold text-gray-800"></span> años (<span id="lbl-categoria" class="font-bold text-amber-600 uppercase"></span>)</p>
+            </div>
+        </section>
 
-    <footer class="text-center text-[10px] text-zinc-400 tracking-widest mt-12 border-t border-zinc-200 pt-4 max-w-6xl mx-auto w-full font-bold uppercase">
-        SENSHI-KAN © 2026 • HONOR • DISCIPLINA • CONSTANCIA
-    </footer>
+        <section>
+            <h3 class="text-2xl font-bold text-gray-800 mb-6 border-b-2 border-brand-black pb-2">Retos Disponibles Para Ti</h3>
+            
+            <div id="msg-espera" class="bg-amber-50 border-l-4 border-amber-500 p-4 text-amber-700 rounded rounded-l-none text-center">
+                Por favor, selecciona tu nombre arriba para desbloquear tus retos correspondientes.
+            </div>
+
+            <div id="contenedor-retos" class="grid grid-cols-1 md:grid-cols-2 gap-6 hidden">
+                </div>
+        </section>
+    </main>
 
     <script>
-        // MODIFICA EXCLUSIVAMENTE ESTA VARIABLE CON TU URL PÚBLICA GENERADA POR GOOGLE APPS SCRIPT
-        const API_URL = "https://script.google.com/macros/s/AKfycbxrmEPaJmgValRzX6-gX2oSVSwP5ePal07aHJSlaVEppBSWArybC5fA_RE45r1mZwTxTQ/exec";
+        // PEGA AQUÍ LA URL QUE COPIASTE EN EL PASO 1 EN LUGAR DE LA SIGUIENTE:
+        const API_URL = "https://script.google.com/macros/s/AKfycbx3JhKtbzE_BozoKDgxikYdI1L-qBWeIN4VfhE5MruC38yQPQ7uVrhKU29_00ljHG3GtQ/exec";
 
-        let datosDojo = { alumnos: [], retos: [], intentosHoy: {}, dashboard: { actual: {}, anterior: {} } };
-        let graficoRendimiento = null;
-        let vistaMesSeleccionado = 'actual';
+        let BD_GLOBAL = { alumnos: [], retos: [], dashboard: { actual: {}, anterior: {} } };
 
-        window.addEventListener("load", iniciarPortal);
-
-        async function iniciarPortal() {
+        // Al cargar la página, traemos los datos desde Google Sheets
+        document.addEventListener("DOMContentLoaded", async () => {
+            const select = document.getElementById("select-alumnos");
+            
             try {
                 const response = await fetch(API_URL);
-                if (!response.ok) throw new Error("Error en la conexión con el servidor");
+                if (!response.ok) throw new Error("Error en la comunicación con el servidor.");
                 
-                datosDojo = await response.json();
-                if (datosDojo.error) { throw new Error(datosDojo.error); }
+                BD_GLOBAL = await response.json();
                 
-                document.getElementById("loading").classList.add("hidden");
-                document.getElementById("main-container").classList.remove("hidden");
+                // 1. Renderizar la gráfica de rendimiento general con datos del mes actual
+                renderizarGrafica();
 
-                cargarListaAlumnos();
-                construirGraficaHorizontal();
-            } catch (err) {
-                console.error(err);
-                document.getElementById("loading").innerHTML = `
-                    <p class="text-red-600 font-bold text-sm tracking-wide">⚠️ ERROR DE ENLACE CON LA BASE DE DATOS</p>
-                    <p class="text-xs text-zinc-400 mt-1">Detalle del sistema: ${err.message}</p>
-                `;
+                // 2. Limpiar y llenar el selector de alumnos
+                select.innerHTML = '<option value="">-- Selecciona tu Nombre --</option>';
+                BD_GLOBAL.alumnos.forEach((alumno, index) => {
+                    const option = document.createElement("option");
+                    option.value = index; 
+                    option.textContent = alumno.nombre;
+                    select.appendChild(option);
+                });
+
+            } catch (error) {
+                console.error(error);
+                select.innerHTML = '<option value="">Error al cargar alumnos. Avisa a tu Sensei.</option>';
+                document.getElementById("contenedor-grafica").innerHTML = `<p class="text-center text-red-500">Error al procesar la gráfica.</p>`;
             }
-        }
+        });
 
-        function cargarListaAlumnos() {
-            const select = document.getElementById("alumno-select");
-            if (!datosDojo.alumnos) datosDojo.alumnos = [];
-
-            datosDojo.alumnos.sort((a, b) => (a.nombre || "").localeCompare(b.nombre || ""));
-            
-            datosDojo.alumnos.forEach(al => {
-                if (al && al.nombre) {
-                    const opt = document.createElement("option");
-                    opt.value = al.id;
-                    opt.textContent = al.nombre.toUpperCase();
-                    select.appendChild(opt);
-                }
-            });
-            select.addEventListener("change", seleccionarAlumno);
-        }
-
-        function seleccionarAlumno(e) {
-            const idAl = e.target.value;
-            const placeholder = document.getElementById("placeholder-retos");
-            const contenedor = document.getElementById("retos-container");
-            const info = document.getElementById("info-alumno");
-
-            if (!idAl) {
-                placeholder.classList.remove("hidden");
-                contenedor.classList.add("hidden");
-                info.classList.add("hidden");
-                return;
-            }
-
-            const alumno = datosDojo.alumnos.find(a => a.id === idAl);
-            if (!alumno) return;
-
-            const cat = obtenerCategoriaPorEdad(alumno.fechaNacimiento);
-            document.getElementById("info-nombre").textContent = alumno.nombre || "SIN NOMBRE";
-            document.getElementById("info-cat").textContent = cat;
-            
-            document.getElementById("info-estatura").textContent = alumno.estatura || "--";
-            document.getElementById("info-peso").textContent = alumno.peso || "--";
-            
-            info.classList.remove("hidden");
-            desplegarRetosFiltrados(alumno.nombre, cat);
-            
-            placeholder.classList.add("hidden");
-            contenedor.classList.remove("hidden");
-        }
-
-        function obtenerCategoriaPorEdad(fechaNacStr) {
-            if (!fechaNacStr) return "infantil";
-            try {
-                const nac = new Date(fechaNacStr);
-                if (isNaN(nac.getTime())) return "infantil";
-                const hoy = new Date();
-                let edad = hoy.getFullYear() - nac.getFullYear();
-                const m = hoy.getMonth() - nac.getMonth();
-                if (m < 0 || (m === 0 && hoy.getDate() < nac.getDate())) { edad--; }
-                return (edad >= 13) ? "juvenil" : "infantil";
-            } catch (e) { return "infantil"; }
-        }
-
-        function desplegarRetosFiltrados(nombreAl, catAl) {
-            const contenedor = document.getElementById("retos-container");
+        // Generar la gráfica de barras horizontal basada exactamente en tus requerimientos
+        function renderizarGrafica() {
+            const contenedor = document.getElementById("contenedor-grafica");
             contenedor.innerHTML = "";
 
-            if (!datosDojo.retos) return;
+            const datosActuales = BD_GLOBAL.dashboard.actual || {};
+            
+            // Convertimos el objeto en arreglo, filtramos los que tienen más de 0 puntos y ordenamos de mayor a menor
+            const alumnosConPuntos = Object.keys(datosActuales)
+                .map(nombre => ({ nombre, puntos: datosActuales[nombre] }))
+                .filter(item => item.puntos > 0)
+                .sort((a, b) => b.puntos - a.puntos);
 
-            const filtrados = datosDojo.retos.filter(r => {
-                if (!r || !r.categoria) return false;
-                const rCat = r.categoria.toLowerCase().trim();
-                return rCat === "ambas" || rCat === "" || rCat === catAl.toLowerCase().trim();
-            });
-
-            if (filtrados.length === 0) {
-                contenedor.innerHTML = `<p class="col-span-full text-center text-zinc-400 py-12 text-xs italic">No hay retos asignados para tu grupo este mes.</p>`;
+            if (alumnosConPuntos.length === 0) {
+                contenedor.innerHTML = `<p class="text-center text-gray-500 py-4">Ningún alumno ha acumulado puntos este mes aún. ¡Sé el primero!</p>`;
                 return;
             }
 
-            filtrados.forEach(r => {
-                const hashHoy = `${nombreAl || ''}_${r.nombre || ''}`;
-                const realizados = datosDojo.intentosHoy ? (datosDojo.intentosHoy[hashHoy] || 0) : 0;
-                const limiteMax = parseInt(r.limiteDiario) || 999;
-                const limiteAlcanzado = realizados >= limiteMax;
+            alumnosConPuntos.forEach(alumno => {
+                // Cálculo de porcentaje relativo con límite estático estricto de 1,000 puntos en el eje X
+                const porcentaje = Math.min((alumno.puntos / 1000) * 100, 100);
 
-                let stars = "";
-                const pop = parseInt(r.popularidad) || 0;
-                for(let s=0; s<5; s++) { stars += s < pop ? "★" : "☆"; }
-
-                const card = document.createElement("div");
-                card.className = "bg-white p-5 rounded-lg border border-zinc-200 flex flex-col justify-between shadow-sm hover:border-zinc-400 transition-all group";
-                
-                let botonHTML = `
-                    <a href="${r.url && r.url !== '#' ? r.url : 'javascript:void(0);'}" 
-                       class="w-full inline-flex items-center justify-center text-center text-xs bg-black text-white font-extrabold py-3 px-4 rounded-md transition-colors tracking-widest uppercase shadow-sm bg-mustard-hover"
-                       ${(!r.url || r.url === '#') ? 'onclick="alert(\'Este reto no tiene un enlace configurado todavía.\')"' : ''}>
-                       ⚡ IR AL RETO
-                    </a>
-                `;
-                if (limiteAlcanzado) {
-                    botonHTML = `<button disabled class="w-full text-xs bg-zinc-300 text-zinc-500 font-extrabold py-3 rounded-md tracking-widest uppercase cursor-not-allowed">🛑 LÍMITE ALCANZADO</button>`;
-                }
-
-                card.innerHTML = `
-                    <div>
-                        <div class="flex justify-between items-center text-[10px] mb-2">
-                            <span class="uppercase tracking-widest font-extrabold ${(r.categoria === 'ambas' || r.categoria === '') ? 'text-zinc-400' : 'text-mustard'}">
-                                ${(r.categoria === 'ambas' || r.categoria === '') ? 'General' : r.categoria}
-                            </span>
-                            <span class="text-mustard font-bold tracking-tighter">${stars}</span>
-                        </div>
-                        <h3 class="font-black text-base text-black uppercase tracking-wide mb-1 group-hover:text-mustard transition-colors">${r.nombre || 'Reto'}</h3>
-                        <p class="text-xs text-zinc-400 mb-6">Completados hoy: <span class="font-bold text-zinc-700">${realizados}</span> de <span class="font-bold text-zinc-700">${limiteMax}</span></p>
+                const filaBarra = document.createElement("div");
+                filaBarra.className = "flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-4";
+                filaBarra.innerHTML = `
+                    <div class="w-full sm:w-1/4 text-sm font-bold text-gray-700 truncate">${alumno.nombre}</div>
+                    <div class="flex-1 bg-gray-200 rounded-full h-6 overflow-hidden relative shadow-inner border border-gray-300">
+                        <div class="bg-brand-gold h-full rounded-full transition-all duration-500 shadow" style="width: ${porcentaje}%"></div>
+                        <span class="absolute inset-0 flex items-center justify-end pr-3 text-xs font-black text-brand-black">${alumno.puntos} pts</span>
                     </div>
-                    <div>${botonHTML}</div>
                 `;
-                contenedor.appendChild(card);
+                contenedor.appendChild(filaBarra);
             });
         }
 
-        function cambiarMesGrafica(mes) {
-            if (vistaMesSeleccionado === mes) return;
-            vistaMesSeleccionado = mes;
+        // Escuchar el cambio de selección de alumno
+        document.getElementById("select-alumnos").addEventListener("change", function() {
+            const index = this.value;
+            const msgEspera = document.getElementById("msg-espera");
+            const contenedorRetos = document.getElementById("contenedor-retos");
+            const perfil = document.getElementById("perfil-alumno");
 
-            const btnActual = document.getElementById("btn-mes-actual");
-            const btnAnterior = document.getElementById("btn-mes-anterior");
-
-            if (mes === 'actual') {
-                btnActual.className = "px-4 py-2 text-xs font-bold uppercase rounded-md transition-all bg-black text-white";
-                btnAnterior.className = "px-4 py-2 text-xs font-bold uppercase rounded-md transition-all text-zinc-600 hover:text-black";
-            } else {
-                btnAnterior.className = "px-4 py-2 text-xs font-bold uppercase rounded-md transition-all bg-black text-white";
-                btnActual.className = "px-4 py-2 text-xs font-bold uppercase rounded-md transition-all text-zinc-600 hover:text-black";
+            if (index === "") {
+                msgEspera.classList.remove("hidden");
+                contenedorRetos.classList.add("hidden");
+                perfil.classList.add("hidden");
+                // Limpiar la sesión si no hay selección
+                sessionStorage.clear();
+                return;
             }
-            construirGraficaHorizontal();
+
+            // Recuperar datos del alumno seleccionado
+            const alumno = BD_GLOBAL.alumnos[index];
+            const edad = calcularEdad(alumno.fechaNacimiento);
+            
+            // CAMBIO SOLICITADO: Criterio modificado a menor o igual a 10 años para infantil
+            const categoria = (edad <= 10) ? "infantil" : "juvenil"; 
+
+            // GUARDAR DATOS EN EL NAVEGADOR (sessionStorage) PARA LA SESIÓN DEL ALUMNO
+            sessionStorage.setItem("alumno_nombre", alumno.nombre);
+            sessionStorage.setItem("alumno_estatura", alumno.estatura);
+            sessionStorage.setItem("alumno_peso", alumno.peso);
+
+            // Mostrar perfil en pantalla
+            document.getElementById("lbl-nombre").textContent = alumno.nombre;
+            document.getElementById("lbl-edad").textContent = edad;
+            document.getElementById("lbl-categoria").textContent = categoria;
+            perfil.classList.remove("hidden");
+
+            // Filtrar y renderizar los retos
+            filtrarRetos(categoria, alumno, edad);
+
+            msgEspera.classList.add("hidden");
+            contenedorRetos.classList.remove("hidden");
+        });
+
+        // Función para calcular la edad exacta
+        function calcularEdad(fechaNacimientoString) {
+            if (!fechaNacimientoString) return 0;
+            const cumpleaños = new Date(fechaNacimientoString);
+            const hoy = new Date();
+            let edad = hoy.getFullYear() - cumpleaños.getFullYear();
+            const mes = hoy.getMonth() - cumpleaños.getMonth();
+            
+            if (mes < 0 || (mes === 0 && hoy.getDate() < cumpleaños.getDate())) {
+                edad--;
+            }
+            return edad;
         }
 
-        // SOLUCIÓN: Filtrado estricto para mostrar solo alumnos con Puntos > 0 en el eje Y
-        function construirGraficaHorizontal() {
-            const container = document.getElementById('canvas-container');
-            const ctx = document.getElementById('chart-rendimiento').getContext('2d');
-            
-            const baseDashboard = datosDojo.dashboard || { actual: {}, anterior: {} };
-            const datosMes = baseDashboard[vistaMesSeleccionado] || {};
-            
-            // 1. Convertimos los datos del mes en un array de objetos entrenables y aplicamos filtro > 0
-            let competidoresActivos = Object.keys(datosMes)
-                .map(alumno => {
-                    return {
-                        nombre: alumno ? alumno.toString().trim() : "",
-                        puntos: parseInt(datosMes[alumno]) || 0
-                    };
-                })
-                .filter(item => item.nombre !== "" && item.nombre !== "undefined" && item.puntos > 0);
+        // Función para pintar los retos adecuados en pantalla
+        function filtrarRetos(categoriaAlumno, alumnoObjeto, edadAlumno) {
+            const contenedor = document.getElementById("contenedor-retos");
+            contenedor.innerHTML = ""; 
 
-            // 2. Ordenamos alfabéticamente para mantener consistencia visual
-            competidoresActivos.sort((a, b) => a.nombre.localeCompare(b.nombre));
+            // Filtrado: Coincide con la categoría o está vacío/indica "ambas"
+            const retosFiltrados = BD_GLOBAL.retos.filter(reto => {
+                const catReto = reto.categoria.toLowerCase().trim();
+                return catReto === "" || catReto === "ambas" || catReto === categoriaAlumno;
+            });
 
-            // 3. Extraemos las listas limpias para Chart.js
-            const labels = competidoresActivos.map(item => item.nombre.toUpperCase());
-            const puntuaciones = competidoresActivos.map(item => item.puntos);
-
-            // Si no hay nadie activo, mostramos una barra indicativa vacía
-            if(labels.length === 0) {
-                labels.push("SIN REGISTROS CON PUNTOS ESTE MES");
-                puntuaciones.push(0);
+            if (retosFiltrados.length === 0) {
+                contenedor.innerHTML = `<div class="col-span-full text-center py-4 text-gray-500">No hay retos activos para tu categoría este mes.</div>`;
+                return;
             }
 
-            // Redimensionamiento dinámico del contenedor basado solo en alumnos activos
-            const totalAlumnos = labels.length;
-            container.style.height = `${(totalAlumnos * 32) + 50}px`;
+            retosFiltrados.forEach(reto => {
+                // PASAR DATOS POR URL: Agregamos Nombre, Edad, Estatura y Peso a las URLs externas de GitHub
+                const urlDestino = `${reto.url}?nombre=${encodeURIComponent(alumnoObjeto.nombre)}&edad=${edadAlumno}&estatura=${encodeURIComponent(alumnoObjeto.estatura)}&peso=${encodeURIComponent(alumnoObjeto.peso)}&reto=${encodeURIComponent(reto.nombre)}`;
 
-            if (graficoRendimiento) { graficoRendimiento.destroy(); }
-
-            graficoRendimiento = new Chart(ctx, {
-                type: 'bar',
-                data: {
-                    labels: labels,
-                    datasets: [{
-                        label: `PUNTOS ACUMULADOS`,
-                        data: puntuaciones,
-                        backgroundColor: '#e5a93c', 
-                        borderColor: '#000000',     
-                        borderWidth: 1.5,
-                        borderRadius: 3,
-                        barThickness: 16,          
-                        categoryPercentage: 1.0,
-                        barPercentage: 1.0    
-                    }]
-                },
-                options: {
-                    indexAxis: 'y', 
-                    responsive: true,
-                    maintainAspectRatio: false, 
-                    scales: {
-                        x: { 
-                            beginAtZero: true, 
-                            ticks: { color: '#1a1a1a', font: { size: 10, weight: 'bold' } }, 
-                            grid: { color: '#f4f4f5' } 
-                        },
-                        y: { 
-                            ticks: { color: '#1a1a1a', font: { size: 10, weight: 'bold' }, padding: 8, autoSkip: false }, 
-                            grid: { display: false } 
-                        }
-                    },
-                    plugins: { 
-                        legend: { display: false } 
-                    }
-                }
+                // Crear tarjeta HTML manteniendo intacto tu diseño original
+                const tarjeta = document.createElement("div");
+                tarjeta.className = "bg-white border-2 border-gray-200 rounded-lg p-5 shadow-sm hover:shadow-md transition-shadow flex flex-col justify-between";
+                tarjeta.innerHTML = `
+                    <div>
+                        <span class="inline-block text-xs font-semibold px-2 py-1 rounded bg-amber-100 text-amber-800 uppercase mb-2">${reto.categoria || "Todas las Categorías"}</span>
+                        <h4 class="text-xl font-bold text-gray-800 mb-2">${reto.nombre}</h4>
+                        <p class="text-sm text-gray-600 mb-4">Ingresa y completa las actividades dinámicas para sumar puntos para los premios del mes.</p>
+                    </div>
+                    <a href="${urlDestino}" class="block text-center bg-brand-black text-brand-gold font-bold py-3 px-4 rounded hover:bg-gray-800 transition-colors tracking-wide border border-brand-gold">
+                        INICIAR RETO
+                    </a>
+                `;
+                contenedor.appendChild(tarjeta);
             });
         }
     </script>

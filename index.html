@@ -90,6 +90,22 @@
                     <span class="text-xs text-gray-400 block mt-1">Puntos oficiales del cierre del mes pasado</span>
                 </div>
             </div>
+
+            <div class="mt-8 border-t pt-6">
+                <h3 class="text-xs font-bold text-gray-700 uppercase tracking-wider mb-4 flex items-center gap-1">
+                    📈 RANKING GENERAL DE ACUMULADOS (MES ACTUAL)
+                </h3>
+                <div id="contenedorGrafica" class="space-y-3 max-h-72 overflow-y-auto pr-2">
+                    </div>
+                
+                <div class="flex justify-between text-neutral-400 text-[10px] font-mono mt-3 pl-28 border-t pt-1">
+                    <span>0 pts</span>
+                    <span>250 pts</span>
+                    <span>500 pts</span>
+                    <span>750 pts</span>
+                    <span class="font-bold text-brand-gold">1,000 pts</span>
+                </div>
+            </div>
         </section>
 
         <section id="seccionRetos" class="hidden mb-8">
@@ -97,7 +113,7 @@
                 🎯 <span>RETOS DISPONIBLES ESTE MES</span>
             </h2>
             <div id="contenedorRetos" class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                </div>
+            </div>
         </section>
 
     </main>
@@ -120,6 +136,7 @@
         const seccionTablero       = document.getElementById("seccionTablero");
         const seccionRetos         = document.getElementById("seccionRetos");
         const contenedorRetos      = document.getElementById("contenedorRetos");
+        const contenedorGrafica    = document.getElementById("contenedorGrafica");
         
         const txtNombreAlumno      = document.getElementById("txtNombreAlumno");
         const txtEstatura          = document.getElementById("txtEstatura");
@@ -267,6 +284,9 @@
             seccionTablero.classList.remove("hidden");
             seccionRetos.classList.remove("hidden");
 
+            // Renderizar la gráfica de barras general del mes actual
+            construirGraficaDesempeño();
+
             // Cargar los retos específicos por edad
             construirTarjetasRetos(alumno.nombre, alumno.fechaNacimiento);
         }
@@ -296,16 +316,62 @@
             return edad;
         }
 
+        // Lógica de construcción dinámica de la gráfica de barras horizontal institucional
+        function construirGraficaDesempeño() {
+            contenedorGrafica.innerHTML = "";
+            
+            if (!datosDashboard.actual || Object.keys(datosDashboard.actual).length === 0) {
+                contenedorGrafica.innerHTML = `<p class="text-gray-400 text-xs py-2 italic text-center">No hay registros de puntuaciones en este mes.</p>`;
+                return;
+            }
+
+            // Mapear, filtrar alumnos con puntajes mayores a 0, y ordenar descendentemente
+            const listaRanking = Object.keys(datosDashboard.actual)
+                .map(nombre => ({ nombre, puntos: parseInt(datosDashboard.actual[nombre]) || 0 }))
+                .filter(item => item.puntos > 0)
+                .sort((a, b) => b.puntos - a.puntos);
+
+            if (listaRanking.length === 0) {
+                contenedorGrafica.innerHTML = `<p class="text-gray-400 text-xs py-2 italic text-center">Aún no hay alumnos con puntos acumulados en el ciclo actual.</p>`;
+                return;
+            }
+
+            // Generar cada barra horizontal dinámicamente
+            listaRanking.forEach(item => {
+                const porcentaje = Math.min((item.puntos / 1000) * 100, 100);
+                const renglon = document.createElement("div");
+                renglon.className = "flex items-center gap-3";
+                
+                renglon.innerHTML = `
+                    <div class="w-24 md:w-28 text-xs font-bold text-gray-700 truncate text-right" title="${item.nombre}">
+                        ${item.nombre}
+                    </div>
+                    <div class="flex-1 bg-gray-200 rounded h-6 overflow-hidden relative shadow-inner border border-gray-300">
+                        <div class="bg-brand-gold h-full rounded transition-all duration-700 border-r-2 border-yellow-600" style="width: ${porcentaje}%"></div>
+                        <span class="absolute inset-0 flex items-center pl-3 text-xs font-black text-brand-black">
+                            ${item.puntos} pts
+                        </span>
+                    </div>
+                `;
+                contenedorGrafica.appendChild(renglon);
+            });
+        }
+
         function construirTarjetasRetos(nombreAlumno, fechaNacimiento) {
             contenedorRetos.innerHTML = "";
             const edadAlumno = calcularEdad(fechaNacimiento);
 
             const retosFiltrados = baseDatosRetos.filter(reto => {
-                const categoria = reto.categoria.toLowerCase();
-                if (edadAlumno < 13) {
-                    return categoria.includes("infantil") || categoria.includes("todos") || !categoria.includes("juvenil");
+                const categoria = reto.categoria.toLowerCase().trim();
+                
+                // Si el campo de categoría está vacío en el catálogo, aplica para ambos grupos
+                if (categoria === "" || categoria === "todos") return true;
+                
+                // NUEVO CRITERIO: Menor o igual a 10 años es Infantil. Mayor es Juvenil.
+                if (edadAlumno <= 10) {
+                    return categoria.includes("infantil") && !categoria.includes("juvenil");
                 } else {
-                    return categoria.includes("juvenil") || categoria.includes("adultos") || categoria.includes("todos") || !categoria.includes("infantil");
+                    return categoria.includes("juvenil") || categoria.includes("adultos");
                 }
             });
 
@@ -321,7 +387,7 @@
                 tarjeta.className = "bg-white border-2 border-gray-200 rounded-lg p-5 shadow-sm hover:shadow-md transition-shadow flex flex-col justify-between";
                 tarjeta.innerHTML = `
                     <div>
-                        <span class="inline-block text-xs font-semibold px-2 py-1 rounded bg-amber-100 text-amber-800 uppercase mb-2">${reto.categoria}</span>
+                        <span class="inline-block text-xs font-semibold px-2 py-1 rounded bg-amber-100 text-amber-800 uppercase mb-2">${reto.categoria || 'Universal'}</span>
                         <h4 class="text-xl font-bold text-gray-800 mb-2">${reto.nombre}</h4>
                         <p class="text-sm text-gray-600 mb-4">Ingresa y completa las actividades dinámicas para sumar puntos para los premios del mes.</p>
                     </div>

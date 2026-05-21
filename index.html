@@ -120,7 +120,6 @@
     </main>
 
     <script>
-        // URL NUEVA OFICIAL YA INTEGRADA
         const WEB_APP_URL = "https://script.google.com/macros/s/AKfycbwMxD4OjrH1UE2jSeJF9TVWr092Z_6zRQPQICQ9pftmBKqzru6Uy5T2RBUSXaWw9wDLCQ/exec";
 
         let baseDatosAlumnos = [];
@@ -167,7 +166,6 @@
                     return;
                 }
 
-                // Activar el buscador si los datos llegaron bien
                 buscadorAlumno.addEventListener("input", manejarEscrituraBuscador);
                 btnGraficaActual.addEventListener("click", () => cambiarMesGrafica("actual"));
                 btnGraficaAnterior.addEventListener("click", () => cambiarMesGrafica("anterior"));
@@ -344,12 +342,12 @@
             const edadAlumno = calcularEdad(fechaNacimiento);
 
             const retosFiltrados = baseDatosRetos.filter(reto => {
-                const categoria = reto.categoria.toLowerCase().trim();
-                if (categoria === "" || categoria === "todos") return true;
+                const category = reto.categoria.toLowerCase().trim();
+                if (category === "" || category === "todos") return true;
                 if (edadAlumno <= 10) {
-                    return categoria.includes("infantil") && !categoria.includes("juvenil");
+                    return category.includes("infantil") && !category.includes("juvenil");
                 } else {
-                    return categoria.includes("juvenil") || categoria.includes("adultos");
+                    return category.includes("juvenil") || category.includes("adultos");
                 }
             });
 
@@ -361,10 +359,15 @@
             retosFiltrados.forEach(reto => {
                 const urlDestino = `${reto.url}?nombre=${encodeURIComponent(nombreAlumno)}&edad=${edadAlumno}&reto=${encodeURIComponent(reto.nombre)}`;
                 
+                // Modificación exclusiva para renderizar estrellas por default blancas y activas en dorado
                 const numEstrellas = parseInt(reto.popularidad) || 0;
                 let estrellasHTML = "";
                 for (let i = 0; i < 5; i++) {
-                    estrellasHTML += i < numEstrellas ? `<span class="text-yellow-500 text-lg">★</span>` : `<span class="text-gray-300 text-lg">★</span>`;
+                    if (i < numEstrellas) {
+                        estrellasHTML += `<span class="text-yellow-500 text-lg drop-shadow-sm">★</span>`;
+                    } else {
+                        estrellasHTML += `<span class="text-white text-lg drop-shadow-[0_1px_1px_rgba(0,0,0,0.2)]" style="-webkit-text-stroke: 1px #d1d5db;">★</span>`;
+                    }
                 }
 
                 const tarjeta = document.createElement("div");

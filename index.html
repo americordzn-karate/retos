@@ -23,22 +23,6 @@
     <main class="max-w-4xl mx-auto px-4 py-8">
         
         <section class="bg-white p-6 rounded-lg shadow-md mb-8 border border-gray-200">
-            <h2 class="text-xl font-bold text-gray-800 mb-4 text-center uppercase tracking-wide">Gráfica de Desempeño General (Mes Actual)</h2>
-            
-            <div id="contenedor-grafica" class="space-y-4">
-                <p class="text-center text-gray-500">Cargando gráfica de rendimiento...</p>
-            </div>
-            
-            <div class="mt-4 pt-2 border-t border-gray-300 flex justify-between text-xs font-bold text-gray-500 px-1">
-                <span>0 pts</span>
-                <span class="hidden sm:inline">250 pts</span>
-                <span>500 pts</span>
-                <span class="hidden sm:inline">750 pts</span>
-                <span>1,000 pts</span>
-            </div>
-        </section>
-
-        <section class="bg-white p-6 rounded-lg shadow-md mb-8 border border-gray-200">
             <h2 class="text-xl font-bold text-gray-800 mb-4 text-center">¡Bienvenido! Selecciona tu nombre para empezar</h2>
             
             <div class="flex flex-col md:flex-row gap-4 justify-center items-center">
@@ -56,7 +40,7 @@
             </div>
         </section>
 
-        <section>
+        <section class="mb-12">
             <h3 class="text-2xl font-bold text-gray-800 mb-6 border-b-2 border-brand-black pb-2">Retos Disponibles Para Ti</h3>
             
             <div id="msg-espera" class="bg-amber-50 border-l-4 border-amber-500 p-4 text-amber-700 rounded rounded-l-none text-center">
@@ -66,13 +50,39 @@
             <div id="contenedor-retos" class="grid grid-cols-1 md:grid-cols-2 gap-6 hidden">
                 </div>
         </section>
+
+        <section class="bg-white p-6 rounded-lg shadow-md border border-gray-200">
+            <h2 class="text-xl font-bold text-gray-800 mb-4 text-center uppercase tracking-wide">Gráfica de Desempeño General</h2>
+            
+            <div class="flex justify-center mb-6 border-b border-gray-200">
+                <button id="btn-mes-actual" class="px-4 py-2 font-bold text-sm border-b-2 border-brand-gold text-brand-gold focus:outline-none">
+                    Mes Actual
+                </button>
+                <button id="btn-mes-anterior" class="px-4 py-2 font-bold text-sm border-b-2 border-transparent text-gray-500 hover:text-gray-700 focus:outline-none">
+                    Mes Anterior
+                </button>
+            </div>
+            
+            <div id="contenedor-grafica" class="space-y-4">
+                <p class="text-center text-gray-500">Cargando gráfica de rendimiento...</p>
+            </div>
+            
+            <div class="mt-4 pt-2 border-t border-gray-300 flex justify-between text-xs font-bold text-gray-500 px-1">
+                <span>0 pts</span>
+                <span class="hidden sm:inline">250 pts</span>
+                <span>500 pts</span>
+                <span class="hidden sm:inline">750 pts</span>
+                <span>1,000 pts</span>
+            </div>
+        </section>
     </main>
 
     <script>
-        // PEGA AQUÍ LA URL QUE COPIASTE EN EL PASO 1 EN LUGAR DE LA SIGUIENTE:
+        // Referencia central de tu script de Google Sheets
         const API_URL = "https://script.google.com/macros/s/AKfycbx3JhKtbzE_BozoKDgxikYdI1L-qBWeIN4VfhE5MruC38yQPQ7uVrhKU29_00ljHG3GtQ/exec";
 
         let BD_GLOBAL = { alumnos: [], retos: [], dashboard: { actual: {}, anterior: {} } };
+        let mesVisualizado = "actual"; // Controla qué mes se dibuja en la gráfica
 
         // Al cargar la página, traemos los datos desde Google Sheets
         document.addEventListener("DOMContentLoaded", async () => {
@@ -84,17 +94,21 @@
                 
                 BD_GLOBAL = await response.json();
                 
-                // 1. Renderizar la gráfica de rendimiento general con datos del mes actual
+                // 1. Renderizar la gráfica de rendimiento general (inicia por defecto en mes actual)
                 renderizarGrafica();
 
-                // 2. Limpiar y llenar el selector de alumnos
+                // 2. Limpiar y llenar el selector de alumnos usando la propiedad exacta .nombre
                 select.innerHTML = '<option value="">-- Selecciona tu Nombre --</option>';
-                BD_GLOBAL.alumnos.forEach((alumno, index) => {
-                    const option = document.createElement("option");
-                    option.value = index; 
-                    option.textContent = alumno.nombre;
-                    select.appendChild(option);
-                });
+                if(BD_GLOBAL.alumnos && BD_GLOBAL.alumnos.length > 0) {
+                    BD_GLOBAL.alumnos.forEach((alumno, index) => {
+                        const option = document.createElement("option");
+                        option.value = index; 
+                        option.textContent = alumno.nombre;
+                        select.appendChild(option);
+                    });
+                } else {
+                    select.innerHTML = '<option value="">No se encontraron alumnos vigentes en la base de datos.</option>';
+                }
 
             } catch (error) {
                 console.error(error);
@@ -103,26 +117,41 @@
             }
         });
 
-        // Generar la gráfica de barras horizontal basada exactamente en tus requerimientos
+        // Configuración de los eventos clic de los botones del selector de mes
+        document.getElementById("btn-mes-actual").addEventListener("click", function() {
+            mesVisualizado = "actual";
+            this.className = "px-4 py-2 font-bold text-sm border-b-2 border-brand-gold text-brand-gold focus:outline-none";
+            document.getElementById("btn-mes-anterior").className = "px-4 py-2 font-bold text-sm border-b-2 border-transparent text-gray-500 hover:text-gray-700 focus:outline-none";
+            renderizarGrafica();
+        });
+
+        document.getElementById("btn-mes-anterior").addEventListener("click", function() {
+            mesVisualizado = "anterior";
+            this.className = "px-4 py-2 font-bold text-sm border-b-2 border-brand-gold text-brand-gold focus:outline-none";
+            document.getElementById("btn-mes-actual").className = "px-4 py-2 font-bold text-sm border-b-2 border-transparent text-gray-500 hover:text-gray-700 focus:outline-none";
+            renderizarGrafica();
+        });
+
+        // Generar la gráfica de barras horizontal dinámicamente según el mes seleccionado
         function renderizarGrafica() {
             const contenedor = document.getElementById("contenedor-grafica");
             contenedor.innerHTML = "";
 
-            const datosActuales = BD_GLOBAL.dashboard.actual || {};
+            // Selecciona dinámicamente los datos según la pestaña activa
+            const datosFiltrados = BD_GLOBAL.dashboard[mesVisualizado] || {};
             
-            // Convertimos el objeto en arreglo, filtramos los que tienen más de 0 puntos y ordenamos de mayor a menor
-            const alumnosConPuntos = Object.keys(datosActuales)
-                .map(nombre => ({ nombre, puntos: datosActuales[nombre] }))
+            const alumnosConPuntos = Object.keys(datosFiltrados)
+                .map(nombre => ({ nombre, puntos: datosFiltrados[nombre] }))
                 .filter(item => item.puntos > 0)
                 .sort((a, b) => b.puntos - a.puntos);
 
             if (alumnosConPuntos.length === 0) {
-                contenedor.innerHTML = `<p class="text-center text-gray-500 py-4">Ningún alumno ha acumulado puntos este mes aún. ¡Sé el primero!</p>`;
+                contenedor.innerHTML = `<p class="text-center text-gray-500 py-4">No hay registros de puntos guardados para este periodo.</p>`;
                 return;
             }
 
             alumnosConPuntos.forEach(alumno => {
-                // Cálculo de porcentaje relativo con límite estático estricto de 1,000 puntos en el eje X
+                // Escala estática estricta fija a 1,000 puntos en el eje X
                 const porcentaje = Math.min((alumno.puntos / 1000) * 100, 100);
 
                 const filaBarra = document.createElement("div");
@@ -149,37 +178,33 @@
                 msgEspera.classList.remove("hidden");
                 contenedorRetos.classList.add("hidden");
                 perfil.classList.add("hidden");
-                // Limpiar la sesión si no hay selección
                 sessionStorage.clear();
                 return;
             }
 
-            // Recuperar datos del alumno seleccionado
             const alumno = BD_GLOBAL.alumnos[index];
-            const edad = calcularEdad(alumno.fechaNacimiento);
+            const srcFecha = alumno.fechaNacimiento;
+            const edad = calcularEdad(srcFecha);
             
-            // CAMBIO SOLICITADO: Criterio modificado a menor o igual a 10 años para infantil
+            // Criterio menor o igual a 10 años para infantil, mayor para juvenil
             const categoria = (edad <= 10) ? "infantil" : "juvenil"; 
 
-            // GUARDAR DATOS EN EL NAVEGADOR (sessionStorage) PARA LA SESIÓN DEL ALUMNO
+            // Almacenar información de forma persistente durante la sesión
             sessionStorage.setItem("alumno_nombre", alumno.nombre);
             sessionStorage.setItem("alumno_estatura", alumno.estatura);
             sessionStorage.setItem("alumno_peso", alumno.peso);
 
-            // Mostrar perfil en pantalla
             document.getElementById("lbl-nombre").textContent = alumno.nombre;
             document.getElementById("lbl-edad").textContent = edad;
             document.getElementById("lbl-categoria").textContent = categoria;
             perfil.classList.remove("hidden");
 
-            // Filtrar y renderizar los retos
             filtrarRetos(categoria, alumno, edad);
 
             msgEspera.classList.add("hidden");
             contenedorRetos.classList.remove("hidden");
         });
 
-        // Función para calcular la edad exacta
         function calcularEdad(fechaNacimientoString) {
             if (!fechaNacimientoString) return 0;
             const cumpleaños = new Date(fechaNacimientoString);
@@ -193,12 +218,10 @@
             return edad;
         }
 
-        // Función para pintar los retos adecuados en pantalla
         function filtrarRetos(categoriaAlumno, alumnoObjeto, edadAlumno) {
             const contenedor = document.getElementById("contenedor-retos");
             contenedor.innerHTML = ""; 
 
-            // Filtrado: Coincide con la categoría o está vacío/indica "ambas"
             const retosFiltrados = BD_GLOBAL.retos.filter(reto => {
                 const catReto = reto.categoria.toLowerCase().trim();
                 return catReto === "" || catReto === "ambas" || catReto === categoriaAlumno;
@@ -210,10 +233,8 @@
             }
 
             retosFiltrados.forEach(reto => {
-                // PASAR DATOS POR URL: Agregamos Nombre, Edad, Estatura y Peso a las URLs externas de GitHub
                 const urlDestino = `${reto.url}?nombre=${encodeURIComponent(alumnoObjeto.nombre)}&edad=${edadAlumno}&estatura=${encodeURIComponent(alumnoObjeto.estatura)}&peso=${encodeURIComponent(alumnoObjeto.peso)}&reto=${encodeURIComponent(reto.nombre)}`;
 
-                // Crear tarjeta HTML manteniendo intacto tu diseño original
                 const tarjeta = document.createElement("div");
                 tarjeta.className = "bg-white border-2 border-gray-200 rounded-lg p-5 shadow-sm hover:shadow-md transition-shadow flex flex-col justify-between";
                 tarjeta.innerHTML = `

@@ -134,7 +134,7 @@
         let baseDatosAlumnos = [];
         let baseDatosRetos = [];
         let datosDashboard = { actual: {}, anterior: {} };
-        let ultimaFechaRegistroAlumnos = {}; // Mapeo auxiliar de la ÚLTIMA fecha de registro por alumno
+        let ultimaFechaRegistroAlumnos = {}; // Guarda la marca de tiempo de la última actividad del alumno
         let mesSeleccionadoGrafica = "actual";
 
         // Elementos del DOM recuperados
@@ -173,7 +173,7 @@
                 baseDatosRetos   = datos.retos || [];
                 datosDashboard   = datos.dashboard || { actual: {}, anterior: {} };
                 
-                // Mapear el historial de logs para indexar el momento del ÚLTIMO registro de cada alumno
+                // Mapear el historial para encontrar la fecha del último registro de cada alumno
                 analizarUltimasFechasDeLog(datos.historialLog || []);
 
                 if (baseDatosAlumnos.length === 0) {
@@ -200,7 +200,7 @@
             }
         }
 
-        // DETERMINA EL MOMENTO EXACTO DEL ÚLTIMO REGISTRO DE CADA COMPETIDOR
+        // IDENTIFICA LA FECHA DEL REGISTRO MÁS RECIENTE (ÚLTIMO REGISTRO) DE CADA ALUMNO
         function analizarUltimasFechasDeLog(logs) {
             ultimaFechaRegistroAlumnos = {};
             if (!Array.isArray(logs)) return;
@@ -211,8 +211,8 @@
             logsOrdenados.forEach(log => {
                 if (log.nombre_alumno && log.fecha) {
                     const nombreClave = log.nombre_alumno.trim().toLowerCase();
-                    // Al ir de antiguo a reciente, cada nueva coincidencia reemplaza a la anterior, 
-                    // quedando guardado de manera definitiva el ÚLTIMO registro del alumno.
+                    // Al recorrer de antiguo a reciente, el registro más nuevo del mes 
+                    // sobrescribe a los anteriores, quedando guardada la fecha de su ÚLTIMA actividad.
                     ultimaFechaRegistroAlumnos[nombreClave] = new Date(log.fecha).getTime();
                 }
             });
@@ -349,7 +349,7 @@
             return edad;
         }
 
-        // LÓGICA DE ORDENAMIENTO AVANZADO: PUNTOS (MAYOR A MENOR) -> ÚLTIMO REGISTRO (MÁS TEMPRANO A MÁS TARDÍO)
+        // LÓGICA DE ORDENAMIENTO DE ACUERDO A TUS DOS CRITERIOS
         function construirGraficaDesempeño() {
             contenedorGrafica.innerHTML = "";
             const origenDatos = mesSeleccionadoGrafica === "actual" ? datosDashboard.actual : datosDashboard.anterior;
@@ -363,23 +363,26 @@
                 .map(nombre => {
                     const nombreLimpio = nombre.trim();
                     const claveBusqueda = nombreLimpio.toLowerCase();
-                    // Si el alumno no registra actividades, se asigna el tiempo actual como comodín
-                    const timestampUltimaFecha = ultimaFechaRegistroAlumnos[claveBusqueda] || Date.now();
+                    // Si el alumno no tiene registros de actividad en el log, se usa la fecha actual como valor de seguridad
+                    const timestampUltimoRegistro = ultimaFechaRegistroAlumnos[claveBusqueda] || Date.now();
                     
                     return { 
                         nombre: nombreLimpio, 
                         puntos: parseInt(origenDatos[nombre]) || 0,
-                        ultimaFecha: timestampUltimaFecha
+                        ultimaActividad: timestampUltimoRegistro
                     };
                 })
                 .filter(item => item.puntos > 0);
 
-            // APLICACIÓN DEL ALGORITMO CORREGIDO DE DESEMPATE
+            // APLICACIÓN DE LOS DOS CRITERIOS DE AGRUPACIÓN Y DESEMPATE
             listaRanking.sort((a, b) => {
+                // Criterio 1: Sumatoria de puntos en el mes (De mayor a menor)
                 if (b.puntos !== a.puntos) {
-                    return b.puntos - a.puntos; // Criterio 1: Mayor puntaje va arriba
+                    return b.puntos - a.puntos; 
                 }
-                return a.ultimaFecha - b.ultimaFecha; // Criterio 2: El último registro realizado MÁS TEMPRANO va arriba
+                // Criterio 2: En caso de empate, el que completó esos puntos primero 
+                // (Es decir, el que tenga la fecha de su ÚLTIMO registro más temprana)
+                return a.ultimaActividad - b.ultimaActividad; 
             });
 
             if (listaRanking.length === 0) {

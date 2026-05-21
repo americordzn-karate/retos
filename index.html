@@ -134,7 +134,7 @@
         let baseDatosAlumnos = [];
         let baseDatosRetos = [];
         let datosDashboard = { actual: {}, anterior: {} };
-        let ultimaFechaRegistroAlumnos = {}; // Mapeo auxiliar seguro de la última marca de tiempo por alumno
+        let ultimaFechaRegistroAlumnos = {}; // Mapeo auxiliar de timestamps para desempates
         let mesSeleccionadoGrafica = "actual";
 
         // Elementos del DOM recuperados
@@ -173,7 +173,7 @@
                 baseDatosRetos   = datos.retos || [];
                 datosDashboard   = datos.dashboard || { actual: {}, anterior: {} };
                 
-                // Mapear el historial interpretando las fechas de forma segura y robusta
+                // Mapear el historial interpretando dinámicamente las llaves del log enviado
                 analizarUltimasFechasDeLog(datos.historialLog || []);
 
                 if (baseDatosAlumnos.length === 0) {
@@ -200,7 +200,7 @@
             }
         }
 
-        // CONVIERTE CUALQUIER FORMATO DE FECHA/HORA DE SHEETS A UN TIMESTAMP SEGURO PARA EL ORDENAMIENTO
+        // DETECTA FECHAS UTILIZANDO MÚLTIPLES LLAVES ALTERNATIVAS PARA EL LOG (MÁXIMA TOLERANCIA A CAMBIOS)
         function analizarUltimasFechasDeLog(logs) {
             ultimaFechaRegistroAlumnos = {};
             if (!Array.isArray(logs)) return;
@@ -234,15 +234,22 @@
                 }
             }
 
-            // Procesamos los logs y los ordenamos cronológicamente de forma ascendente
-            const logsProcesados = logs.map(log => ({
-                nombre: log.nombre_alumno ? log.nombre_alumno.trim().toLowerCase() : "",
-                timestamp: parsearFechaSegura(log.fecha)
-            })).filter(log => log.nombre !== "" && log.timestamp !== null);
+            // Mapeo robusto: busca la fecha en las diferentes variaciones que genera el Backend
+            const logsProcesados = logs.map(log => {
+                const nombre = log.nombre_alumno || log.nombre || "";
+                // Busca en las llaves comunes: 'fecha_reto', 'fecha', 'fecha_reto_completado'
+                const rawFecha = log.fecha_reto || log.fecha || log.fecha_reto_completado || null;
+                
+                return {
+                    nombre: nombre.toString().trim().toLowerCase(),
+                    timestamp: parsearFechaSegura(rawFecha)
+                };
+            }).filter(log => log.nombre !== "" && log.timestamp !== null);
 
+            // Ordenamos cronológicamente (antiguo a reciente)
             logsProcesados.sort((a, b) => a.timestamp - b.timestamp);
 
-            // Al ir de antiguo a reciente, la última coincidencia del mes se queda guardada definitivamente
+            // Asignamos. Al avanzar secuencialmente, la fecha guardada será la de su ÚLTIMO registro.
             logsProcesados.forEach(log => {
                 ultimaFechaRegistroAlumnos[log.nombre] = log.timestamp;
             });
@@ -379,7 +386,7 @@
             return edad;
         }
 
-        // ORDENAMIENTO EN BASE A LOS DOS CRITERIOS SOLICITADOS
+        // SELECCIÓN Y ORDENAMIENTO ABSOLUTO SEGÚN TUS DOS CRITERIOS DE AGRUPACIÓN
         function construirGraficaDesempeño() {
             contenedorGrafica.innerHTML = "";
             const origenDatos = mesSeleccionadoGrafica === "actual" ? datosDashboard.actual : datosDashboard.anterior;
@@ -393,8 +400,9 @@
                 .map(nombre => {
                     const nombreLimpio = nombre.trim();
                     const claveBusqueda = nombreLimpio.toLowerCase();
-                    // Si el alumno está en la lista pero no tiene actividades, se le asigna una fecha muy lejana
-                    const timestampUltimoRegistro = ultimaFechaRegistroAlumnos[claveBusqueda] || Date.now();
+                    
+                    // Si el alumno no registra log en memoria, se le asigna 0 para controlarlo en la lógica
+                    const timestampUltimoRegistro = ultimaFechaRegistroAlumnos[claveBusqueda] || 0;
                     
                     return { 
                         nombre: nombreLimpio, 
@@ -404,15 +412,25 @@
                 })
                 .filter(item => item.puntos > 0);
 
-            // APLICACIÓN DE LOS DOS CRITERIOS DE AGRUPACIÓN Y DESEMPATE
+            // APLICACIÓN DEL ALGORITMO COMPLETO DE ORDENAMIENTO
             listaRanking.sort((a, b) => {
-                // Criterio 1: Sumatoria de puntos en el mes (De mayor a menor)
+                // 1) Criterio Primario: Sumatoria de puntos en el mes (Mayor a Menor)
                 if (b.puntos !== a.puntos) {
                     return b.puntos - a.puntos; 
                 }
-                // Criterio 2: En caso de empate, el primero que completó esos puntos va ARRIBA.
-                // Si la fecha de 'a' es menor (más antigua), la resta da negativo y 'a' sube en el ranking.
-                return a.ultimaActividad - b.ultimaActividad; 
+                
+                // 2) Criterio Secundario (Caso de Empate): Quien completó esos puntos primero.
+                // Si ambos tienen logs válidos (> 0), ordenamos poniendo más arriba al del timestamp menor (más antiguo)
+                if (a.ultimaActividad > 0 && b.ultimaActividad > 0) {
+                    return a.ultimaActividad - b.ultimaActividad;
+                }
+                
+                // Si un alumno no tiene log pero el otro sí, el que sí tiene log se considera prioritario
+                if (a.ultimaActividad > 0 && b.ultimaActividad === 0) return -1;
+                if (b.ultimaActividad > 0 && a.ultimaActividad === 0) return 1;
+
+                // 3) Criterio de Respaldo por orden alfabético si todo lo demás es idéntico
+                return a.nombre.localeCompare(b.nombre);
             });
 
             if (listaRanking.length === 0) {
@@ -420,6 +438,7 @@
                 return;
             }
 
+            // Inyectar renglones ordenados en el contenedor visual
             listaRanking.forEach(item => {
                 const porcentaje = Math.min((item.puntos / 1000) * 100, 100);
                 const renglon = document.createElement("div");

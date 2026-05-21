@@ -58,7 +58,7 @@
                         </div>
                     </div>
 
-                    <!-- Ficha del Alumno -->
+                    <!-- Ficha del Alumno Conectada Exactivamente -->
                     <div id="info-alumno" class="hidden mt-8 pt-6 border-t border-zinc-200 bg-white p-4 rounded-lg border border-zinc-100 shadow-inner">
                         <span class="text-[10px] tracking-widest text-zinc-400 uppercase font-bold block">Alumno Seleccionado</span>
                         <p id="info-nombre" class="text-lg font-black text-black uppercase truncate mt-0.5 tracking-wide"></p>
@@ -126,7 +126,7 @@
     </footer>
 
     <script>
-        // PEGA TU NUEVA URL DE IMPLEMENTACIÓN AQUÍ ABAJO
+        // MODIFICA EXCLUSIVAMENTE ESTA VARIABLE CON TU URL PÚBLICA GENERADA POR GOOGLE APPS SCRIPT
         const API_URL = "https://script.google.com/macros/s/AKfycbz4PT4fWYdPXVtH_KOfknPX2T53gcmytuJb9zIx7f39pMWe1mszszoBW0gB1CWaxJOQRA/exec";
 
         let datosDojo = { alumnos: [], retos: [], intentosHoy: {}, dashboard: { actual: {}, anterior: {} } };
@@ -194,21 +194,9 @@
             document.getElementById("info-nombre").textContent = alumno.nombre || "SIN NOMBRE";
             document.getElementById("info-cat").textContent = cat;
             
-            // Extracción segura de columnas Q (Estatura) y R (Peso) desde el array de datosFila
-            let estaturaFinal = "--";
-            let pesoFinal = "--";
-
-            if (Array.isArray(alumno.datosFila)) {
-                if (alumno.datosFila[16] !== undefined && alumno.datosFila[16] !== null && alumno.datosFila[16].toString().trim() !== "") {
-                    estaturaFinal = alumno.datosFila[16];
-                }
-                if (alumno.datosFila[17] !== undefined && alumno.datosFila[17] !== null && alumno.datosFila[17].toString().trim() !== "") {
-                    pesoFinal = alumno.datosFila[17];
-                }
-            }
-
-            document.getElementById("info-estatura").textContent = estaturaFinal;
-            document.getElementById("info-peso").textContent = pesoFinal;
+            // Presentación directa de variables biométricas procesadas de forma nativa
+            document.getElementById("info-estatura").textContent = alumno.estatura || "--";
+            document.getElementById("info-peso").textContent = alumno.peso || "--";
             
             info.classList.remove("hidden");
             desplegarRetosFiltrados(alumno.nombre, cat);

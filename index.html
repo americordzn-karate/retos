@@ -4,9 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Senshi-Kan - Portal Reto del Mes</title>
-    <!-- Tailwind CSS para el estilizado institucional -->
     <script src="https://cdn.tailwindcss.com"></script>
-    <!-- Chart.js para la gráfica de rendimiento -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <style>
         body {
@@ -18,8 +16,6 @@
         .bg-mustard { background-color: #e5a93c; }
         .bg-mustard-hover:hover { background-color: #d4962b; }
         .border-mustard { border-color: #e5a93c; }
-        
-        /* Estilos de scrollbar limpios */
         ::-webkit-scrollbar { width: 6px; }
         ::-webkit-scrollbar-track { background: #f4f4f5; }
         ::-webkit-scrollbar-thumb { background: #d4d4d8; border-radius: 3px; }
@@ -46,7 +42,7 @@
             
             <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
                 
-                <!-- Columna Izquierda: Identificación y Perfil -->
+                <!-- Columna Izquierda: Selección -->
                 <div class="bg-zinc-50 p-6 rounded-xl border border-zinc-200 shadow-sm flex flex-col justify-between">
                     <div>
                         <h2 class="text-xs font-bold uppercase tracking-wider text-zinc-400 mb-4">Paso 1: Selección</h2>
@@ -62,12 +58,11 @@
                         </div>
                     </div>
 
-                    <!-- Ficha del Alumno Enriquecida -->
+                    <!-- Ficha del Alumno -->
                     <div id="info-alumno" class="hidden mt-8 pt-6 border-t border-zinc-200 bg-white p-4 rounded-lg border border-zinc-100 shadow-inner">
                         <span class="text-[10px] tracking-widest text-zinc-400 uppercase font-bold block">Alumno Seleccionado</span>
                         <p id="info-nombre" class="text-lg font-black text-black uppercase truncate mt-0.5 tracking-wide"></p>
                         
-                        <!-- Bloque de Etiquetas e Información Biométrica vinculado a columnas Q y R -->
                         <div class="flex flex-wrap gap-2 mt-3">
                             <div class="inline-flex items-center px-2.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-wide bg-zinc-100 text-black border border-zinc-300">
                                 <span id="info-cat"></span>
@@ -82,25 +77,23 @@
                     </div>
                 </div>
 
-                <!-- Columna Derecha: Panel de Retos Disponibles -->
+                <!-- Columna Derecha: Catálogo de Retos -->
                 <div class="lg:col-span-2 bg-zinc-50 p-6 rounded-xl border border-zinc-200 shadow-sm flex flex-col">
                     <h2 class="text-xs font-bold uppercase tracking-wider text-zinc-400 mb-4">Paso 2: Retos Disponibles</h2>
 
-                    <!-- Mensaje Inicial -->
                     <div id="placeholder-retos" class="flex-grow flex flex-col items-center justify-center py-16 text-center">
                         <svg class="w-12 h-12 text-zinc-300 mb-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01"></path></svg>
                         <p class="text-sm text-zinc-400 italic">Elige tu nombre en el panel izquierdo para cargar tus retos asignados.</p>
                     </div>
 
-                    <!-- Listado Dinámico de Retos -->
                     <div id="retos-container" class="hidden grid grid-cols-1 sm:grid-cols-2 gap-4 overflow-y-auto max-h-[380px] pr-1">
-                        <!-- Inserción vía JavaScript -->
+                        <!-- Carga dinámica -->
                     </div>
                 </div>
 
             </div>
 
-            <!-- Sección Inferior: Métricas e Historial General -->
+            <!-- Tabla General de Rendimiento -->
             <div class="bg-zinc-50 p-6 rounded-xl border border-zinc-200 shadow-sm">
                 <div class="flex flex-col sm:flex-row sm:items-center justify-between border-b border-zinc-200 pb-4 mb-6 gap-4">
                     <div>
@@ -108,7 +101,6 @@
                         <h3 class="text-lg font-bold text-black">Tabla General de Rendimiento</h3>
                     </div>
                     
-                    <!-- Botones Selectores de Meses -->
                     <div class="inline-flex rounded-md shadow-sm bg-white p-1 border border-zinc-200" role="group">
                         <button id="btn-mes-actual" onclick="cambiarMesGrafica('actual')" class="px-4 py-2 text-xs font-bold uppercase rounded-md transition-all bg-black text-white">
                             Mes Actual
@@ -119,7 +111,6 @@
                     </div>
                 </div>
                 
-                <!-- Área del Gráfico con Scroll Inteligente si hay demasiados elementos -->
                 <div class="w-full bg-white p-2 rounded-lg border border-zinc-100 shadow-inner overflow-y-auto max-h-[500px]">
                     <div id="canvas-container" class="relative w-full">
                         <canvas id="chart-rendimiento"></canvas>
@@ -130,13 +121,13 @@
         </div>
     </div>
 
-    <!-- Pie de página institucional -->
     <footer class="text-center text-[10px] text-zinc-400 tracking-widest mt-12 border-t border-zinc-200 pt-4 max-w-6xl mx-auto w-full font-bold uppercase">
         SENSHI-KAN © 2026 • HONOR • DISCIPLINA • CONSTANCIA
     </footer>
 
     <script>
-        const API_URL = "https://script.google.com/macros/s/AKfycbygola2e0xpSjLwlBA66bi0APz6S5fVD37ON2ymNx4yE4e9tvDP8p3RtYrsaqklbrqbRw/exec";
+        // PEGA TU NUEVA URL DE IMPLEMENTACIÓN AQUÍ ABAJO
+        const API_URL = "https://script.google.com/macros/s/AKfycbz4PT4fWYdPXVtH_KOfknPX2T53gcmytuJb9zIx7f39pMWe1mszszoBW0gB1CWaxJOQRA/exec";
 
         let datosDojo = { alumnos: [], retos: [], intentosHoy: {}, dashboard: { actual: {}, anterior: {} } };
         let graficoRendimiento = null;
@@ -150,6 +141,7 @@
                 if (!response.ok) throw new Error("Error en la conexión con el servidor");
                 
                 datosDojo = await response.json();
+                if (datosDojo.error) { throw new Error(datosDojo.error); }
                 
                 document.getElementById("loading").classList.add("hidden");
                 document.getElementById("main-container").classList.remove("hidden");
@@ -160,23 +152,16 @@
                 console.error(err);
                 document.getElementById("loading").innerHTML = `
                     <p class="text-red-600 font-bold text-sm tracking-wide">⚠️ ERROR DE ENLACE CON LA BASE DE DATOS</p>
-                    <p class="text-xs text-zinc-400 mt-1">Verifica la conexión a internet o el estado de la implementación.</p>
+                    <p class="text-xs text-zinc-400 mt-1">Detalle del sistema: ${err.message}</p>
                 `;
             }
         }
 
         function cargarListaAlumnos() {
             const select = document.getElementById("alumno-select");
-            
-            if (!datosDojo.alumnos || !Array.isArray(datosDojo.alumnos)) {
-                datosDojo.alumnos = [];
-            }
+            if (!datosDojo.alumnos) datosDojo.alumnos = [];
 
-            datosDojo.alumnos.sort((a, b) => {
-                const nA = a.nombre || "";
-                const nB = b.nombre || "";
-                return nA.localeCompare(nB);
-            });
+            datosDojo.alumnos.sort((a, b) => (a.nombre || "").localeCompare(b.nombre || ""));
             
             datosDojo.alumnos.forEach(al => {
                 if (al && al.nombre) {
@@ -186,7 +171,6 @@
                     select.appendChild(opt);
                 }
             });
-
             select.addEventListener("change", seleccionarAlumno);
         }
 
@@ -207,48 +191,26 @@
             if (!alumno) return;
 
             const cat = obtenerCategoriaPorEdad(alumno.fechaNacimiento);
-
             document.getElementById("info-nombre").textContent = alumno.nombre || "SIN NOMBRE";
             document.getElementById("info-cat").textContent = cat;
             
-            // EXTRACCIÓN ROBUSTA DE COLUMNAS Q Y R (ÍNDICES 16 Y 17 RESPECTIVAMENTE)
+            // Extracción segura de columnas Q (Estatura) y R (Peso) desde el array de datosFila
             let estaturaFinal = "--";
             let pesoFinal = "--";
 
-            try {
-                if (Array.isArray(alumno.datosFila)) {
-                    if (alumno.datosFila[16] !== undefined && alumno.datosFila[16] !== null && alumno.datosFila[16].toString().trim() !== "") {
-                        estaturaFinal = alumno.datosFila[16];
-                    }
-                    if (alumno.datosFila[17] !== undefined && alumno.datosFila[17] !== null && alumno.datosFila[17].toString().trim() !== "") {
-                        pesoFinal = alumno.datosFila[17];
-                    }
-                } 
-                
-                if (estaturaFinal === "--" || pesoFinal === "--") {
-                    Object.keys(alumno).forEach(key => {
-                        const llaveNormalizada = key.toLowerCase().trim();
-                        const valorOriginal = alumno[key];
-
-                        if (valorOriginal !== null && valorOriginal !== undefined && valorOriginal.toString().trim() !== "") {
-                            if (estaturaFinal === "--" && (llaveNormalizada.includes("estatura") || llaveNormalizada.includes("altura") || llaveNormalizada === "q")) {
-                                estaturaFinal = valorOriginal;
-                            }
-                            if (pesoFinal === "--" && (llaveNormalizada.includes("peso") || llaveNormalizada === "r")) {
-                                pesoFinal = valorOriginal;
-                            }
-                        }
-                    });
+            if (Array.isArray(alumno.datosFila)) {
+                if (alumno.datosFila[16] !== undefined && alumno.datosFila[16] !== null && alumno.datosFila[16].toString().trim() !== "") {
+                    estaturaFinal = alumno.datosFila[16];
                 }
-            } catch (error) {
-                console.warn("Faltan datos biométricos en este alumno, continuando sin detener el sistema.", error);
+                if (alumno.datosFila[17] !== undefined && alumno.datosFila[17] !== null && alumno.datosFila[17].toString().trim() !== "") {
+                    pesoFinal = alumno.datosFila[17];
+                }
             }
 
             document.getElementById("info-estatura").textContent = estaturaFinal;
             document.getElementById("info-peso").textContent = pesoFinal;
             
             info.classList.remove("hidden");
-
             desplegarRetosFiltrados(alumno.nombre, cat);
             
             placeholder.classList.add("hidden");
@@ -263,20 +225,16 @@
                 const hoy = new Date();
                 let edad = hoy.getFullYear() - nac.getFullYear();
                 const m = hoy.getMonth() - nac.getMonth();
-                if (m < 0 || (m === 0 && hoy.getDate() < nac.getDate())) {
-                    edad--;
-                }
+                if (m < 0 || (m === 0 && hoy.getDate() < nac.getDate())) { edad--; }
                 return (edad >= 13) ? "juvenil" : "infantil";
-            } catch (e) {
-                return "infantil";
-            }
+            } catch (e) { return "infantil"; }
         }
 
         function desplegarRetosFiltrados(nombreAl, catAl) {
             const contenedor = document.getElementById("retos-container");
             contenedor.innerHTML = "";
 
-            if (!datosDojo.retos || !Array.isArray(datosDojo.retos)) return;
+            if (!datosDojo.retos) return;
 
             const filtrados = datosDojo.retos.filter(r => {
                 if (!r || !r.categoria) return false;
@@ -293,34 +251,24 @@
                 const hashHoy = `${nombreAl || ''}_${r.nombre || ''}`;
                 const realizados = datosDojo.intentosHoy ? (datosDojo.intentosHoy[hashHoy] || 0) : 0;
                 const limiteMax = parseInt(r.limiteDiario) || 999;
-                
                 const limiteAlcanzado = realizados >= limiteMax;
 
                 let stars = "";
                 const pop = parseInt(r.popularidad) || 0;
-                for(let s=0; s<5; s++) {
-                    stars += s < pop ? "★" : "☆";
-                }
+                for(let s=0; s<5; s++) { stars += s < pop ? "★" : "☆"; }
 
                 const card = document.createElement("div");
                 card.className = "bg-white p-5 rounded-lg border border-zinc-200 flex flex-col justify-between shadow-sm hover:border-zinc-400 transition-all group";
                 
-                let botonHTML = "";
+                let botonHTML = `
+                    <a href="${r.url && r.url !== '#' ? r.url : 'javascript:void(0);'}" 
+                       class="w-full inline-flex items-center justify-center text-center text-xs bg-black text-white font-extrabold py-3 px-4 rounded-md transition-colors tracking-widest uppercase shadow-sm bg-mustard-hover"
+                       ${(!r.url || r.url === '#') ? 'onclick="alert(\'Este reto no tiene un enlace configurado todavía.\')"' : ''}>
+                       ⚡ IR AL RETO
+                    </a>
+                `;
                 if (limiteAlcanzado) {
-                    botonHTML = `
-                        <button disabled 
-                           class="w-full inline-flex items-center justify-center text-center text-xs bg-zinc-300 text-zinc-500 font-extrabold py-3 px-4 rounded-md tracking-widest uppercase cursor-not-allowed shadow-none">
-                           🛑 LÍMITE ALCANZADO
-                        </button>
-                    `;
-                } else {
-                    botonHTML = `
-                        <a href="${r.url && r.url !== '#' ? r.url : 'javascript:void(0);'}" 
-                           class="w-full inline-flex items-center justify-center text-center text-xs bg-black text-white font-extrabold py-3 px-4 rounded-md transition-colors tracking-widest uppercase shadow-sm bg-mustard-hover"
-                           ${(!r.url || r.url === '#') ? 'onclick="alert(\'Este reto no tiene un enlace configurado todavía.\')"' : ''}>
-                           ⚡ IR AL RETO
-                        </a>
-                    `;
+                    botonHTML = `<button disabled class="w-full text-xs bg-zinc-300 text-zinc-500 font-extrabold py-3 rounded-md tracking-widest uppercase cursor-not-allowed">🛑 LÍMITE ALCANZADO</button>`;
                 }
 
                 card.innerHTML = `
@@ -334,9 +282,7 @@
                         <h3 class="font-black text-base text-black uppercase tracking-wide mb-1 group-hover:text-mustard transition-colors">${r.nombre || 'Reto'}</h3>
                         <p class="text-xs text-zinc-400 mb-6">Completados hoy: <span class="font-bold text-zinc-700">${realizados}</span> de <span class="font-bold text-zinc-700">${limiteMax}</span></p>
                     </div>
-                    <div>
-                        ${botonHTML}
-                    </div>
+                    <div>${botonHTML}</div>
                 `;
                 contenedor.appendChild(card);
             });
@@ -356,7 +302,6 @@
                 btnAnterior.className = "px-4 py-2 text-xs font-bold uppercase rounded-md transition-all bg-black text-white";
                 btnActual.className = "px-4 py-2 text-xs font-bold uppercase rounded-md transition-all text-zinc-600 hover:text-black";
             }
-
             construirGraficaHorizontal();
         }
 
@@ -367,17 +312,11 @@
             const baseDashboard = datosDojo.dashboard || { actual: {}, anterior: {} };
             const datosMes = baseDashboard[vistaMesSeleccionado] || {};
             
-            // SANITIZACIÓN ROBUSTA ANTE CELDAS VACÍAS
-            // Filtramos las llaves para omitir registros con nombres indefinidos, vacíos o corruptos
             const labels = Object.keys(datosMes)
                 .filter(alumno => alumno && alumno.toString().trim() !== "" && alumno !== "undefined")
                 .sort();
                 
-            // Mapeamos los puntajes asegurando que cualquier celda vacía/nula se convierta en un 0 numérico limpio
-            const puntuaciones = labels.map(alumno => {
-                const puntos = parseInt(datosMes[alumno]);
-                return isNaN(puntos) ? 0 : puntos;
-            });
+            const puntuaciones = labels.map(alumno => parseInt(datosMes[alumno]) || 0);
 
             if(labels.length === 0) {
                 labels.push("SIN REGISTROS ESTE MES");
@@ -385,58 +324,35 @@
             }
 
             const totalAlumnos = labels.length;
-            const alturaCalculada = (totalAlumnos * 28) + 40; 
-            container.style.height = `${alturaCalculada}px`;
+            container.style.height = `${(totalAlumnos * 28) + 40}px`;
 
-            if (graficoRendimiento) {
-                graficoRendimiento.destroy();
-            }
+            if (graficoRendimiento) { graficoRendimiento.destroy(); }
 
             graficoRendimiento = new Chart(ctx, {
                 type: 'bar',
                 data: {
                     labels: labels.map(l => l.toUpperCase()),
-                    datasets: [
-                        {
-                            label: `PUNTOS`,
-                            data: puntuaciones,
-                            backgroundColor: '#e5a93c', 
-                            borderColor: '#000000',     
-                            borderWidth: 1.5,
-                            borderRadius: 3,
-                            barThickness: 14,          
-                            categoryPercentage: 1.0,
-                            barPercentage: 1.0    
-                        }
-                    ]
+                    datasets: [{
+                        label: `PUNTOS`,
+                        data: puntuaciones,
+                        backgroundColor: '#e5a93c', 
+                        borderColor: '#000000',     
+                        borderWidth: 1.5,
+                        borderRadius: 3,
+                        barThickness: 14,          
+                        categoryPercentage: 1.0,
+                        barPercentage: 1.0    
+                    }]
                 },
                 options: {
                     indexAxis: 'y', 
                     responsive: true,
                     maintainAspectRatio: false, 
                     scales: {
-                        x: { 
-                            beginAtZero: true,
-                            max: 1000, 
-                            ticks: { 
-                                color: '#1a1a1a', 
-                                font: { size: 10, weight: 'bold' }
-                            }, 
-                            grid: { color: '#f4f4f5' } 
-                        },
-                        y: { 
-                            ticks: { 
-                                color: '#1a1a1a', 
-                                font: { size: 10, weight: 'bold' },
-                                padding: 6,
-                                autoSkip: false 
-                            }, 
-                            grid: { display: false } 
-                        }
+                        x: { beginAtZero: true, max: 1000, ticks: { color: '#1a1a1a', font: { size: 10, weight: 'bold' } }, grid: { color: '#f4f4f5' } },
+                        y: { ticks: { color: '#1a1a1a', font: { size: 10, weight: 'bold' }, padding: 6, autoSkip: false }, grid: { display: false } }
                     },
-                    plugins: {
-                        legend: { display: false }
-                    }
+                    plugins: { legend: { display: false } }
                 }
             });
         }

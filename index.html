@@ -184,21 +184,21 @@
             }
         }
 
-        // LÓGICA FILTRADO DE AUTOCOMPLETADO ESTRICTO
+        // LÓGICA FILTRADO DE AUTOCOMPLETADO ASCENDENTE Y COMIENZO ESTRICTO
         function manejarEscrituraBuscador() {
             const textoBuscar = buscadorAlumno.value.trim().toLowerCase();
             contenedorSugerencias.innerHTML = "";
 
-            // REGLA 1: Si no hay texto, no se despliega ninguna lista
+            // Si no hay texto, no se despliega ninguna lista
             if (textoBuscar === "") {
                 contenedorSugerencias.classList.add("hidden");
                 return;
             }
 
-            // Filtrar alumnos que contengan los caracteres ingresados
-            const alumnosFiltrados = baseDatosAlumnos.filter(alumno => 
-                alumno.nombre.toLowerCase().includes(textoBuscar)
-            );
+            // Filtrado: únicamente los que INICIEN con los caracteres escritos, ordenados alfabéticamente (A-Z)
+            const alumnosFiltrados = baseDatosAlumnos
+                .filter(alumno => alumno.nombre.toLowerCase().startsWith(textoBuscar))
+                .sort((a, b) => a.nombre.localeCompare(b.nombre));
 
             if (alumnosFiltrados.length === 0) {
                 contenedorSugerencias.classList.add("hidden");
@@ -256,10 +256,11 @@
         function verificarSesionExistente() {
             const nombreGuardado = sessionStorage.getItem("nombreAlumno");
             if (nombreGuardado) {
-                const sigueVigente = baseDatosAlumnos.find(a => a.nombre.toLowerCase() === nombreGuardado.toLowerCase());
-                if (sigueVigente) {
-                    buscadorAlumno.value = sigueVigente.nombre;
-                    activarInterfazAlumno(sigueVigente);
+                const sigueVigente = baseDatosAlumnos.find(a => a.nombre.toLowerCase() === text => text.nombre.toLowerCase() === nombreGuardado.toLowerCase());
+                const alumnoObjeto = baseDatosAlumnos.find(a => a.nombre.toLowerCase() === nombreGuardado.toLowerCase());
+                if (alumnoObjeto) {
+                    buscadorAlumno.value = alumnoObjeto.nombre;
+                    activarInterfazAlumno(alumnoObjeto);
                 } else {
                     sessionStorage.clear();
                 }
@@ -279,7 +280,7 @@
             puntosMesActual.textContent   = ptsActual;
             puntosMesAnterior.textContent = ptsAnterior;
 
-            // REGLA CRÍTICA: Mostrar módulos únicamente al seleccionar el alumno
+            // Mostrar módulos únicamente al seleccionar el alumno
             panelBienvenida.classList.remove("hidden");
             seccionTablero.classList.remove("hidden");
             seccionRetos.classList.remove("hidden");
@@ -367,7 +368,7 @@
                 // Si el campo de categoría está vacío en el catálogo, aplica para ambos grupos
                 if (categoria === "" || categoria === "todos") return true;
                 
-                // NUEVO CRITERIO: Menor o igual a 10 años es Infantil. Mayor es Juvenil.
+                // Criterio establecido: Menor o igual a 10 años es Infantil. Mayor es Juvenil.
                 if (edadAlumno <= 10) {
                     return categoria.includes("infantil") && !categoria.includes("juvenil");
                 } else {
@@ -383,11 +384,20 @@
             retosFiltrados.forEach(reto => {
                 const urlDestino = `${reto.url}?nombre=${encodeURIComponent(nombreAlumno)}&edad=${edadAlumno}&reto=${encodeURIComponent(reto.nombre)}`;
 
+                // Generación dinámica de estrellas de popularidad basándose en el campo numérico
+                const valorPopularidad = parseInt(reto.popularidad) || 0;
+                const estrellasHtml = "⭐".repeat(valorPopularidad);
+
                 const tarjeta = document.createElement("div");
-                tarjeta.className = "bg-white border-2 border-gray-200 rounded-lg p-5 shadow-sm hover:shadow-md transition-shadow flex flex-col justify-between";
+                tarjeta.className = "bg-white border-2 border-gray-200 rounded-lg p-5 shadow-sm hover:shadow-md transition-shadow flex flex-col justify-between relative";
                 tarjeta.innerHTML = `
                     <div>
                         <span class="inline-block text-xs font-semibold px-2 py-1 rounded bg-amber-100 text-amber-800 uppercase mb-2">${reto.categoria || 'Universal'}</span>
+                        
+                        <div class="absolute top-5 right-5 flex gap-0.5 text-sm" title="Popularidad: ${valorPopularidad} estrellas">
+                            ${estrellasHtml}
+                        </div>
+                        
                         <h4 class="text-xl font-bold text-gray-800 mb-2">${reto.nombre}</h4>
                         <p class="text-sm text-gray-600 mb-4">Ingresa y completa las actividades dinámicas para sumar puntos para los premios del mes.</p>
                     </div>

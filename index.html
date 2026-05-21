@@ -58,7 +58,7 @@
                         </div>
                     </div>
 
-                    <!-- Ficha del Alumno Conectada Exactivamente -->
+                    <!-- Ficha del Alumno -->
                     <div id="info-alumno" class="hidden mt-8 pt-6 border-t border-zinc-200 bg-white p-4 rounded-lg border border-zinc-100 shadow-inner">
                         <span class="text-[10px] tracking-widest text-zinc-400 uppercase font-bold block">Alumno Seleccionado</span>
                         <p id="info-nombre" class="text-lg font-black text-black uppercase truncate mt-0.5 tracking-wide"></p>
@@ -194,7 +194,6 @@
             document.getElementById("info-nombre").textContent = alumno.nombre || "SIN NOMBRE";
             document.getElementById("info-cat").textContent = cat;
             
-            // Presentación directa de variables biométricas procesadas de forma nativa
             document.getElementById("info-estatura").textContent = alumno.estatura || "--";
             document.getElementById("info-peso").textContent = alumno.peso || "--";
             
@@ -293,6 +292,7 @@
             construirGraficaHorizontal();
         }
 
+        // SOLUCIÓN: Filtrado estricto para mostrar solo alumnos con Puntos > 0 en el eje Y
         function construirGraficaHorizontal() {
             const container = document.getElementById('canvas-container');
             const ctx = document.getElementById('chart-rendimiento').getContext('2d');
@@ -300,34 +300,47 @@
             const baseDashboard = datosDojo.dashboard || { actual: {}, anterior: {} };
             const datosMes = baseDashboard[vistaMesSeleccionado] || {};
             
-            const labels = Object.keys(datosMes)
-                .filter(alumno => alumno && alumno.toString().trim() !== "" && alumno !== "undefined")
-                .sort();
-                
-            const puntuaciones = labels.map(alumno => parseInt(datosMes[alumno]) || 0);
+            // 1. Convertimos los datos del mes en un array de objetos entrenables y aplicamos filtro > 0
+            let competidoresActivos = Object.keys(datosMes)
+                .map(alumno => {
+                    return {
+                        nombre: alumno ? alumno.toString().trim() : "",
+                        puntos: parseInt(datosMes[alumno]) || 0
+                    };
+                })
+                .filter(item => item.nombre !== "" && item.nombre !== "undefined" && item.puntos > 0);
 
+            // 2. Ordenamos alfabéticamente para mantener consistencia visual
+            competidoresActivos.sort((a, b) => a.nombre.localeCompare(b.nombre));
+
+            // 3. Extraemos las listas limpias para Chart.js
+            const labels = competidoresActivos.map(item => item.nombre.toUpperCase());
+            const puntuaciones = competidoresActivos.map(item => item.puntos);
+
+            // Si no hay nadie activo, mostramos una barra indicativa vacía
             if(labels.length === 0) {
-                labels.push("SIN REGISTROS ESTE MES");
+                labels.push("SIN REGISTROS CON PUNTOS ESTE MES");
                 puntuaciones.push(0);
             }
 
+            // Redimensionamiento dinámico del contenedor basado solo en alumnos activos
             const totalAlumnos = labels.length;
-            container.style.height = `${(totalAlumnos * 28) + 40}px`;
+            container.style.height = `${(totalAlumnos * 32) + 50}px`;
 
             if (graficoRendimiento) { graficoRendimiento.destroy(); }
 
             graficoRendimiento = new Chart(ctx, {
                 type: 'bar',
                 data: {
-                    labels: labels.map(l => l.toUpperCase()),
+                    labels: labels,
                     datasets: [{
-                        label: `PUNTOS`,
+                        label: `PUNTOS ACUMULADOS`,
                         data: puntuaciones,
                         backgroundColor: '#e5a93c', 
                         borderColor: '#000000',     
                         borderWidth: 1.5,
                         borderRadius: 3,
-                        barThickness: 14,          
+                        barThickness: 16,          
                         categoryPercentage: 1.0,
                         barPercentage: 1.0    
                     }]
@@ -337,10 +350,19 @@
                     responsive: true,
                     maintainAspectRatio: false, 
                     scales: {
-                        x: { beginAtZero: true, max: 1000, ticks: { color: '#1a1a1a', font: { size: 10, weight: 'bold' } }, grid: { color: '#f4f4f5' } },
-                        y: { ticks: { color: '#1a1a1a', font: { size: 10, weight: 'bold' }, padding: 6, autoSkip: false }, grid: { display: false } }
+                        x: { 
+                            beginAtZero: true, 
+                            ticks: { color: '#1a1a1a', font: { size: 10, weight: 'bold' } }, 
+                            grid: { color: '#f4f4f5' } 
+                        },
+                        y: { 
+                            ticks: { color: '#1a1a1a', font: { size: 10, weight: 'bold' }, padding: 8, autoSkip: false }, 
+                            grid: { display: false } 
+                        }
                     },
-                    plugins: { legend: { display: false } }
+                    plugins: { 
+                        legend: { display: false } 
+                    }
                 }
             });
         }

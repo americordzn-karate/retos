@@ -6,10 +6,13 @@
     <title>Portal Reto del Mes - Senshi-Kan</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
+        /* Personalización de colores institucionales de la academia */
         .bg-brand-black { background-color: #1a1a1a; }
         .text-brand-gold { color: #d4af37; }
         .bg-brand-gold { background-color: #d4af37; }
         .border-brand-gold { border-color: #d4af37; }
+        
+        /* Estilo personalizado para el menú desplegable flotante de autocompletado */
         .sugerencias-lista {
             max-height: 200px;
             overflow-y: auto;
@@ -30,7 +33,7 @@
             <h2 class="text-xl font-bold text-gray-800 mb-2 flex items-center gap-2">
                 🥋 <span class="tracking-wide">IDENTIFICACIÓN DEL ALUMNO</span>
             </h2>
-            <p class="text-gray-600 text-sm mb-4">Empieza a escribir tu nombre y selecciónalo de la lista para ingresar al portal.</p>
+            <p class="text-gray-600 text-sm mb-4">Empieza a escribir tu nombre y selecciónalo de la lista para ingresar automáticamente al portal.</p>
             
             <div class="flex flex-col relative">
                 <div class="w-full relative">
@@ -53,7 +56,7 @@
             <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
                 <div>
                     <h3 class="text-2xl font-bold text-brand-gold tracking-wide">¡Hola, <span id="txtNombreAlumno">---</span>!</h3>
-                    <p class="text-gray-400 text-xs mt-1 italic">Bienvenido a tu panel de seguimiento.</p>
+                    <p class="text-gray-400 text-xs mt-1 italic">Bienvenido a tu panel de seguimiento y retos activos.</p>
                 </div>
                 <div class="flex gap-6 bg-neutral-800 px-4 py-2 rounded border border-neutral-700 w-full md:w-auto justify-around">
                     <div class="text-center">
@@ -76,29 +79,32 @@
                 <div class="bg-gray-50 border border-gray-200 p-4 rounded-lg text-center shadow-inner">
                     <h3 class="text-sm font-semibold text-gray-500 uppercase tracking-wider">Puntos Acumulados (Mes Actual)</h3>
                     <p id="puntosMesActual" class="text-4xl font-extrabold text-brand-black mt-2">0</p>
+                    <span class="text-xs text-gray-400 block mt-1">Suma de todos tus retos completados en este ciclo</span>
                 </div>
                 <div class="bg-gray-50 border border-gray-200 p-4 rounded-lg text-center shadow-inner">
                     <h3 class="text-sm font-semibold text-gray-500 uppercase tracking-wider">Historial (Mes Anterior)</h3>
                     <p id="puntosMesAnterior" class="text-4xl font-extrabold text-neutral-500 mt-2">0</p>
+                    <span class="text-xs text-gray-400 block mt-1">Puntos oficiales del cierre del mes pasado</span>
                 </div>
             </div>
 
             <div class="mt-8 border-t pt-6">
                 <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2 mb-4">
-                    <h3 id="tituloGrafica" class="text-xs font-bold text-gray-700 uppercase tracking-wider">
+                    <h3 id="tituloGrafica" class="text-xs font-bold text-gray-700 uppercase tracking-wider flex items-center gap-1">
                         📈 RANKING GENERAL (MES ACTUAL)
                     </h3>
                     <div class="inline-flex rounded-md shadow-sm">
-                        <button id="btnGraficaActual" class="bg-brand-black text-brand-gold text-xs font-bold px-3 py-1.5 rounded-l border border-brand-gold focus:outline-none">
+                        <button id="btnGraficaActual" class="bg-brand-black text-brand-gold text-xs font-bold px-3 py-1.5 rounded-l border border-brand-gold transition-colors focus:outline-none">
                             Mes Actual
                         </button>
-                        <button id="btnGraficaAnterior" class="bg-gray-200 text-gray-700 hover:bg-gray-300 text-xs font-bold px-3 py-1.5 rounded-r border-t border-b border-r border-gray-300 focus:outline-none">
+                        <button id="btnGraficaAnterior" class="bg-gray-200 text-gray-700 hover:bg-gray-300 text-xs font-bold px-3 py-1.5 rounded-r border-t border-b border-r border-gray-300 transition-colors focus:outline-none">
                             Mes Anterior
                         </button>
                     </div>
                 </div>
 
-                <div id="contenedorGrafica" class="space-y-3 max-h-72 overflow-y-auto pr-2"></div>
+                <div id="contenedorGrafica" class="space-y-3 max-h-72 overflow-y-auto pr-2">
+                    </div>
                 
                 <div class="flex justify-between text-neutral-400 text-[10px] font-mono mt-3 pl-28 border-t pt-1">
                     <span>0 pts</span>
@@ -114,7 +120,8 @@
             <h2 class="text-2xl font-bold text-gray-800 mb-4 tracking-wide border-b-2 border-gray-200 pb-2 flex items-center gap-2">
                 🎯 <span>RETOS DISPONIBLES ESTE MES</span>
             </h2>
-            <div id="contenedorRetos" class="grid grid-cols-1 md:grid-cols-2 gap-6"></div>
+            <div id="contenedorRetos" class="grid grid-cols-1 md:grid-cols-2 gap-6">
+            </div>
         </section>
 
     </main>
@@ -153,10 +160,10 @@
         async function inicializarPortal() {
             try {
                 const respuesta = await fetch(WEB_APP_URL);
-                if (!respuesta.ok) throw new Error("Error en red.");
+                if (!respuesta.ok) throw new Error("Error en la conexión con el servidor.");
                 
                 const datos = await respuesta.json();
-                
+
                 baseDatosAlumnos = datos.alumnos || [];
                 baseDatosRetos   = datos.retos || [];
                 datosDashboard   = datos.dashboard || { actual: {}, anterior: {} };
@@ -179,7 +186,8 @@
                 verificarSesionExistente();
 
             } catch (error) {
-                mostrarAlerta("Error al conectar con la base de datos.");
+                console.error("Error cargando portal:", error);
+                mostrarAlerta("Error al conectar con la base de datos de Karate. Recarga la página.");
             }
         }
 
@@ -203,7 +211,7 @@
 
             alumnosFiltrados.forEach(alumno => {
                 const divOpcion = document.createElement("div");
-                divOpcion.className = "px-4 py-2 hover:bg-gray-100 cursor-pointer text-sm text-gray-700 border-b last:border-b-0";
+                divOpcion.className = "px-4 py-2 hover:bg-gray-100 cursor-pointer text-sm text-gray-700 transition-colors border-b last:border-b-0";
                 divOpcion.textContent = alumno.nombre.trim();
                 
                 divOpcion.addEventListener("click", () => {
@@ -224,13 +232,17 @@
             );
 
             if (!alumnoEncontrado) {
-                mostrarAlerta("El nombre no coincide.");
+                mostrarAlerta("El nombre ingresado no coincide con ningún alumno activo.");
                 ocultarModulos();
                 return;
             }
 
             alertaAlumno.classList.add("hidden");
+
             sessionStorage.setItem("nombreAlumno", alumnoEncontrado.nombre.trim());
+            sessionStorage.setItem("estaturaAlumno", alumnoEncontrado.estatura);
+            sessionStorage.setItem("pesoAlumno", alumnoEncontrado.peso);
+
             activarInterfazAlumno(alumnoEncontrado);
         }
 
@@ -241,6 +253,8 @@
                 if (alumnoObjeto) {
                     buscadorAlumno.value = alumnoObjeto.nombre.trim();
                     activarInterfazAlumno(alumnoObjeto);
+                } else {
+                    sessionStorage.clear();
                 }
             }
         }
@@ -252,8 +266,11 @@
             txtEstatura.textContent     = alumno.estatura || "N/A";
             txtPeso.textContent         = alumno.peso || "N/A";
 
-            puntosMesActual.textContent   = datosDashboard.actual[nombreLimpio] || 0;
-            puntosMesAnterior.textContent = datosDashboard.anterior[nombreLimpio] || 0;
+            const ptsActual   = datosDashboard.actual[nombreLimpio] || 0;
+            const ptsAnterior = datosDashboard.anterior[nombreLimpio] || 0;
+            
+            puntosMesActual.textContent   = ptsActual;
+            puntosMesAnterior.textContent = ptsAnterior;
 
             panelBienvenida.classList.remove("hidden");
             seccionTablero.classList.remove("hidden");
@@ -269,12 +286,12 @@
 
             if (mes === "actual") {
                 tituloGrafica.innerHTML = "📈 RANKING GENERAL (MES ACTUAL)";
-                btnGraficaActual.className = "bg-brand-black text-brand-gold text-xs font-bold px-3 py-1.5 rounded-l border border-brand-gold focus:outline-none";
-                btnGraficaAnterior.className = "bg-gray-200 text-gray-700 hover:bg-gray-300 text-xs font-bold px-3 py-1.5 rounded-r border-t border-b border-r border-gray-300 focus:outline-none";
+                btnGraficaActual.className = "bg-brand-black text-brand-gold text-xs font-bold px-3 py-1.5 rounded-l border border-brand-gold transition-colors focus:outline-none";
+                btnGraficaAnterior.className = "bg-gray-200 text-gray-700 hover:bg-gray-300 text-xs font-bold px-3 py-1.5 rounded-r border-t border-b border-r border-gray-300 transition-colors focus:outline-none";
             } else {
                 tituloGrafica.innerHTML = "📈 RANKING GENERAL (MES ANTERIOR)";
-                btnGraficaActual.className = "bg-gray-200 text-gray-700 hover:bg-gray-300 text-xs font-bold px-3 py-1.5 rounded-l border-t border-b border-l border-gray-300 focus:outline-none";
-                btnGraficaAnterior.className = "bg-brand-black text-brand-gold text-xs font-bold px-3 py-1.5 rounded-r border border-brand-gold focus:outline-none";
+                btnGraficaActual.className = "bg-gray-200 text-gray-700 hover:bg-gray-300 text-xs font-bold px-3 py-1.5 rounded-l border-t border-b border-l border-gray-300 transition-colors focus:outline-none";
+                btnGraficaAnterior.className = "bg-brand-black text-brand-gold text-xs font-bold px-3 py-1.5 rounded-r border border-brand-gold transition-colors focus:outline-none";
             }
 
             construirGraficaDesempeño();
@@ -294,82 +311,4 @@
         function calcularEdad(fechaNacimientoStr) {
             if (!fechaNacimientoStr) return 15;
             const fechaNac = new Date(fechaNacimientoStr);
-            if (isNaN(fechaNac.getTime())) return 15;
-            const hoy = new Date();
-            let edad = hoy.getFullYear() - fechaNac.getFullYear();
-            const mes = hoy.getMonth() - fechaNac.getMonth();
-            if (mes < 0 || (mes === 0 && hoy.getDate() < fechaNac.getDate())) edad--;
-            return edad;
-        }
-
-        function construirGraficaDesempeño() {
-            contenedorGrafica.innerHTML = "";
-            const origenDatos = mesSeleccionadoGrafica === "actual" ? datosDashboard.actual : datosDashboard.anterior;
-
-            if (!origenDatos || Object.keys(origenDatos).length === 0) {
-                contenedorGrafica.innerHTML = `<p class="text-gray-400 text-xs py-4 italic text-center">No hay registros de puntuaciones.</p>`;
-                return;
-            }
-
-            const listaRanking = Object.keys(origenDatos)
-                .map(nombre => ({ nombre: nombre.trim(), puntos: parseInt(origenDatos[nombre]) || 0 }))
-                .filter(item => item.puntos > 0)
-                .sort((a, b) => b.puntos - a.puntos);
-
-            if (listaRanking.length === 0) {
-                contenedorGrafica.innerHTML = `<p class="text-gray-400 text-xs py-4 italic text-center">Aún no hay alumnos con puntos.</p>`;
-                return;
-            }
-
-            listaRanking.forEach(item => {
-                const porcentaje = Math.min((item.puntos / 1000) * 100, 100);
-                const renglon = document.createElement("div");
-                renglon.className = "flex items-center gap-3";
-                renglon.innerHTML = `
-                    <div class="w-24 md:w-28 text-xs font-bold text-gray-700 truncate text-right">${item.nombre}</div>
-                    <div class="flex-1 bg-gray-200 rounded h-6 overflow-hidden relative shadow-inner border border-gray-300">
-                        <div class="bg-brand-gold h-full rounded border-r-2 border-yellow-600" style="width: ${porcentaje}%"></div>
-                        <span class="absolute inset-0 flex items-center pl-3 text-xs font-black text-brand-black">${item.puntos} pts</span>
-                    </div>
-                `;
-                contenedorGrafica.appendChild(renglon);
-            });
-        }
-
-        function construirTarjetasRetos(nombreAlumno, fechaNacimiento) {
-            contenedorRetos.innerHTML = "";
-            const edadAlumno = calcularEdad(fechaNacimiento);
-
-            const retosFiltrados = baseDatosRetos.filter(reto => {
-                const categoria = reto.categoria.toLowerCase().trim();
-                if (categoria === "" || categoria === "todos") return true;
-                if (edadAlumno <= 10) {
-                    return categoria.includes("infantil") && !categoria.includes("juvenil");
-                } else {
-                    return categoria.includes("juvenil") || categoria.includes("adultos");
-                }
-            });
-
-            if (retosFiltrados.length === 0) {
-                contenedorRetos.innerHTML = `<p class="text-gray-500 col-span-2 text-center py-4 bg-white rounded border">No hay retos disponibles.</p>`;
-                return;
-            }
-
-            retosFiltrados.forEach(reto => {
-                const urlDestino = `${reto.url}?nombre=${encodeURIComponent(nombreAlumno)}&edad=${edadAlumno}&reto=${encodeURIComponent(reto.nombre)}`;
-                const tarjeta = document.createElement("div");
-                tarjeta.className = "bg-white border-2 border-gray-200 rounded-lg p-5 shadow-sm flex flex-col justify-between";
-                tarjeta.innerHTML = `
-                    <div>
-                        <span class="inline-block text-xs font-semibold px-2 py-1 rounded bg-amber-100 text-amber-800 uppercase mb-2">${reto.categoria}</span>
-                        <h4 class="text-xl font-bold text-gray-800 mb-2">${reto.nombre}</h4>
-                        <p class="text-sm text-gray-600 mb-4">Completa las actividades para sumar puntos.</p>
-                    </div>
-                    <a href="${urlDestino}" class="block text-center bg-brand-black text-brand-gold font-bold py-3 px-4 rounded tracking-wide border border-brand-gold">INICIAR RETO</a>
-                `;
-                contenedorRetos.appendChild(tarjeta);
-            });
-        }
-    </script>
-</body>
-</html>
+            if (isNaN(

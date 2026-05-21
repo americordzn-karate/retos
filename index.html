@@ -89,9 +89,20 @@
             </div>
 
             <div class="mt-8 border-t pt-6">
-                <h3 class="text-xs font-bold text-gray-700 uppercase tracking-wider mb-4 flex items-center gap-1">
-                    📈 RANKING GENERAL DE ACUMULADOS (MES ACTUAL)
-                </h3>
+                <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2 mb-4">
+                    <h3 id="tituloGrafica" class="text-xs font-bold text-gray-700 uppercase tracking-wider flex items-center gap-1">
+                        📈 RANKING GENERAL (MES ACTUAL)
+                    </h3>
+                    <div class="inline-flex rounded-md shadow-sm">
+                        <button id="btnGraficaActual" class="bg-brand-black text-brand-gold text-xs font-bold px-3 py-1.5 rounded-l border border-brand-gold transition-colors focus:outline-none">
+                            Mes Actual
+                        </button>
+                        <button id="btnGraficaAnterior" class="bg-gray-200 text-gray-700 hover:bg-gray-300 text-xs font-bold px-3 py-1.5 rounded-r border-t border-b border-r border-gray-300 transition-colors focus:outline-none">
+                            Mes Anterior
+                        </button>
+                    </div>
+                </div>
+
                 <div id="contenedorGrafica" class="space-y-3 max-h-72 overflow-y-auto pr-2">
                     </div>
                 
@@ -123,6 +134,8 @@
         let baseDatosAlumnos = [];
         let baseDatosRetos = [];
         let datosDashboard = { actual: {}, anterior: {} };
+        let registroFechasAlumnos = {}; // Mapeo auxiliar de la primera fecha de registro por alumno
+        let mesSeleccionadoGrafica = "actual";
 
         // Elementos del DOM recuperados
         const buscadorAlumno         = document.getElementById("buscadorAlumno");
@@ -133,6 +146,10 @@
         const seccionRetos         = document.getElementById("seccionRetos");
         const contenedorRetos      = document.getElementById("contenedorRetos");
         const contenedorGrafica    = document.getElementById("contenedorGrafica");
+        const tituloGrafica        = document.getElementById("tituloGrafica");
+        
+        const btnGraficaActual     = document.getElementById("btnGraficaActual");
+        const btnGraficaAnterior   = document.getElementById("btnGraficaAnterior");
         
         const txtNombreAlumno      = document.getElementById("txtNombreAlumno");
         const txtEstatura          = document.getElementById("txtEstatura");
@@ -155,23 +172,26 @@
                 baseDatosAlumnos = datos.alumnos || [];
                 baseDatosRetos   = datos.retos || [];
                 datosDashboard   = datos.dashboard || { actual: {}, anterior: {} };
+                
+                // Mapear el historial de logs para indexar cuándo cumplió cada alumno por primera vez
+                analizarFechasDeLog(datos.historialLog || []);
 
                 if (baseDatosAlumnos.length === 0) {
                     mostrarAlerta("No hay alumnos vigentes registrados en la tabla de Sheets.");
                     return;
                 }
 
-                // Escuchamos lo que escribe el alumno para filtrar en tiempo real
                 buscadorAlumno.addEventListener("input", manejarEscrituraBuscador);
                 
-                // Cerrar las sugerencias si hacen clic fuera del input
+                btnGraficaActual.addEventListener("click", () => cambiarMesGrafica("actual"));
+                btnGraficaAnterior.addEventListener("click", () => cambiarMesGrafica("anterior"));
+
                 document.addEventListener("click", (e) => {
                     if (e.target !== buscadorAlumno && e.target !== contenedorSugerencias) {
                         contenedorSugerencias.classList.add("hidden");
                     }
                 });
 
-                // Restaurar sesión previa si existe
                 verificarSesionExistente();
 
             } catch (error) {
@@ -180,7 +200,25 @@
             }
         }
 
-        // LÓGICA FILTRADO DE AUTOCOMPLETADO ASCENDENTE
+        // PROCESA EL HISTORIAL DE COMPETICIÓN PARA CALCULAR LA CRONOLOGÍA DE DESEMPATE
+        function analizarFechasDeLog(logs) {
+            registroFechasAlumnos = {};
+            if (!Array.isArray(logs)) return;
+
+            // Ordenamos los logs de Sheets cronológicamente de forma ascendente (el más antiguo primero)
+            const logsOrdenados = [...logs].sort((a, b) => new Date(a.fecha) - new Date(b.fecha));
+
+            logsOrdenados.forEach(log => {
+                if (log.nombre_alumno && log.fecha) {
+                    const nombreClave = log.nombre_alumno.trim().toLowerCase();
+                    // Guardamos únicamente el primer momento histórico en el que registró puntos este mes
+                    if (!registroFechasAlumnos[nombreClave]) {
+                        registroFechasAlumnos[nombreClave] = new Date(log.fecha).getTime();
+                    }
+                }
+            });
+        }
+
         function manejarEscrituraBuscador() {
             const textoBuscar = buscadorAlumno.value.trim().toLowerCase();
             contenedorSugerencias.innerHTML = "";
@@ -190,7 +228,6 @@
                 return;
             }
 
-            // Filtrado: únicamente los que INICIEN con los caracteres escritos, ordenados de la A a la Z
             const alumnosFiltrados = baseDatosAlumnos
                 .filter(alumno => alumno.nombre.trim().toLowerCase().startsWith(textoBuscar))
                 .sort((a, b) => a.nombre.trim().localeCompare(b.nombre.trim()));
@@ -200,13 +237,11 @@
                 return;
             }
 
-            // Construir dinámicamente el menú desplegable flotante
             alumnosFiltrados.forEach(alumno => {
                 const divOpcion = document.createElement("div");
                 divOpcion.className = "px-4 py-2 hover:bg-gray-100 cursor-pointer text-sm text-gray-700 transition-colors border-b last:border-b-0";
                 divOpcion.textContent = alumno.nombre.trim();
                 
-                // AL HACER CLIC: Autocompleta e ingresa automáticamente sin usar botones adicionales
                 divOpcion.addEventListener("click", () => {
                     buscadorAlumno.value = alumno.nombre.trim();
                     contenedorSugerencias.classList.add("hidden");
@@ -219,7 +254,6 @@
             contenedorSugerencias.classList.remove("hidden");
         }
 
-        // PROCESAMIENTO AUTOMÁTICO DE INGRESO
         function procesarIngresoAlumno(nombreSeleccionado) {
             const alumnoEncontrado = baseDatosAlumnos.find(
                 a => a.nombre.trim().toLowerCase() === nombreSeleccionado.toLowerCase()
@@ -233,12 +267,10 @@
 
             alertaAlumno.classList.add("hidden");
 
-            // Guardado persistente de datos de sesión
             sessionStorage.setItem("nombreAlumno", alumnoEncontrado.nombre.trim());
             sessionStorage.setItem("estaturaAlumno", alumnoEncontrado.estatura);
             sessionStorage.setItem("pesoAlumno", alumnoEncontrado.peso);
 
-            // Activación del Dashboard y renderizado de módulos
             activarInterfazAlumno(alumnoEncontrado);
         }
 
@@ -256,29 +288,41 @@
         }
 
         function activarInterfazAlumno(alumno) {
-            // Limpieza de nombres
             const nombreLimpio = alumno.nombre.trim();
 
-            // Asignación de datos antropométricos corregida de sintaxis
             txtNombreAlumno.textContent = nombreLimpio;
             txtEstatura.textContent     = alumno.estatura || "N/A";
             txtPeso.textContent         = alumno.peso || "N/A";
 
-            // Extracción de puntajes desde el JSON del backend
             const ptsActual   = datosDashboard.actual[nombreLimpio] || 0;
             const ptsAnterior = datosDashboard.anterior[nombreLimpio] || 0;
             
             puntosMesActual.textContent   = ptsActual;
             puntosMesAnterior.textContent = ptsAnterior;
 
-            // Mostrar los módulos visuales
             panelBienvenida.classList.remove("hidden");
             seccionTablero.classList.remove("hidden");
             seccionRetos.classList.remove("hidden");
 
-            // Renderizar la gráfica y las tarjetas
             construirGraficaDesempeño();
             construirTarjetasRetos(nombreLimpio, alumno.fechaNacimiento);
+        }
+
+        function cambiarMesGrafica(mes) {
+            if (mesSeleccionadoGrafica === mes) return;
+            mesSeleccionadoGrafica = mes;
+
+            if (mes === "actual") {
+                tituloGrafica.innerHTML = "📈 RANKING GENERAL (MES ACTUAL)";
+                btnGraficaActual.className = "bg-brand-black text-brand-gold text-xs font-bold px-3 py-1.5 rounded-l border border-brand-gold transition-colors focus:outline-none";
+                btnGraficaAnterior.className = "bg-gray-200 text-gray-700 hover:bg-gray-300 text-xs font-bold px-3 py-1.5 rounded-r border-t border-b border-r border-gray-300 transition-colors focus:outline-none";
+            } else {
+                tituloGrafica.innerHTML = "📈 RANKING GENERAL (MES ANTERIOR)";
+                btnGraficaActual.className = "bg-gray-200 text-gray-700 hover:bg-gray-300 text-xs font-bold px-3 py-1.5 rounded-l border-t border-b border-l border-gray-300 transition-colors focus:outline-none";
+                btnGraficaAnterior.className = "bg-brand-black text-brand-gold text-xs font-bold px-3 py-1.5 rounded-r border border-brand-gold transition-colors focus:outline-none";
+            }
+
+            construirGraficaDesempeño();
         }
 
         function ocultarModulos() {
@@ -306,21 +350,41 @@
             return edad;
         }
 
+        // LÓGICA DE ORDENAMIENTO DE DOBLE CRITERIO (PUNTOS DESCENDENTE -> FECHA ASCENDENTE)
         function construirGraficaDesempeño() {
             contenedorGrafica.innerHTML = "";
-            
-            if (!datosDashboard.actual || Object.keys(datosDashboard.actual).length === 0) {
-                contenedorGrafica.innerHTML = `<p class="text-gray-400 text-xs py-2 italic text-center">No hay registros de puntuaciones en este mes.</p>`;
+            const origenDatos = mesSeleccionadoGrafica === "actual" ? datosDashboard.actual : datosDashboard.anterior;
+
+            if (!origenDatos || Object.keys(origenDatos).length === 0) {
+                contenedorGrafica.innerHTML = `<p class="text-gray-400 text-xs py-4 italic text-center">No hay registros de puntuaciones en este ciclo.</p>`;
                 return;
             }
 
-            const listaRanking = Object.keys(datosDashboard.actual)
-                .map(nombre => ({ nombre: nombre.trim(), puntos: parseInt(datosDashboard.actual[nombre]) || 0 }))
-                .filter(item => item.puntos > 0)
-                .sort((a, b) => b.puntos - a.puntos);
+            const listaRanking = Object.keys(origenDatos)
+                .map(nombre => {
+                    const nombreLimpio = nombre.trim();
+                    const claveBusqueda = nombreLimpio.toLowerCase();
+                    // Si no tiene fecha registrada en el log, se le asigna por defecto el momento actual en milisegundos
+                    const timestampFecha = registroFechasAlumnos[claveBusqueda] || Date.now();
+                    
+                    return { 
+                        nombre: nombreLimpio, 
+                        puntos: parseInt(origenDatos[nombre]) || 0,
+                        fechaRegistro: timestampFecha
+                    };
+                })
+                .filter(item => item.puntos > 0);
+
+            // APLICACIÓN DEL ALGORITMO DE DOBLE FILTRO
+            listaRanking.sort((a, b) => {
+                if (b.puntos !== a.puntos) {
+                    return b.puntos - a.puntos; // Criterio 1: Mayor Puntaje va arriba
+                }
+                return a.fechaRegistro - b.fechaRegistro; // Criterio 2: El que registró primero (fecha menor/más antigua) va arriba
+            });
 
             if (listaRanking.length === 0) {
-                contenedorGrafica.innerHTML = `<p class="text-gray-400 text-xs py-2 italic text-center">Aún no hay alumnos con puntos acumulados en el ciclo actual.</p>`;
+                contenedorGrafica.innerHTML = `<p class="text-gray-400 text-xs py-4 italic text-center">Aún no hay alumnos con puntos acumulados en este ciclo.</p>`;
                 return;
             }
 

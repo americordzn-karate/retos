@@ -119,10 +119,10 @@
     </main>
 
     <script>
-        // URL de tu Web App de Google Apps Script (Exactamente la tuya)
+        // URL de tu Web App de Google Apps Script
         const WEB_APP_URL = "https://script.google.com/macros/s/AKfycbzuiaSD1HuWO_1xqMNpLL6519ZKsS1jeOkDEgL9OmvZxq889918sYw9HKpnSXDbcxDmQA/exec";
 
-        // Estructuras de datos en memoria masiva descargada del Servidor
+        // Estructuras de datos en memoria descargada del Servidor
         let baseDatosAlumnos = [];
         let baseDatosRetos = [];
         let datosDashboard = { actual: {}, anterior: {} };
@@ -195,10 +195,10 @@
                 return;
             }
 
-            // Filtrado: únicamente los que INICIEN con los caracteres escritos, ordenados alfabéticamente (A-Z)
+            // Filtrado: únicamente los que INICIEN con los caracteres escritos (limpiando espacios del nombre), ordenados de la A a la Z
             const alumnosFiltrados = baseDatosAlumnos
-                .filter(alumno => alumno.nombre.toLowerCase().startsWith(textoBuscar))
-                .sort((a, b) => a.nombre.localeCompare(b.nombre));
+                .filter(alumno => alumno.nombre.trim().toLowerCase().startsWith(textoBuscar))
+                .sort((a, b) => a.nombre.trim().localeCompare(b.nombre.trim()));
 
             if (alumnosFiltrados.length === 0) {
                 contenedorSugerencias.classList.add("hidden");
@@ -209,11 +209,11 @@
             alumnosFiltrados.forEach(alumno => {
                 const divOpcion = document.createElement("div");
                 divOpcion.className = "px-4 py-2 hover:bg-gray-100 cursor-pointer text-sm text-gray-700 transition-colors border-b last:border-b-0";
-                divOpcion.textContent = alumno.nombre;
+                divOpcion.textContent = alumno.nombre.trim();
                 
                 // Al dar clic sobre una sugerencia, se autocompleta el input y se cierra la lista
                 divOpcion.addEventListener("click", () => {
-                    buscadorAlumno.value = alumno.nombre;
+                    buscadorAlumno.value = alumno.nombre.trim();
                     contenedorSugerencias.classList.add("hidden");
                 });
                 
@@ -233,7 +233,7 @@
             }
 
             const alumnoEncontrado = baseDatosAlumnos.find(
-                a => a.nombre.toLowerCase() === nombreSeleccionado.toLowerCase()
+                a => a.nombre.trim().toLowerCase() === nombreSeleccionado.toLowerCase()
             );
 
             if (!alumnoEncontrado) {
@@ -245,7 +245,7 @@
             alertaAlumno.classList.add("hidden");
 
             // Guardado persistente obligatorio de datos de sesión
-            sessionStorage.setItem("nombreAlumno", alumnoEncontrado.nombre);
+            sessionStorage.setItem("nombreAlumno", alumnoEncontrado.nombre.trim());
             sessionStorage.setItem("estaturaAlumno", alumnoEncontrado.estatura);
             sessionStorage.setItem("pesoAlumno", alumnoEncontrado.peso);
 
@@ -256,10 +256,9 @@
         function verificarSesionExistente() {
             const nombreGuardado = sessionStorage.getItem("nombreAlumno");
             if (nombreGuardado) {
-                const sigueVigente = baseDatosAlumnos.find(a => a.nombre.toLowerCase() === text => text.nombre.toLowerCase() === nombreGuardado.toLowerCase());
-                const alumnoObjeto = baseDatosAlumnos.find(a => a.nombre.toLowerCase() === nombreGuardado.toLowerCase());
+                const alumnoObjeto = baseDatosAlumnos.find(a => a.nombre.trim().toLowerCase() === nombreGuardado.toLowerCase());
                 if (alumnoObjeto) {
-                    buscadorAlumno.value = alumnoObjeto.nombre;
+                    buscadorAlumno.value = alumnoObjeto.nombre.trim();
                     activarInterfazAlumno(alumnoObjeto);
                 } else {
                     sessionStorage.clear();
@@ -269,13 +268,14 @@
 
         function activarInterfazAlumno(alumno) {
             // Asignación de datos antropométricos
-            txtNombreAlumno.textContent = alumno.nombre;
+            txtNombreAlumno.textContent = alumno.nombre.trim();
             txtEstatura.textContent     = alumno.estatura || "N/A";
-            txtPeso.textContent         = alumno.peso || "N/A";
+            txtPeso             = document.getElementById("txtPeso");
+            if(txtPeso) txtPeso.textContent = alumno.peso || "N/A";
 
             // Extracción y cálculo de puntajes del Dashboard desde el JSON del backend
-            const ptsActual   = datosDashboard.actual[alumno.nombre] || 0;
-            const ptsAnterior = datosDashboard.anterior[alumno.nombre] || 0;
+            const ptsActual   = datosDashboard.actual[alumno.nombre.trim()] || 0;
+            const ptsAnterior = datosDashboard.anterior[alumno.nombre.trim()] || 0;
             
             puntosMesActual.textContent   = ptsActual;
             puntosMesAnterior.textContent = ptsAnterior;
@@ -289,7 +289,7 @@
             construirGraficaDesempeño();
 
             // Cargar los retos específicos por edad
-            construirTarjetasRetos(alumno.nombre, alumno.fechaNacimiento);
+            construirTarjetasRetos(alumno.nombre.trim(), alumno.fechaNacimiento);
         }
 
         function ocultarModulos() {
@@ -328,7 +328,7 @@
 
             // Mapear, filtrar alumnos con puntajes mayores a 0, y ordenar descendentemente
             const listaRanking = Object.keys(datosDashboard.actual)
-                .map(nombre => ({ nombre, puntos: parseInt(datosDashboard.actual[nombre]) || 0 }))
+                .map(nombre => ({ nombre: nombre.trim(), puntos: parseInt(datosDashboard.actual[nombre]) || 0 }))
                 .filter(item => item.puntos > 0)
                 .sort((a, b) => b.puntos - a.puntos);
 

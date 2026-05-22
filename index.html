@@ -105,7 +105,7 @@
                     <span>250 pts</span>
                     <span>500 pts</span>
                     <span>750 pts</span>
-                    <span class="font-bold text-brand-gold">1,000 pts</span>
+                    <span>1,000 pts</span>
                 </div>
             </div>
         </section>
@@ -120,7 +120,7 @@
     </main>
 
     <script>
-        const WEB_APP_URL = "https://script.google.com/macros/s/AKfycbwk1sf4B--H1WxEnRsmdjBKZgiqM1pFvcHoyb1Tni9-MZ81M7NRM28YfPU8FEHO7KG4KA/exec";
+        const WEB_APP_URL = "https://script.google.com/macros/s/AKfycbx-HblajsORhiS0C6ZbJ-RsooJVE2uWMEE6mB4Miag7-7slpusjkAgyS51gyRU_xcsseg/exec";
 
         let baseDatosAlumnos = [];
         let baseDatosRetos = [];
@@ -130,7 +130,7 @@
 
         const buscadorAlumno         = document.getElementById("buscadorAlumno");
         const contenedorSugerencias  = document.getElementById("contenedorSugerencias");
-        const alertaAlumno         = document.getElementById("alertaAlumno");
+        const alertaAlumno           = document.getElementById("alertaAlumno");
         const panelBienvenida      = document.getElementById("panelBienvenida");
         const seccionTablero       = document.getElementById("seccionTablero");
         const seccionRetos         = document.getElementById("seccionRetos");
@@ -374,9 +374,8 @@
                 const hashClave = `${nombreAlumno}_${reto.nombre}`;
                 const realizadosHoy = intentosHoy[hashClave] || 0;
                 
-                // Flexibilidad de lectura: Intenta leer en minúsculas o con la nomenclatura exacta "Diario_Permitido"
-                const rawLimite = reto.diario_permitido !== undefined ? reto.diario_permitido : reto.Diario_Permitido;
-                const limiteMaximo  = parseInt(rawLimite) || 999; 
+                // CORRECCIÓN CLAVE: Cambiado para leer 'limiteDiario' tal cual se envía desde Script.txt
+                const limiteMaximo  = parseInt(reto.limiteDiario) || 999; 
                 
                 let botonHTML = "";
                 if (realizadosHoy >= limiteMaximo) {

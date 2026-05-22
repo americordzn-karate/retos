@@ -120,7 +120,7 @@
     </main>
 
     <script>
-        const WEB_APP_URL = "https://script.google.com/macros/s/AKfycbxDvUisSfA0TpZ9WVcfTWTV8kzXre6pomPPbeCCYV1yUcD9c9u146Kh9aiHkcIf4FNfBw/exec";
+        const WEB_APP_URL = "https://script.google.com/macros/s/AKfycbwX5w8iiwkJVbGtpz-5f20U9jue2MC0vouE3blkHXo9CIMqg9bvCZrAYE8WKxH4gXGWzg/exec";
 
         let baseDatosAlumnos = [];
         let baseDatosRetos = [];
@@ -256,7 +256,7 @@
             txtPeso.textContent         = alumno.peso || "N/A";
 
             puntosMesActual.textContent   = datosDashboard.actual[nombreLimpio] || 0;
-            puntosMesAnterior.textContent = datosDashboard.anterior[nombreLimpio] || 0;
+            puntosMesAnterior.textContent = datosDashboard.anterior[nombreLiopio] || 0;
 
             panelBienvenida.classList.remove("hidden");
             seccionTablero.classList.remove("hidden");
@@ -374,8 +374,7 @@
                 const hashClave = `${nombreAlumno}_${reto.nombre}`;
                 const realizadosHoy = intentosHoy[hashClave] || 0;
                 
-                // Flexibilidad de lectura: Intenta leer en minúsculas o con la nomenclatura exacta "Diario_Permitido"
-                const rawLimite = reto.diario_permitido !== undefined ? reto.diario_permitido : reto.Diario_Permitido;
+                const rawLimite = reto.diario_permitido !== undefined ? reto.diario_permitido : 999;
                 const limiteMaximo  = parseInt(rawLimite) || 999; 
                 
                 let botonHTML = "";
@@ -390,7 +389,7 @@
                 tarjeta.innerHTML = `
                     <div>
                         <div class="flex justify-between items-start mb-2">
-                            <span class="inline-block text-xs font-semibold px-2 py-1 rounded bg-amber-100 text-amber-800 uppercase">${reto.categoria}</span>
+                            <span class="inline-block text-xs font-semibold px-2 py-1 rounded bg-amber-100 text-amber-800 uppercase">${reto.categoria || 'General'}</span>
                             <div class="flex items-center gap-0.5">${estrellasHTML}</div>
                         </div>
                         <h4 class="text-xl font-bold text-gray-800 mb-2">${reto.nombre}</h4>

@@ -25,208 +25,364 @@
     </header>
 
     <main class="max-w-4xl mx-auto px-4 py-8">
-        <section class="bg-white rounded-lg p-6 shadow-md mb-8 border border-gray-200">
-            <h2 class="text-xl font-bold text-gray-800 mb-4 flex items-center gap-2">
-                <span>🥋</span> Identificación del Alumno
+        
+        <section class="bg-white rounded-lg p-6 shadow-sm mb-8 border-t-4 border-brand-black">
+            <h2 class="text-xl font-bold text-gray-800 mb-2 flex items-center gap-2">
+                🥋 <span class="tracking-wide">IDENTIFICACIÓN DEL ALUMNO</span>
             </h2>
-            <div class="relative">
-                <label for="buscar-alumno" class="block text-sm font-medium text-gray-700 mb-1">Escribe tu nombre completo:</label>
-                <input type="text" id="buscar-alumno" placeholder="Ej. Juan Pérez..." class="w-full border-2 border-gray-300 rounded px-4 py-2 text-lg focus:outline-none focus:border-brand-black transition-colors" autocomplete="off">
-                <div id="sugerencias" class="absolute left-0 right-0 bg-white border border-gray-300 rounded mt-1 shadow-lg hidden sugerencias-lista"></div>
-            </div>
-
-            <div id="perfil-sesion" class="mt-4 p-4 bg-amber-50 border border-amber-200 rounded hidden flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
-                <div>
-                    <p class="text-xs font-semibold text-amber-700 uppercase tracking-wider">Sesión Activa</p>
-                    <h3 id="sesion-nombre" class="text-lg font-bold text-gray-900"></h3>
-                    <p id="sesion-detalles" class="text-sm text-gray-600"></p>
+            <p class="text-gray-600 text-sm mb-4">Empieza a escribir tu nombre y selecciónalo de la lista para ingresar automáticamente al portal.</p>
+            
+            <div class="flex flex-col relative">
+                <div class="w-full relative">
+                    <label for="buscadorAlumno" class="block text-xs font-bold text-gray-700 uppercase mb-1 tracking-wider">Escribe tu Nombre:</label>
+                    <input 
+                        type="text"
+                        id="buscadorAlumno" 
+                        autocomplete="off"
+                        placeholder="Busca tu nombre aquí..." 
+                        class="w-full border-2 border-gray-300 rounded px-3 py-2 focus:outline-none focus:border-brand-black transition-colors"
+                    >
+                    <div id="contenedorSugerencias" class="hidden absolute left-0 right-0 mt-1 bg-white border border-gray-300 rounded shadow-lg sugerencias-lista"></div>
                 </div>
-                <button id="btn-cerrar-sesion" class="text-sm bg-red-100 hover:bg-red-200 text-red-700 font-medium py-1 px-3 rounded transition-colors">
-                    Cambiar de Alumno
-                </button>
+            </div>
+            
+            <div id="alertaAlumno" class="hidden mt-4 bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded text-sm font-semibold"></div>
+        </section>
+
+        <section id="panelBienvenida" class="hidden bg-brand-black text-white rounded-lg p-6 shadow-md mb-8 border-2 border-brand-gold transition-all">
+            <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+                <div>
+                    <h3 class="text-2xl font-bold text-brand-gold tracking-wide">¡Hola, <span id="txtNombreAlumno">---</span>!</h3>
+                    <p class="text-gray-400 text-xs mt-1 italic">Bienvenido a tu panel de seguimiento.</p>
+                </div>
+                <div class="flex gap-6 bg-neutral-800 px-4 py-2 rounded border border-neutral-700 w-full md:w-auto justify-around">
+                    <div class="text-center">
+                        <span class="block text-xs text-gray-400 uppercase tracking-widest">Estatura</span>
+                        <span class="text-lg font-bold text-brand-gold"><span id="txtEstatura">0</span> cm</span>
+                    </div>
+                    <div class="text-center border-l border-neutral-600 pl-6">
+                        <span class="block text-xs text-gray-400 uppercase tracking-widest">Peso</span>
+                        <span class="text-lg font-bold text-brand-gold"><span id="txtPeso">0</span> kg</span>
+                    </div>
+                </div>
             </div>
         </section>
 
-        <section>
-            <h2 class="text-2xl font-bold text-gray-800 mb-6 flex items-center gap-2">
-                <span>🏆</span> Retos Disponibles para Ti
+        <section id="seccionTablero" class="hidden bg-white rounded-lg p-6 shadow-sm mb-8 border-t-4 border-brand-gold">
+            <h2 class="text-xl font-bold text-gray-800 mb-4 tracking-wide flex items-center gap-2">
+                📊 <span>TU RENDIMIENTO DE PUNTOS</span>
             </h2>
-            <div id="contenedor-retos" class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <p id="mensaje-retos" class="text-gray-500 italic col-span-full text-center py-8 bg-white rounded border border-dashed border-gray-300">
-                    Por favor, selecciona tu nombre arriba para visualizar los retos y tus intentos disponibles.
-                </p>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div class="bg-gray-50 border border-gray-200 p-4 rounded-lg text-center shadow-inner">
+                    <h3 class="text-sm font-semibold text-gray-500 uppercase tracking-wider">Puntos Acumulados (Mes Actual)</h3>
+                    <p id="puntosMesActual" class="text-4xl font-extrabold text-brand-black mt-2">0</p>
+                </div>
+                <div class="bg-gray-50 border border-gray-200 p-4 rounded-lg text-center shadow-inner">
+                    <h3 class="text-sm font-semibold text-gray-500 uppercase tracking-wider">Historial (Mes Anterior)</h3>
+                    <p id="puntosMesAnterior" class="text-4xl font-extrabold text-neutral-500 mt-2">0</p>
+                </div>
+            </div>
+
+            <div class="mt-8 border-t pt-6">
+                <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2 mb-4">
+                    <h3 id="tituloGrafica" class="text-xs font-bold text-gray-700 uppercase tracking-wider">
+                        📈 RANKING GENERAL (MES ACTUAL)
+                    </h3>
+                    <div class="inline-flex rounded-md shadow-sm">
+                        <button id="btnGraficaActual" class="bg-brand-black text-brand-gold text-xs font-bold px-3 py-1.5 rounded-l border border-brand-gold focus:outline-none">
+                            Mes Actual
+                        </button>
+                        <button id="btnGraficaAnterior" class="bg-gray-200 text-gray-700 hover:bg-gray-300 text-xs font-bold px-3 py-1.5 rounded-r border-t border-b border-r border-gray-300 focus:outline-none">
+                            Mes Anterior
+                        </button>
+                    </div>
+                </div>
+
+                <div id="contenedorGrafica" class="space-y-3 max-h-72 overflow-y-auto pr-2"></div>
+                
+                <div class="flex justify-between text-neutral-400 text-[10px] font-mono mt-3 pl-28 border-t pt-1">
+                    <span>0 pts</span>
+                    <span>250 pts</span>
+                    <span>500 pts</span>
+                    <span>750 pts</span>
+                    <span class="font-bold text-brand-gold">1,000 pts</span>
+                </div>
             </div>
         </section>
+
+        <section id="seccionRetos" class="hidden mb-8">
+            <h2 class="text-2xl font-bold text-gray-800 mb-4 tracking-wide border-b-2 border-gray-200 pb-2 flex items-center gap-2">
+                🎯 <span>RETOS DISPONIBLES ESTE MES</span>
+            </h2>
+            <div id="contenedorRetos" class="grid grid-cols-1 md:grid-cols-2 gap-6"></div>
+        </section>
+
     </main>
 
     <script>
-        // CONFIGURACIÓN PRINCIPAL: Reemplaza con la URL de tu Web App de Google Apps Script
-        const WEB_APP_URL = "https://script.google.com/macros/s/AKfycbx-HblajsORhiS0C6ZbJ-RsooJVE2uWMEE6mB4Miag7-7slpusjkAgyS51gyRU_xcsseg/exec";
+        const WEB_APP_URL = "https://script.google.com/macros/s/AKfycbxD1-Nc9-0ns2TJSzajwhFCDK0hg4SpFl4DoAAsrPjFXojAq9jo3ZZvYpYGhKdGCsMYGQ/exec";
 
-        let BD_ALUMNOS = [];
-        let BD_RETOS = [];
-        let BD_LOGS = [];
-        let alumnoSeleccionado = null;
+        let baseDatosAlumnos = [];
+        let baseDatosRetos = [];
+        let datosDashboard = { actual: {}, anterior: {} };
+        let intentosHoy = {}; 
+        let mesSeleccionadoGrafica = "actual";
 
-        document.addEventListener("DOMContentLoaded", () => {
-            inicializarElementos();
-            cargarDatosDesdeServidor();
-            verificarSesionExistente();
+        const buscadorAlumno         = document.getElementById("buscadorAlumno");
+        const contenedorSugerencias  = document.getElementById("contenedorSugerencias");
+        const alertaAlumno         = document.getElementById("alertaAlumno");
+        const panelBienvenida      = document.getElementById("panelBienvenida");
+        const seccionTablero       = document.getElementById("seccionTablero");
+        const seccionRetos         = document.getElementById("seccionRetos");
+        const contenedorRetos      = document.getElementById("contenedorRetos");
+        const contenedorGrafica    = document.getElementById("contenedorGrafica");
+        const tituloGrafica        = document.getElementById("tituloGrafica");
+        
+        const btnGraficaActual     = document.getElementById("btnGraficaActual");
+        const btnGraficaAnterior   = document.getElementById("btnGraficaAnterior");
+        
+        const txtNombreAlumno            = document.getElementById("txtNombreAlumno");
+        const txtEstatura                = document.getElementById("txtEstatura");
+        const txtPeso                    = document.getElementById("txtPeso");
+        const puntosMesActual            = document.getElementById("puntosMesActual");
+        const puntosMesAnterior          = document.getElementById("puntosMesAnterior");
+
+        window.addEventListener("DOMContentLoaded", () => {
+            inicializarPortal();
         });
 
-        function inicializarElementos() {
-            const inputBuscar = document.getElementById("buscar-alumno");
-            const btnCerrar = document.getElementById("btn-cerrar-sesion");
-
-            inputBuscar.addEventListener("input", manejarEscrituraBusqueda);
-            inputBuscar.addEventListener("focus", () => { if(inputBuscar.value.trim().length >= 2) mostrarSugerencias(); });
-            
-            // Cerrar sugerencias al hacer clic fuera
-            document.addEventListener("click", (e) => {
-                if (e.target !== inputBuscar && !document.getElementById("sugerencias").contains(e.target)) {
-                    ocultarSugerencias();
-                }
-            });
-
-            btnCerrar.addEventListener("click", cerrarSesionAlumno);
-        }
-
-        async function cargarDatosDesdeServidor() {
+        async function inicializarPortal() {
             try {
                 const respuesta = await fetch(WEB_APP_URL);
+                if (!respuesta.ok) throw new Error("El servidor de Google no respondió correctamente.");
+                
                 const datos = await respuesta.json();
                 
-                if (datos && datos.alumnos && datos.catalogoRetos) {
-                    BD_ALUMNOS = datos.alumnos;
-                    BD_RETOS = datos.catalogoRetos;
-                    BD_LOGS = datos.resultadosLog || [];
-                    
-                    // Si ya había una sesión guardada, refrescar los retos con los datos nuevos
-                    if (alumnoSeleccionado) {
-                        // Actualizar objeto por si cambiaron datos en la hoja
-                        alumnoSeleccionado = BD_ALUMNOS.find(a => a.nombre === alumnoSeleccionado.nombre) || alumnoSeleccionado;
-                        renderizarRetos();
-                    }
+                baseDatosAlumnos = datos.alumnos || [];
+                baseDatosRetos   = datos.retos || [];
+                datosDashboard   = datos.dashboard || { actual: {}, anterior: {} };
+                intentosHoy      = datos.intentosHoy || {}; 
+
+                if (baseDatosAlumnos.length === 0) {
+                    mostrarAlerta("Atención: El servidor respondió, pero la lista de alumnos vigentes está vacía.");
+                    return;
                 }
+
+                buscadorAlumno.addEventListener("input", manejarEscrituraBuscador);
+                btnGraficaActual.addEventListener("click", () => cambiarMesGrafica("actual"));
+                btnGraficaAnterior.addEventListener("click", () => cambiarMesGrafica("anterior"));
+
+                document.addEventListener("click", (e) => {
+                    if (e.target !== buscadorAlumno && e.target !== contenedorSugerencias) {
+                        contenedorSugerencias.classList.add("hidden");
+                    }
+                });
+
+                verificarSesionExistente();
+
             } catch (error) {
-                console.error("Error al conectar con el backend:", error);
+                console.error("Error:", error);
+                mostrarAlerta("Error de conexión: No se pudo leer la base de datos de Google Sheets.");
             }
+        }
+
+        function manejarEscrituraBuscador() {
+            const textoBuscar = buscadorAlumno.value.trim().toLowerCase();
+            contenedorSugerencias.innerHTML = "";
+
+            if (textoBuscar === "") {
+                contenedorSugerencias.classList.add("hidden");
+                return;
+            }
+
+            const alumnosFiltrados = baseDatosAlumnos
+                .filter(alumno => alumno.nombre.trim().toLowerCase().startsWith(textoBuscar))
+                .sort((a, b) => a.nombre.trim().localeCompare(b.nombre.trim()));
+
+            if (alumnosFiltrados.length === 0) {
+                contenedorSugerencias.classList.add("hidden");
+                return;
+            }
+
+            alumnosFiltrados.forEach(alumno => {
+                const divOpcion = document.createElement("div");
+                divOpcion.className = "px-4 py-2 hover:bg-gray-100 cursor-pointer text-sm text-gray-700 border-b last:border-b-0";
+                divOpcion.textContent = alumno.nombre.trim();
+                
+                divOpcion.addEventListener("click", () => {
+                    buscadorAlumno.value = alumno.nombre.trim();
+                    contenedorSugerencias.classList.add("hidden");
+                    procesarIngresoAlumno(alumno.nombre.trim());
+                });
+                
+                contenedorSugerencias.appendChild(divOpcion);
+            });
+
+            contenedorSugerencias.classList.remove("hidden");
+        }
+
+        function procesarIngresoAlumno(nombreSeleccionado) {
+            const alumnoEncontrado = baseDatosAlumnos.find(
+                a => a.nombre.trim().toLowerCase() === nombreSeleccionado.toLowerCase()
+            );
+
+            if (!alumnoEncontrado) {
+                mostrarAlerta("El nombre ingresado no coincide con ningún alumno activo.");
+                ocultarModulos();
+                return;
+            }
+
+            alertaAlumno.classList.add("hidden");
+            sessionStorage.setItem("nombreAlumno", alumnoEncontrado.nombre.trim());
+            activarInterfazAlumno(alumnoEncontrado);
         }
 
         function verificarSesionExistente() {
-            const sesionGuardada = localStorage.getItem("karate_alumno_sesion");
-            if (sesionGuardada) {
-                alumnoSeleccionado = JSON.parse(sesionGuardada);
-                mostrarPerfilSesion();
+            const nombreGuardado = sessionStorage.getItem("nombreAlumno");
+            if (nombreGuardado) {
+                const alumnoObjeto = baseDatosAlumnos.find(a => a.nombre.trim().toLowerCase() === nombreGuardado.toLowerCase());
+                if (alumnoObjeto) {
+                    buscadorAlumno.value = alumnoObjeto.nombre.trim();
+                    activarInterfazAlumno(alumnoObjeto);
+                }
             }
         }
 
-        function manejarEscrituraBusqueda(e) {
-            const texto = e.target.value.trim().toLowerCase();
-            const divSugerencias = document.getElementById("sugerencias");
+        function activarInterfazAlumno(alumno) {
+            const nombreLimpio = alumno.nombre.trim();
 
-            if (texto.length < 2) {
-                ocultarSugerencias();
-                return;
-            }
+            txtNombreAlumno.textContent = nombreLimpio;
+            txtEstatura.textContent     = alumno.estatura || "N/A";
+            txtPeso.textContent         = alumno.peso || "N/A";
 
-            // Filtrar alumnos vigentes
-            const filtrados = BD_ALUMNOS.filter(alumno => 
-                alumno.nombre.toLowerCase().includes(texto)
-            );
+            puntosMesActual.textContent   = datosDashboard.actual[nombreLimpio] || 0;
+            puntosMesAnterior.textContent = datosDashboard.anterior[nombreLimpio] || 0;
 
-            if (filtrados.length === 0) {
-                divSugerencias.innerHTML = `<div class="p-3 text-sm text-gray-500 italic">No se encontraron alumnos vigentes con ese nombre</div>`;
+            panelBienvenida.classList.remove("hidden");
+            seccionTablero.classList.remove("hidden");
+            seccionRetos.classList.remove("hidden");
+
+            construirGraficaDesempeño();
+            construirTarjetasRetos(nombreLimpio, alumno.fechaNacimiento);
+        }
+
+        function cambiarMesGrafica(mes) {
+            if (mesSeleccionadoGrafica === mes) return;
+            mesSeleccionadoGrafica = mes;
+
+            if (mes === "actual") {
+                tituloGrafica.innerHTML = "📈 RANKING GENERAL (MES ACTUAL)";
+                btnGraficaActual.className = "bg-brand-black text-brand-gold text-xs font-bold px-3 py-1.5 rounded-l border border-brand-gold focus:outline-none";
+                btnGraficaAnterior.className = "bg-gray-200 text-gray-700 hover:bg-gray-300 text-xs font-bold px-3 py-1.5 rounded-r border-t border-b border-r border-gray-300 focus:outline-none";
             } else {
-                divSugerencias.innerHTML = filtrados.map(alumno => `
-                    <div class="p-3 text-base text-gray-800 hover:bg-amber-100 cursor-pointer border-b border-gray-100 font-medium" 
-                         onclick="seleccionarAlumno('${alumno.nombre.replace(/'/g, "\\'")}')">
-                        ${alumno.nombre}
-                    </div>
-                `).join("");
+                tituloGrafica.innerHTML = "📈 RANKING GENERAL (MES ANTERIOR)";
+                btnGraficaActual.className = "bg-gray-200 text-gray-700 hover:bg-gray-300 text-xs font-bold px-3 py-1.5 rounded-l border-t border-b border-l border-gray-300 focus:outline-none";
+                btnGraficaAnterior.className = "bg-brand-black text-brand-gold text-xs font-bold px-3 py-1.5 rounded-r border border-brand-gold focus:outline-none";
             }
-            mostrarSugerencias();
+
+            construirGraficaDesempeño();
         }
 
-        function mostrarSugerencias() { document.getElementById("sugerencias").classList.remove("hidden"); }
-        function ocultarSugerencias() { document.getElementById("sugerencias").classList.add("hidden"); }
-
-        function seleccionarAlumno(nombre) {
-            const alumno = BD_ALUMNOS.find(a => a.nombre === nombre);
-            if (!alumno) return;
-
-            alumnoSeleccionado = alumno;
-            localStorage.setItem("karate_alumno_sesion", JSON.stringify(alumno));
-            
-            document.getElementById("buscar-alumno").value = "";
-            ocultarSugerencias();
-            mostrarPerfilSesion();
-            renderizarRetos();
+        function ocultarModulos() {
+            panelBienvenida.classList.add("hidden");
+            seccionTablero.classList.add("hidden");
+            seccionRetos.classList.add("hidden");
         }
 
-        function mostrarPerfilSesion() {
-            document.getElementById("buscar-alumno").parentElement.classList.add("hidden");
-            document.getElementById("sesion-nombre").textContent = alumnoSeleccionado.nombre;
-            
-            const edad = alumnoSeleccionado.fecha_nacimiento ? calcularEdad(alumnoSeleccionado.fecha_nacimiento) + " años" : "N/D";
-            document.getElementById("sesion-detalles").textContent = `Estatura: ${alumnoSeleccionado.estatura_cm || 'N/D'} cm | Peso: ${alumnoSeleccionado.peso_kg || 'N/D'} kg | Edad: ${edad}`;
-            document.getElementById("perfil-sesion").classList.remove("hidden");
+        function mostrarAlerta(mensaje) {
+            alertaAlumno.textContent = mensaje;
+            alertaAlumno.classList.remove("hidden");
         }
 
-        function cerrarSesionAlumno() {
-            alumnoSeleccionado = null;
-            localStorage.removeItem("karate_alumno_sesion");
-            
-            document.getElementById("perfil-sesion").classList.add("hidden");
-            document.getElementById("buscar-alumno").parentElement.classList.remove("hidden");
-            
-            const contenedorRetos = document.getElementById("contenedor-retos");
-            contenedorRetos.innerHTML = `
-                <p id="mensaje-retos" class="text-gray-500 italic col-span-full text-center py-8 bg-white rounded border border-dashed border-gray-300">
-                    Por favor, selecciona tu nombre arriba para visualizar los retos y tus intentos disponibles.
-                </p>
-            `;
+        function calcularEdad(fechaNacimientoStr) {
+            if (!fechaNacimientoStr) return 15;
+            const fechaNac = new Date(fechaNacimientoStr);
+            if (isNaN(fechaNac.getTime())) return 15;
+            const hoy = new Date();
+            let edad = hoy.getFullYear() - fechaNac.getFullYear();
+            const mes = hoy.getMonth() - fechaNac.getMonth();
+            if (mes < 0 || (mes === 0 && hoy.getDate() < fechaNac.getDate())) edad--;
+            return edad;
         }
 
-        function renderizarRetos() {
-            const contenedorRetos = document.getElementById("contenedor-retos");
-            contenedorRetos.innerHTML = "";
+        function construirGraficaDesempeño() {
+            contenedorGrafica.innerHTML = "";
+            const origenDatos = mesSeleccionadoGrafica === "actual" ? datosDashboard.actual : datosDashboard.anterior;
 
-            if (BD_RETOS.length === 0) {
-                contenedorRetos.innerHTML = `<p class="text-gray-500 italic col-span-full text-center py-4">No hay retos configurados en el catálogo actualmente.</p>`;
+            if (!origenDatos || Object.keys(origenDatos).length === 0) {
+                contenedorGrafica.innerHTML = `<p class="text-gray-400 text-xs py-4 italic text-center">No hay registros de puntuaciones.</p>`;
                 return;
             }
 
-            const hoyString = obtenerFechaActualLocalString();
+            const listaRanking = Object.keys(origenDatos)
+                .map(nombre => ({ nombre: nombre.trim(), puntos: parseInt(origenDatos[nombre]) || 0 }))
+                .filter(item => item.puntos > 0)
+                .sort((a, b) => b.puntos - a.puntos);
 
-            BD_RETOS.forEach(reto => {
-                // Calcular intentos realizados hoy para este reto específico por este alumno
-                const realizadosHoy = BD_LOGS.filter(log => {
-                    if (!log.fecha_reto || !log.nombre_alumno || !log.nombre_reto) return false;
-                    const esMismoAlumno = log.nombre_alumno.trim().toLowerCase() === alumnoSeleccionado.nombre.trim().toLowerCase();
-                    const esMismoReto = log.nombre_reto.trim().toLowerCase() === reto.nombre.trim().toLowerCase();
-                    const esHoy = log.fecha_reto.split("T")[0] === hoyString;
-                    return esMismoAlumno && esMismoReto && esHoy;
-                }).length;
+            if (listaRanking.length === 0) {
+                contenedorGrafica.innerHTML = `<p class="text-gray-400 text-xs py-4 italic text-center">Aún no hay alumnos con puntos acumulados.</p>`;
+                return;
+            }
 
-                const limiteMaximo = parseInt(reto.limite_intentos_diarios) || 999;
-                const tieneIntentosDisponibles = realizadosHoy < limiteMaximo;
+            listaRanking.forEach(item => {
+                const porcentaje = Math.min((item.puntos / 1000) * 100, 100);
+                const renglon = document.createElement("div");
+                renglon.className = "flex items-center gap-3";
+                renglon.innerHTML = `
+                    <div class="w-24 md:w-28 text-xs font-bold text-gray-700 truncate text-right">${item.nombre}</div>
+                    <div class="flex-1 bg-gray-200 rounded h-6 overflow-hidden relative shadow-inner border border-gray-300">
+                        <div class="bg-brand-gold h-full rounded border-r-2 border-yellow-600" style="width: ${porcentaje}%"></div>
+                        <span class="absolute inset-0 flex items-center pl-3 text-xs font-black text-brand-black">${item.puntos} pts</span>
+                    </div>
+                `;
+                contenedorGrafica.appendChild(renglon);
+            });
+        }
 
-                // Estrellas de dificultad
-                const dificultad = parseInt(reto.dificultad) || 1;
+        function construirTarjetasRetos(nombreAlumno, fechaNacimiento) {
+            contenedorRetos.innerHTML = "";
+            const edadAlumno = calcularEdad(fechaNacimiento);
+
+            const retosFiltrados = baseDatosRetos.filter(reto => {
+                const category = reto.categoria.toLowerCase().trim();
+                if (category === "" || category === "todos") return true;
+                if (edadAlumno <= 10) {
+                    return category.includes("infantil") && !category.includes("juvenil");
+                } else {
+                    return category.includes("juvenil") || category.includes("adultos");
+                }
+            });
+
+            if (retosFiltrados.length === 0) {
+                contenedorRetos.innerHTML = `<p class="text-gray-500 col-span-2 text-center py-4 bg-white rounded border">No hay retos disponibles para tu categoría.</p>`;
+                return;
+            }
+
+            retosFiltrados.forEach(reto => {
+                const urlDestino = `${reto.url}?nombre=${encodeURIComponent(nombreAlumno)}&edad=${edadAlumno}&reto=${encodeURIComponent(reto.nombre)}`;
+                
+                const numEstrellas = parseInt(reto.popularidad) || 0;
                 let estrellasHTML = "";
-                for (let i = 1; i <= 5; i++) {
-                    estrellasHTML += `<span class="${i <= dificultad ? 'text-amber-400' : 'text-gray-300'} text-lg">★</span>`;
+                for (let i = 0; i < 5; i++) {
+                    if (i < numEstrellas) {
+                        estrellasHTML += `<span class="text-yellow-500 text-lg drop-shadow-sm">★</span>`;
+                    } else {
+                        estrellasHTML += `<span class="text-white text-lg drop-shadow-[0_1px_1px_rgba(0,0,0,0.2)]" style="-webkit-text-stroke: 1px #d1d5db;">★</span>`;
+                    }
                 }
 
-                // Generar URL destino pasando los parámetros dinámicos del alumno y reto
-                const urlDestino = `${reto.url_app_web}?alumno=${encodeURIComponent(alumnoSeleccionado.nombre)}&estatura=${encodeURIComponent(alumnoSeleccionado.estatura_cm || "")}&peso=${encodeURIComponent(alumnoSeleccionado.peso_kg || "")}&reto=${encodeURIComponent(reto.nombre)}`;
-
+                const hashClave = `${nombreAlumno}_${reto.nombre}`;
+                const realizadosHoy = intentosHoy[hashClave] || 0;
+                
+                // Flexibilidad de lectura: Intenta leer en minúsculas o con la nomenclatura exacta "Diario_Permitido"
+                const rawLimite = reto.diario_permitido !== undefined ? reto.diario_permitido : reto.Diario_Permitido;
+                const limiteMaximo  = parseInt(rawLimite) || 999; 
+                
                 let botonHTML = "";
-                if (!tieneIntentosDisponibles) {
-                    botonHTML = `<button disabled class="w-full text-center bg-gray-300 text-gray-500 font-bold py-3 px-4 rounded tracking-wide cursor-not-allowed uppercase">Límite Diario Alcanzado</button>`;
+                if (realizadosHoy >= limiteMaximo) {
+                    botonHTML = `<button disabled class="w-full text-center bg-gray-300 text-gray-500 font-bold py-3 px-4 rounded tracking-wide border border-gray-400 cursor-not-allowed uppercase text-xs">LÍMITE DIARIO ALCANZADO</button>`;
                 } else {
-                    botonHTML = `<a href="${urlDestino}" class="block text-center bg-brand-black text-brand-gold hover:bg-neutral-800 font-bold py-3 px-4 rounded tracking-wide border border-brand-gold transition-colors">INICIAR RETO</a>`;
+                    botonHTML = `<a href="${urlDestino}" class="block text-center bg-brand-black text-brand-gold font-bold py-3 px-4 rounded tracking-wide border border-brand-gold">INICIAR RETO</a>`;
                 }
 
                 const tarjeta = document.createElement("div");
@@ -234,7 +390,7 @@
                 tarjeta.innerHTML = `
                     <div>
                         <div class="flex justify-between items-start mb-2">
-                            <span class="inline-block text-xs font-semibold px-2 py-1 rounded bg-amber-100 text-amber-800 uppercase">${reto.categoria || "General"}</span>
+                            <span class="inline-block text-xs font-semibold px-2 py-1 rounded bg-amber-100 text-amber-800 uppercase">${reto.categoria}</span>
                             <div class="flex items-center gap-0.5">${estrellasHTML}</div>
                         </div>
                         <h4 class="text-xl font-bold text-gray-800 mb-2">${reto.nombre}</h4>
@@ -245,22 +401,6 @@
                 `;
                 contenedorRetos.appendChild(tarjeta);
             });
-        }
-
-        function calcularEdad(fechaString) {
-            if(!fechaString) return "";
-            const fechaNac = new Date(fechaString);
-            if (isNaN(fechaNac.getTime())) return "";
-            const dif = Date.now() - fechaNac.getTime();
-            const edadFecha = new Date(dif);
-            return Math.abs(edadFecha.getUTCFullYear() - 1970);
-        }
-
-        function obtenerFechaActualLocalString() {
-            const d = new Date();
-            const offset = d.getTimezoneOffset();
-            const local = new Date(d.getTime() - (offset * 60 * 1000));
-            return local.toISOString().split('T')[0];
         }
     </script>
 </body>

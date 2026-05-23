@@ -148,6 +148,12 @@
         const puntosMesAnterior          = document.getElementById("puntosMesAnterior");
 
         window.addEventListener("DOMContentLoaded", () => {
+            const urlParams = new URLSearchParams(window.location.search);
+    
+    // Si existe el parámetro 't', significa que venimos de terminar un reto
+    if (urlParams.has('t')) {
+        console.log("Regreso detectado, forzando actualización de estados...");
+        // Aquí llamas a tu función que consulta a Google Sheets para refrescar los contadores
             inicializarPortal();
         });
 

@@ -147,17 +147,35 @@
         const puntosMesActual            = document.getElementById("puntosMesActual");
         const puntosMesAnterior          = document.getElementById("puntosMesAnterior");
 
-        window.addEventListener("DOMContentLoaded", () => {
+        // 1. Manejador estándar al cargar la página por primera vez o con parámetros
+window.addEventListener("DOMContentLoaded", () => {
     const urlParams = new URLSearchParams(window.location.search);
 
-    // Si existe el parámetro 't', procesamos el regreso del reto
     if (urlParams.has('t')) {
-        console.log("Regreso detectado, forzando actualización de estados...");
-        // Aquí puedes meter lógica extra en el futuro si lo requieres
+        console.log("Regreso detectado vía botón web, forzando actualización...");
     }
 
-    // Inicializamos el portal SIEMPRE, ya sea primera entrada o regreso
+    // Inicializamos el portal normalmente
     inicializarPortal();
+});
+
+// 2. BLINDAJE CRÍTICO: Detectar si se regresa usando el botón "Atrás" del navegador
+window.addEventListener("pageshow", (event) => {
+    // 'event.persisted' es true si la página se cargó desde la caché de retroceso (botón atrás)
+    // O si el rendimiento de navegación indica que es un movimiento en el historial back_forward
+    const entradaHistorial = performance.getEntriesByType("navigation")[0];
+    const esBotonAtras = event.persisted || (entradaHistorial && entradaHistorial.type === "back_forward");
+
+    if (esBotonAtras) {
+        console.warn("Se detectó regreso por botón del navegador. Forzando recarga limpia...");
+        
+        // Agregamos un timestamp dinámico para destruir cualquier intento de caché
+        const currentUrl = new URL(window.location.href);
+        currentUrl.searchParams.set('t', new Date().getTime());
+        
+        // Redireccionamos a sí mismo forzando la petición real al servidor
+        window.location.replace(currentUrl.href);
+    }
 });
 
         async function inicializarPortal() {

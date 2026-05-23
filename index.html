@@ -148,14 +148,17 @@
         const puntosMesAnterior          = document.getElementById("puntosMesAnterior");
 
         window.addEventListener("DOMContentLoaded", () => {
-            const urlParams = new URLSearchParams(window.location.search);
-    
-    // Si existe el parámetro 't', significa que venimos de terminar un reto
+    const urlParams = new URLSearchParams(window.location.search);
+
+    // Si existe el parámetro 't', procesamos el regreso del reto
     if (urlParams.has('t')) {
         console.log("Regreso detectado, forzando actualización de estados...");
-        // Aquí llamas a tu función que consulta a Google Sheets para refrescar los contadores
-            inicializarPortal();
-        });
+        // Aquí puedes meter lógica extra en el futuro si lo requieres
+    }
+
+    // Inicializamos el portal SIEMPRE, ya sea primera entrada o regreso
+    inicializarPortal();
+});
 
         async function inicializarPortal() {
             try {

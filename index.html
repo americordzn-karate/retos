@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Portal Reto del Mes - Senshi-Kan</title>
+    <title>Portal de Retos - Senshi-Kan</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
         .bg-brand-black { background-color: #1a1a1a; }
@@ -15,6 +15,14 @@
             overflow-y: auto;
             z-index: 50;
         }
+        #contenedorProgreso { display: none; }
+#barraProgreso {
+    height: 100%;
+    width: 0%;
+    background-color: #d4af37;
+    border-radius: 0.25rem;
+    transition: width 0.3s ease;
+}
     </style>
 </head>
 <body class="bg-gray-100 min-h-screen font-sans">
@@ -42,6 +50,12 @@
                         placeholder="Busca tu nombre aquí..." 
                         class="w-full border-2 border-gray-300 rounded px-3 py-2 focus:outline-none focus:border-brand-black transition-colors"
                     >
+                    <div id="contenedorProgreso" class="w-full mt-2">
+    <div class="w-full bg-gray-200 rounded overflow-hidden relative" style="height: 28px;">
+        <div id="barraProgreso"></div>
+        <span class="absolute inset-0 flex items-center justify-center text-xs font-bold text-gray-700 tracking-wider">Cargando listado...</span>
+    </div>
+</div>
                     <div id="contenedorSugerencias" class="hidden absolute left-0 right-0 mt-1 bg-white border border-gray-300 rounded shadow-lg sugerencias-lista"></div>
                 </div>
             </div>
@@ -179,39 +193,85 @@ window.addEventListener("pageshow", (event) => {
 });
 
         async function inicializarPortal() {
-            try {
-                const respuesta = await fetch(WEB_APP_URL);
-                if (!respuesta.ok) throw new Error("El servidor de Google no respondió correctamente.");
-                
-                const datos = await respuesta.json();
-                
-                baseDatosAlumnos = datos.alumnos || [];
-                baseDatosRetos   = datos.retos || [];
-                datosDashboard   = datos.dashboard || { actual: {}, anterior: {} };
-                intentosHoy      = datos.intentosHoy || {}; 
+    // --- INICIO: Lógica de la barra de progreso ---
+    const contenedorProgreso = document.getElementById("contenedorProgreso");
+    const barraProgreso      = document.getElementById("barraProgreso");
 
-                if (baseDatosAlumnos.length === 0) {
-                    mostrarAlerta("Atención: El servidor respondió, pero la lista de alumnos vigentes está vacía.");
-                    return;
-                }
+    // Deshabilitar el campo de búsqueda mientras carga
+    buscadorAlumno.disabled = true;
+    buscadorAlumno.placeholder = "Espera un momento...";
+    buscadorAlumno.classList.add("bg-gray-100", "cursor-not-allowed");
 
-                buscadorAlumno.addEventListener("input", manejarEscrituraBuscador);
-                btnGraficaActual.addEventListener("click", () => cambiarMesGrafica("actual"));
-                btnGraficaAnterior.addEventListener("click", () => cambiarMesGrafica("anterior"));
+    // Mostrar la barra de progreso
+    contenedorProgreso.style.display = "block";
 
-                document.addEventListener("click", (e) => {
-                    if (e.target !== buscadorAlumno && e.target !== contenedorSugerencias) {
-                        contenedorSugerencias.classList.add("hidden");
-                    }
-                });
+    // Animación simulada: avanza hasta 90% mientras espera al servidor
+    let progresoActual = 0;
+    const intervalo = setInterval(() => {
+        // Desacelera progresivamente para no llegar al 100% antes de tiempo
+        const incremento = (90 - progresoActual) * 0.06;
+        progresoActual = Math.min(progresoActual + incremento, 90);
+        barraProgreso.style.width = progresoActual + "%";
+    }, 150);
+    // --- FIN: Lógica de la barra de progreso ---
 
-                verificarSesionExistente();
+    try {
+        const respuesta = await fetch(WEB_APP_URL);
+        if (!respuesta.ok) throw new Error("El servidor de Google no respondió correctamente.");
+        
+        const datos = await respuesta.json();
+        
+        baseDatosAlumnos = datos.alumnos || [];
+        baseDatosRetos   = datos.retos || [];
+        datosDashboard   = datos.dashboard || { actual: {}, anterior: {} };
+        intentosHoy      = datos.intentosHoy || {}; 
 
-            } catch (error) {
-                console.error("Error:", error);
-                mostrarAlerta("Error de conexión: No se pudo leer la base de datos de Google Sheets.");
-            }
+        // --- INICIO: Completar y ocultar la barra ---
+        clearInterval(intervalo);
+        barraProgreso.style.width = "100%";
+        setTimeout(() => {
+            contenedorProgreso.style.display = "none";
+            barraProgreso.style.width = "0%";
+        }, 400); // Pequeña pausa para que el usuario vea el 100% antes de que desaparezca
+        // --- FIN: Completar y ocultar la barra ---
+
+        // Rehabilitar el campo de búsqueda
+        buscadorAlumno.disabled = false;
+        buscadorAlumno.placeholder = "Busca tu nombre aquí...";
+        buscadorAlumno.classList.remove("bg-gray-100", "cursor-not-allowed");
+
+        if (baseDatosAlumnos.length === 0) {
+            mostrarAlerta("Atención: El servidor respondió, pero la lista de alumnos vigentes está vacía.");
+            return;
         }
+
+        buscadorAlumno.addEventListener("input", manejarEscrituraBuscador);
+        btnGraficaActual.addEventListener("click", () => cambiarMesGrafica("actual"));
+        btnGraficaAnterior.addEventListener("click", () => cambiarMesGrafica("anterior"));
+
+        document.addEventListener("click", (e) => {
+            if (e.target !== buscadorAlumno && e.target !== contenedorSugerencias) {
+                contenedorSugerencias.classList.add("hidden");
+            }
+        });
+
+        verificarSesionExistente();
+
+    } catch (error) {
+        // En caso de error, también detener y ocultar la barra
+        clearInterval(intervalo);
+        contenedorProgreso.style.display = "none";
+        barraProgreso.style.width = "0%";
+
+        // Rehabilitar el campo (aunque fallara)
+        buscadorAlumno.disabled = false;
+        buscadorAlumno.placeholder = "Busca tu nombre aquí...";
+        buscadorAlumno.classList.remove("bg-gray-100", "cursor-not-allowed");
+
+        console.error("Error:", error);
+        mostrarAlerta("Error de conexión: No se pudo leer la base de datos de Google Sheets.");
+    }
+}
 
         function manejarEscrituraBuscador() {
             const textoBuscar = buscadorAlumno.value.trim().toLowerCase();

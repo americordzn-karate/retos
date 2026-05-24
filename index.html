@@ -418,7 +418,7 @@ window.addEventListener("pageshow", (event) => {
             }
 
             listaRanking.forEach(item => {
-                const porcentaje = Math.min((item.puntos / 1000) * 100, 100);
+                const porcentaje = Math.min((item.puntos / 1000) * 100, 100); // ESCALA DE LA GRÁFICA EN 1000
                 const renglon = document.createElement("div");
                 renglon.className = "flex items-center gap-3";
                 renglon.innerHTML = `

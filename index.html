@@ -455,7 +455,7 @@ panelNivel.innerHTML = `
             }
 
             listaRanking.forEach(item => {
-                const porcentaje = Math.min((item.puntos / 1000) * 100, 100); // ESCALA DE LA GRÁFICA EN 1000
+                const porcentaje = Math.min((item.puntos / 15000) * 100, 100); // ESCALA DE LA GRÁFICA EN 15000
                 const renglon = document.createElement("div");
                 renglon.className = "flex items-center gap-3";
                 renglon.innerHTML = `

@@ -97,7 +97,10 @@
                     <p id="puntosMesAnterior" class="text-4xl font-extrabold text-neutral-500 mt-2">0</p>
                 </div>
             </div>
-
+<div class="mt-6 border-t pt-5">
+                <h3 class="text-xs font-bold text-gray-700 uppercase tracking-wider mb-3">⚔️ TU AVANCE EN EL NIVEL ACTUAL</h3>
+                <div id="contenedorNivelProgreso"></div>
+            </div>
             <div class="mt-8 border-t pt-6">
                 <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2 mb-4">
                     <h3 id="tituloGrafica" class="text-xs font-bold text-gray-700 uppercase tracking-wider">
@@ -364,6 +367,26 @@ panelNivel.innerHTML = `
         <span class="text-[10px] text-neutral-500 mt-0.5">${totalHistorico.toLocaleString()} pts históricos acumulados</span>
     </div>
 `;
+            const porcentajeNivel = infoNivel.esMaximo
+    ? 100
+    : Math.round(((totalHistorico - infoNivel.minActual) / (infoNivel.maxActual - infoNivel.minActual)) * 100);
+
+const posEmoji = Math.max(porcentajeNivel, 4);
+
+const contenedorNivelProgreso = document.getElementById("contenedorNivelProgreso");
+contenedorNivelProgreso.innerHTML = `
+    <div class="flex items-center gap-3">
+        <div class="flex-1 relative" style="height: 28px;">
+            <div class="absolute inset-0 bg-gray-200 rounded shadow-inner border border-gray-300 overflow-hidden">
+                <div class="bg-brand-gold h-full rounded" style="width: ${porcentajeNivel}%"></div>
+            </div>
+            <span class="absolute text-base leading-none" style="left: ${posEmoji}%; top: 50%; transform: translate(-50%, -50%);">🥋</span>
+        </div>
+        <div class="text-xs font-bold text-gray-500 whitespace-nowrap">
+            ${infoNivel.esMaximo ? '🏅 Nivel máximo' : 'Siguiente Nivel'}
+        </div>
+    </div>
+`;
         }
 
         function cambiarMesGrafica(mes) {
@@ -423,11 +446,13 @@ panelNivel.innerHTML = `
     const siguiente = niveles.find(n => n.nivel === actual.nivel + 1);
 
     return {
-        nivel: actual.nivel,
-        insignia: actual.insignia,
-        faltante: siguiente ? (siguiente.min - puntosHistoricos) : 0,
-        esMaximo: actual.nivel === 10
-    };
+    nivel: actual.nivel,
+    insignia: actual.insignia,
+    faltante: siguiente ? (siguiente.min - puntosHistoricos) : 0,
+    esMaximo: actual.nivel === 10,
+    minActual: actual.min,
+    maxActual: actual.max === Infinity ? actual.min : actual.max
+};
 }
         
         function construirGraficaDesempeño() {

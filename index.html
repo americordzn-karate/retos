@@ -505,7 +505,8 @@ contenedorNivelProgreso.innerHTML = `
 
         let imgHTML = "";
         if (anuncio.foto && anuncio.foto !== "") {
-            imgHTML = `<img src="${anuncio.foto}" alt="${anuncio.titulo}" onerror="this.style.display='none'">`;
+            const urlProxy = "https://images.weserv.nl/?url=" + encodeURIComponent(anuncio.foto);
+imgHTML = `<img src="${urlProxy}" alt="${anuncio.titulo}" onerror="this.style.display='none'">`;
         }
 
         let linkHTML = "";

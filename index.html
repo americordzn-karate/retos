@@ -11,7 +11,7 @@
         .bg-brand-gold { background-color: #d4af37; }
         .border-brand-gold { border-color: #d4af37; }
         .sugerencias-lista {
-            max-height: 200px;
+            max-height: 150px;
             overflow-y: auto;
             z-index: 50;
         }
@@ -23,6 +23,61 @@
     border-radius: 0.25rem;
     transition: width 0.3s ease;
 }
+        /* --- Carrusel de Anuncios --- */
+#pistaAnuncios { display: flex; }
+.diapositiva-anuncio {
+    min-width: 100%;
+    box-sizing: border-box;
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    padding: 1rem 1.25rem;
+}
+.diapositiva-anuncio img {
+    width: 90px;
+    height: 90px;
+    object-fit: cover;
+    border-radius: 0.5rem;
+    border: 2px solid #d4af37;
+    flex-shrink: 0;
+}
+.anuncio-contenido { flex: 1; min-width: 0; }
+.anuncio-titulo {
+    font-size: 1rem;
+    font-weight: 800;
+    color: #d4af37;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    margin-bottom: 0.25rem;
+}
+.anuncio-texto {
+    font-size: 0.8rem;
+    color: #e5e7eb;
+    line-height: 1.4;
+    margin-bottom: 0.4rem;
+}
+.anuncio-link {
+    display: inline-block;
+    font-size: 0.7rem;
+    font-weight: 700;
+    color: #1a1a1a;
+    background-color: #d4af37;
+    padding: 0.2rem 0.6rem;
+    border-radius: 0.25rem;
+    text-decoration: none;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+}
+.anuncio-link:hover { background-color: #b8952e; }
+.indicador-anuncio {
+    width: 8px; height: 8px;
+    border-radius: 50%;
+    background-color: #6b7280;
+    cursor: pointer;
+    transition: background-color 0.3s;
+    border: none;
+}
+.indicador-anuncio.activo { background-color: #d4af37; }
     </style>
 </head>
 <body class="bg-gray-100 min-h-screen font-sans">
@@ -33,7 +88,15 @@
     </header>
 
     <main class="max-w-4xl mx-auto px-4 py-8">
-        
+        <!-- ===== TABLERO DE ANUNCIOS ===== -->
+<section id="seccionAnuncios" class="hidden mb-8">
+  <div id="carruselAnuncios" class="relative w-full overflow-hidden rounded-lg shadow-md bg-brand-black border-2 border-brand-gold" style="min-height: 120px;">
+    <div id="pistaAnuncios" class="flex transition-transform duration-500 ease-in-out" style="will-change: transform;"></div>
+    <!-- Indicadores -->
+    <div id="indicadoresAnuncios" class="absolute bottom-2 left-0 right-0 flex justify-center gap-2 z-10"></div>
+  </div>
+</section>
+<!-- ===== FIN TABLERO DE ANUNCIOS ===== -->
         <section class="bg-white rounded-lg p-6 shadow-sm mb-8 border-t-4 border-brand-black">
             <h2 class="text-xl font-bold text-gray-800 mb-2 flex items-center gap-2">
                 🥋 <span class="tracking-wide">IDENTIFICACIÓN DEL ALUMNO</span>
@@ -147,6 +210,9 @@
         let puntosTotales = {};
         let intentosHoy = {}; 
         let mesSeleccionadoGrafica = "actual";
+        let baseDatosAnuncios = [];
+let _carruselIndice = 0;
+let _carruselTimer = null;
 
         const buscadorAlumno         = document.getElementById("buscadorAlumno");
         const contenedorSugerencias  = document.getElementById("contenedorSugerencias");
@@ -226,6 +292,8 @@ window.addEventListener("pageshow", (event) => {
         intentosHoy         = datos.intentosHoy || {};
         datosDashboardFecha = datos.dashboardFecha || { actual: {} };
         puntosTotales = datos.puntosTotales || {};
+        baseDatosAnuncios = datos.anuncios || [];
+construirCarruselAnuncios();
 
         clearInterval(intervalo);
         barraProgreso.style.width = "100%";
@@ -416,6 +484,91 @@ contenedorNivelProgreso.innerHTML = `
             alertaAlumno.textContent = mensaje;
             alertaAlumno.classList.remove("hidden");
         }
+
+        function construirCarruselAnuncios() {
+    const seccion   = document.getElementById("seccionAnuncios");
+    const pista     = document.getElementById("pistaAnuncios");
+    const indicadores = document.getElementById("indicadoresAnuncios");
+
+    if (!baseDatosAnuncios || baseDatosAnuncios.length === 0) {
+        seccion.classList.add("hidden");
+        return;
+    }
+
+    seccion.classList.remove("hidden");
+    pista.innerHTML = "";
+    indicadores.innerHTML = "";
+
+    baseDatosAnuncios.forEach((anuncio, idx) => {
+        const slide = document.createElement("div");
+        slide.className = "diapositiva-anuncio";
+
+        let imgHTML = "";
+        if (anuncio.foto && anuncio.foto !== "") {
+            imgHTML = `<img src="${anuncio.foto}" alt="${anuncio.titulo}" onerror="this.style.display='none'">`;
+        }
+
+        let linkHTML = "";
+        if (anuncio.link && anuncio.link !== "") {
+            linkHTML = `<a href="${anuncio.link}" target="_blank" rel="noopener noreferrer" class="anuncio-link">Ver más →</a>`;
+        }
+
+        let tituloHTML = "";
+        if (anuncio.titulo && anuncio.titulo !== "") {
+            tituloHTML = `<div class="anuncio-titulo">${anuncio.titulo}</div>`;
+        }
+
+        let textoHTML = "";
+        if (anuncio.texto && anuncio.texto !== "") {
+            textoHTML = `<div class="anuncio-texto">${anuncio.texto}</div>`;
+        }
+
+        slide.innerHTML = `
+            ${imgHTML}
+            <div class="anuncio-contenido">
+                ${tituloHTML}
+                ${textoHTML}
+                ${linkHTML}
+            </div>
+        `;
+        pista.appendChild(slide);
+
+        const dot = document.createElement("button");
+        dot.className = "indicador-anuncio" + (idx === 0 ? " activo" : "");
+        dot.setAttribute("aria-label", "Anuncio " + (idx + 1));
+        dot.addEventListener("click", () => {
+            irAAnuncio(idx);
+            reiniciarTimerCarrusel();
+        });
+        indicadores.appendChild(dot);
+    });
+
+    _carruselIndice = 0;
+    actualizarPosicionCarrusel();
+    reiniciarTimerCarrusel();
+}
+
+function irAAnuncio(idx) {
+    _carruselIndice = idx;
+    actualizarPosicionCarrusel();
+}
+
+function actualizarPosicionCarrusel() {
+    const pista = document.getElementById("pistaAnuncios");
+    const dots  = document.querySelectorAll(".indicador-anuncio");
+    if (!pista) return;
+    pista.style.transform = `translateX(-${_carruselIndice * 100}%)`;
+    dots.forEach((d, i) => d.classList.toggle("activo", i === _carruselIndice));
+}
+
+function reiniciarTimerCarrusel() {
+    if (_carruselTimer) clearInterval(_carruselTimer);
+    if (!baseDatosAnuncios || baseDatosAnuncios.length <= 1) return;
+    _carruselTimer = setInterval(() => {
+        _carruselIndice = (_carruselIndice + 1) % baseDatosAnuncios.length;
+        actualizarPosicionCarrusel();
+    }, 4000);
+}
 
         function calcularEdad(fechaNacimientoStr) {
             if (!fechaNacimientoStr) return 15;

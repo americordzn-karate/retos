@@ -194,8 +194,11 @@
                         <button id="btnGraficaActual" class="bg-brand-black text-brand-gold text-xs font-bold px-3 py-1.5 rounded-l border border-brand-gold focus:outline-none">
                             Mes Actual
                         </button>
-                        <button id="btnGraficaAnterior" class="bg-gray-200 text-gray-700 hover:bg-gray-300 text-xs font-bold px-3 py-1.5 rounded-r border-t border-b border-r border-gray-300 focus:outline-none">
+                        <button id="btnGraficaAnterior" class="bg-gray-200 text-gray-700 hover:bg-gray-300 text-xs font-bold px-3 py-1.5 border-t border-b border-r border-gray-300 focus:outline-none">
                             Mes Anterior
+                        </button>
+                        <button id="btnGraficaTotales" class="bg-gray-200 text-gray-700 hover:bg-gray-300 text-xs font-bold px-3 py-1.5 rounded-r border-t border-b border-r border-gray-300 focus:outline-none">
+                            Totales
                         </button>
                     </div>
                 </div>
@@ -247,6 +250,7 @@ let _carruselTimer = null;
         
         const btnGraficaActual     = document.getElementById("btnGraficaActual");
         const btnGraficaAnterior   = document.getElementById("btnGraficaAnterior");
+        const btnGraficaTotales    = document.getElementById("btnGraficaTotales");
         
         const txtNombreAlumno            = document.getElementById("txtNombreAlumno");
         const txtEstatura                = document.getElementById("txtEstatura");
@@ -335,6 +339,7 @@ construirCarruselAnuncios();
         buscadorAlumno.addEventListener("input", manejarEscrituraBuscador);
         btnGraficaActual.addEventListener("click",   () => cambiarMesGrafica("actual"));
         btnGraficaAnterior.addEventListener("click", () => cambiarMesGrafica("anterior"));
+        btnGraficaTotales.addEventListener("click",  () => cambiarMesGrafica("totales"));
 
         document.addEventListener("click", (e) => {
             if (e.target !== buscadorAlumno && e.target !== contenedorSugerencias) {
@@ -482,14 +487,25 @@ contenedorNivelProgreso.innerHTML = `
             if (mesSeleccionadoGrafica === mes) return;
             mesSeleccionadoGrafica = mes;
 
+            // Clases base reutilizables
+            const claseActivo   = "bg-brand-black text-brand-gold text-xs font-bold px-3 py-1.5 border border-brand-gold focus:outline-none";
+            const claseInactivo = "bg-gray-200 text-gray-700 hover:bg-gray-300 text-xs font-bold px-3 py-1.5 border-t border-b border-r border-gray-300 focus:outline-none";
+
+            // Resetear los tres botones a estado inactivo
+            btnGraficaActual.className   = claseInactivo + " rounded-l border-l";
+            btnGraficaAnterior.className = claseInactivo;
+            btnGraficaTotales.className  = claseInactivo + " rounded-r";
+
+            // Activar el botón seleccionado
             if (mes === "actual") {
-                tituloGrafica.innerHTML = "📈 RANKING GENERAL (MES ACTUAL)";
-                btnGraficaActual.className = "bg-brand-black text-brand-gold text-xs font-bold px-3 py-1.5 rounded-l border border-brand-gold focus:outline-none";
-                btnGraficaAnterior.className = "bg-gray-200 text-gray-700 hover:bg-gray-300 text-xs font-bold px-3 py-1.5 rounded-r border-t border-b border-r border-gray-300 focus:outline-none";
-            } else {
-                tituloGrafica.innerHTML = "📈 RANKING GENERAL (MES ANTERIOR)";
-                btnGraficaActual.className = "bg-gray-200 text-gray-700 hover:bg-gray-300 text-xs font-bold px-3 py-1.5 rounded-l border-t border-b border-l border-gray-300 focus:outline-none";
-                btnGraficaAnterior.className = "bg-brand-black text-brand-gold text-xs font-bold px-3 py-1.5 rounded-r border border-brand-gold focus:outline-none";
+                tituloGrafica.innerHTML    = "📈 RANKING GENERAL (MES ACTUAL)";
+                btnGraficaActual.className = claseActivo + " rounded-l";
+            } else if (mes === "anterior") {
+                tituloGrafica.innerHTML      = "📈 RANKING GENERAL (MES ANTERIOR)";
+                btnGraficaAnterior.className = claseActivo;
+            } else if (mes === "totales") {
+                tituloGrafica.innerHTML     = "🏅 RANKING TOTAL (TODOS LOS MESES)";
+                btnGraficaTotales.className = claseActivo + " rounded-r";
             }
 
             construirGraficaDesempeño();
@@ -632,7 +648,9 @@ function reiniciarTimerCarrusel() {
         
         function construirGraficaDesempeño() {
             contenedorGrafica.innerHTML = "";
-            const origenDatos = mesSeleccionadoGrafica === "actual" ? datosDashboard.actual : datosDashboard.anterior;
+            const origenDatos = mesSeleccionadoGrafica === "totales"
+                ? puntosTotales
+                : (mesSeleccionadoGrafica === "actual" ? datosDashboard.actual : datosDashboard.anterior);
 
             if (!origenDatos || Object.keys(origenDatos).length === 0) {
                 contenedorGrafica.innerHTML = `<p class="text-gray-400 text-xs py-4 italic text-center">No hay registros de puntuaciones.</p>`;

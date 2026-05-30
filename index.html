@@ -171,14 +171,23 @@
             <h2 class="text-xl font-bold text-gray-800 mb-4 tracking-wide flex items-center gap-2">
                 📊 <span>TU RENDIMIENTO DE PUNTOS</span>
             </h2>
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <div class="bg-gray-50 border border-gray-200 p-4 rounded-lg text-center shadow-inner">
-                    <h3 class="text-sm font-semibold text-gray-500 uppercase tracking-wider">Puntos Acumulados (Mes Actual)</h3>
-                    <p id="puntosMesActual" class="text-4xl font-extrabold text-brand-black mt-2">0</p>
+            <div class="bg-gray-50 border border-gray-200 rounded-lg shadow-inner px-4 py-3 flex flex-row items-center justify-around gap-2 flex-wrap">
+                <div class="flex flex-col items-center px-3 py-2">
+                    <span class="text-xs font-semibold text-gray-400 uppercase tracking-widest mb-1">Mes Actual</span>
+                    <p id="puntosMesActual" class="text-2xl font-extrabold text-brand-black leading-none">0</p>
+                    <span class="text-xs text-gray-400 mt-1">pts</span>
                 </div>
-                <div class="bg-gray-50 border border-gray-200 p-4 rounded-lg text-center shadow-inner">
-                    <h3 class="text-sm font-semibold text-gray-500 uppercase tracking-wider">Historial (Mes Anterior)</h3>
-                    <p id="puntosMesAnterior" class="text-4xl font-extrabold text-neutral-500 mt-2">0</p>
+                <div class="w-px h-10 bg-gray-300 self-center hidden sm:block"></div>
+                <div class="flex flex-col items-center px-3 py-2">
+                    <span class="text-xs font-semibold text-gray-400 uppercase tracking-widest mb-1">Mes Anterior</span>
+                    <p id="puntosMesAnterior" class="text-2xl font-extrabold text-neutral-400 leading-none">0</p>
+                    <span class="text-xs text-gray-400 mt-1">pts</span>
+                </div>
+                <div class="w-px h-10 bg-gray-300 self-center hidden sm:block"></div>
+                <div class="flex flex-col items-center px-3 py-2">
+                    <span class="text-xs font-semibold text-green-600 uppercase tracking-widest mb-1">Total Acumulado</span>
+                    <p id="puntosTotalesAlumno" class="text-2xl font-extrabold text-green-600 leading-none">0</p>
+                    <span class="text-xs text-green-400 mt-1">pts</span>
                 </div>
             </div>
 <div class="mt-6 border-t pt-5">
@@ -257,6 +266,7 @@ let _carruselTimer = null;
         const txtPeso                    = document.getElementById("txtPeso");
         const puntosMesActual            = document.getElementById("puntosMesActual");
         const puntosMesAnterior          = document.getElementById("puntosMesAnterior");
+        const puntosTotalesAlumno        = document.getElementById("puntosTotalesAlumno");
 
         // 1. Manejador estándar al cargar la página por primera vez o con parámetros
 window.addEventListener("DOMContentLoaded", () => {
@@ -438,6 +448,7 @@ construirCarruselAnuncios();
 
             puntosMesActual.textContent   = datosDashboard.actual[nombreLimpio] || 0;
             puntosMesAnterior.textContent = datosDashboard.anterior[nombreLimpio] || 0;
+            puntosTotalesAlumno.textContent = puntosTotales[nombreLimpio] || 0;
 
             panelBienvenida.classList.remove("hidden");
             seccionTablero.classList.remove("hidden");

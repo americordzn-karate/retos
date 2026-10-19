@@ -6,16 +6,13 @@
     <title>Portal de Retos - Senshi-Kan</title>
     <link rel="icon" type="image/x-icon" href="https://raw.githubusercontent.com/americordzn-karate/examenes/refs/heads/main/favicon.ico">
     <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Lector de códigos QR (acceso de alumnos) -->
+    <script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
     <style>
         .bg-brand-black { background-color: #1a1a1a; }
         .text-brand-gold { color: #d4af37; }
         .bg-brand-gold { background-color: #d4af37; }
         .border-brand-gold { border-color: #d4af37; }
-        .sugerencias-lista {
-            max-height: 100px;
-            overflow-y: auto;
-            z-index: 50;
-        }
         #contenedorProgreso { display: none; }
 #barraProgreso {
     height: 100%;
@@ -24,6 +21,20 @@
     border-radius: 0.25rem;
     transition: width 0.3s ease;
 }
+        /* --- Ventana del lector QR --- */
+        #ventanaEscaner {
+            max-width: 320px;
+            margin: 0 auto;
+        }
+        #lectorQR {
+            width: 100%;
+            border: 3px solid #d4af37;
+            border-radius: 0.5rem;
+            overflow: hidden;
+            background-color: #1a1a1a;
+            min-height: 200px;
+        }
+        #lectorQR video { width: 100% !important; object-fit: cover; }
         /* --- Carrusel de Anuncios --- */
 #pistaAnuncios { display: flex; }
 .diapositiva-anuncio {
@@ -122,26 +133,42 @@
             <h2 class="text-xl font-bold text-gray-800 mb-2 flex items-center gap-2">
                 🥋 <span class="tracking-wide">IDENTIFICACIÓN DEL ALUMNO</span>
             </h2>
-            <p class="text-gray-600 text-sm mb-4">Empieza a escribir tu nombre y selecciónalo de la lista para ingresar automáticamente al portal.</p>
-            
-            <div class="flex flex-col relative">
-                <div class="w-full relative">
-                    <label for="buscadorAlumno" class="block text-xs font-bold text-gray-700 uppercase mb-1 tracking-wider">Escribe tu Nombre:</label>
-                    <input 
-                        type="text"
-                        id="buscadorAlumno" 
-                        autocomplete="off"
-                        placeholder="Busca tu nombre aquí..." 
-                        class="w-full border-2 border-gray-300 rounded px-3 py-2 focus:outline-none focus:border-brand-black transition-colors"
-                    >
-                    <div id="contenedorProgreso" class="w-full mt-2">
-    <div class="w-full bg-gray-200 rounded overflow-hidden relative" style="height: 28px;">
-        <div id="barraProgreso"></div>
-        <span class="absolute inset-0 flex items-center justify-center text-xs font-bold text-gray-700 tracking-wider">Cargando listado...</span>
-    </div>
-</div>
-                    <div id="contenedorSugerencias" class="hidden absolute left-0 right-0 mt-1 bg-white border border-gray-300 rounded shadow-lg sugerencias-lista"></div>
+
+            <!-- Barra de carga del listado (se conserva) -->
+            <div id="contenedorProgreso" class="w-full mb-3">
+                <div class="w-full bg-gray-200 rounded overflow-hidden relative" style="height: 28px;">
+                    <div id="barraProgreso"></div>
+                    <span class="absolute inset-0 flex items-center justify-center text-xs font-bold text-gray-700 tracking-wider">Cargando listado...</span>
                 </div>
+            </div>
+
+            <!-- Bloque de escaneo (visible mientras no hay alumno identificado) -->
+            <div id="bloqueEscaner">
+                <p class="text-gray-600 text-sm mb-4">Para ingresar, presenta tu código QR personal a la cámara trasera de tu dispositivo.</p>
+
+                <button id="btnIniciarEscaner" disabled
+                    class="w-full bg-gray-300 text-gray-500 font-bold py-3 px-4 rounded tracking-wide border border-gray-400 cursor-not-allowed uppercase text-sm">
+                    📷 Espera un momento...
+                </button>
+
+                <!-- Ventana del lector QR -->
+                <div id="ventanaEscaner" class="hidden">
+                    <div id="lectorQR"></div>
+                    <p class="text-center text-xs text-gray-500 mt-2">Coloca tu código QR frente a la cámara.</p>
+                    <button id="btnCancelarEscaner"
+                        class="w-full mt-2 bg-gray-200 text-gray-700 hover:bg-gray-300 font-bold py-2 px-4 rounded text-xs uppercase tracking-wide">
+                        Cancelar
+                    </button>
+                </div>
+            </div>
+
+            <!-- Alumno identificado -->
+            <div id="estadoAlumno" class="hidden flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 bg-green-50 border border-green-300 rounded px-4 py-3">
+                <p class="text-sm text-green-800">✅ Alumno identificado: <span id="txtAlumnoIdentificado" class="font-bold">---</span></p>
+                <button id="btnCambiarAlumno"
+                    class="bg-brand-black text-brand-gold border border-brand-gold text-xs font-bold px-3 py-1.5 rounded uppercase tracking-wide">
+                    Cambiar de alumno
+                </button>
             </div>
             
             <div id="alertaAlumno" class="hidden mt-4 bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded text-sm font-semibold"></div>
@@ -247,8 +274,12 @@
 let _carruselIndice = 0;
 let _carruselTimer = null;
 
-        const buscadorAlumno         = document.getElementById("buscadorAlumno");
-        const contenedorSugerencias  = document.getElementById("contenedorSugerencias");
+        // --- Estado del lector QR ---
+        let lectorQR = null;
+        let escaneando = false;
+        let procesandoQR = false;
+        let ultimoQRInvalido = "";
+
         const alertaAlumno         = document.getElementById("alertaAlumno");
         const panelBienvenida      = document.getElementById("panelBienvenida");
         const seccionTablero       = document.getElementById("seccionTablero");
@@ -267,6 +298,15 @@ let _carruselTimer = null;
         const puntosMesActual            = document.getElementById("puntosMesActual");
         const puntosMesAnterior          = document.getElementById("puntosMesAnterior");
         const puntosTotalesAlumno        = document.getElementById("puntosTotalesAlumno");
+
+        // Elementos del acceso por QR
+        const bloqueEscaner          = document.getElementById("bloqueEscaner");
+        const btnIniciarEscaner      = document.getElementById("btnIniciarEscaner");
+        const btnCancelarEscaner     = document.getElementById("btnCancelarEscaner");
+        const ventanaEscaner         = document.getElementById("ventanaEscaner");
+        const estadoAlumno           = document.getElementById("estadoAlumno");
+        const txtAlumnoIdentificado  = document.getElementById("txtAlumnoIdentificado");
+        const btnCambiarAlumno       = document.getElementById("btnCambiarAlumno");
 
         // 1. Manejador estándar al cargar la página por primera vez o con parámetros
 window.addEventListener("DOMContentLoaded", () => {
@@ -299,13 +339,142 @@ window.addEventListener("pageshow", (event) => {
     }
 });
 
+        // ===== ACCESO POR CÓDIGO QR =====
+
+        function normalizarId(valor) {
+            return String(valor === undefined || valor === null ? "" : valor).trim().toLowerCase();
+        }
+
+        // Obtiene el ID_Alumno del objeto alumno devuelto por el servidor
+        function obtenerIdAlumno(alumno) {
+            const candidato = alumno.id !== undefined ? alumno.id
+                : alumno.ID_Alumno !== undefined ? alumno.ID_Alumno
+                : alumno.id_alumno !== undefined ? alumno.id_alumno
+                : alumno.idAlumno !== undefined ? alumno.idAlumno
+                : alumno.ID !== undefined ? alumno.ID
+                : "";
+            return candidato;
+        }
+
+        function habilitarBotonEscaner() {
+            btnIniciarEscaner.disabled = false;
+            btnIniciarEscaner.textContent = "📷 Escanear mi código QR";
+            btnIniciarEscaner.className = "w-full bg-brand-black text-brand-gold font-bold py-3 px-4 rounded tracking-wide border border-brand-gold uppercase text-sm";
+        }
+
+        function deshabilitarBotonEscaner(texto) {
+            btnIniciarEscaner.disabled = true;
+            btnIniciarEscaner.textContent = texto;
+            btnIniciarEscaner.className = "w-full bg-gray-300 text-gray-500 font-bold py-3 px-4 rounded tracking-wide border border-gray-400 cursor-not-allowed uppercase text-sm";
+        }
+
+        async function iniciarEscaner() {
+            if (escaneando) return;
+
+            alertaAlumno.classList.add("hidden");
+            ventanaEscaner.classList.remove("hidden");
+            btnIniciarEscaner.classList.add("hidden");
+            ultimoQRInvalido = "";
+
+            try {
+                if (!lectorQR) lectorQR = new Html5Qrcode("lectorQR");
+
+                await lectorQR.start(
+                    { facingMode: "environment" },   // cámara trasera
+                    {
+                        fps: 10,
+                        qrbox: (ancho, alto) => {
+                            const lado = Math.floor(Math.min(ancho, alto) * 0.7);
+                            return { width: lado, height: lado };
+                        }
+                    },
+                    alLeerQR,
+                    () => {} // errores de lectura por fotograma: se ignoran
+                );
+                escaneando = true;
+            } catch (error) {
+                console.error("Error al iniciar la cámara:", error);
+                escaneando = false;
+                ventanaEscaner.classList.add("hidden");
+                btnIniciarEscaner.classList.remove("hidden");
+
+                const nombreError = (error && error.name) ? error.name : String(error);
+                if (nombreError === "NotAllowedError" || String(error).includes("Permission")) {
+                    mostrarAlerta("No se otorgó permiso para usar la cámara. Activa el permiso de cámara para este sitio en tu navegador e inténtalo de nuevo.");
+                } else if (nombreError === "NotFoundError" || String(error).includes("NotFound")) {
+                    mostrarAlerta("No se encontró ninguna cámara en este dispositivo.");
+                } else {
+                    mostrarAlerta("No fue posible iniciar la cámara. Cierra otras aplicaciones que la estén usando e inténtalo de nuevo.");
+                }
+            }
+        }
+
+        async function detenerEscaner() {
+            try {
+                if (lectorQR && escaneando) {
+                    await lectorQR.stop();
+                    lectorQR.clear();
+                }
+            } catch (e) {
+                console.warn("Aviso al detener el lector QR:", e);
+            }
+            escaneando = false;
+            ventanaEscaner.classList.add("hidden");
+            btnIniciarEscaner.classList.remove("hidden");
+        }
+
+        async function alLeerQR(textoLeido) {
+            if (procesandoQR) return;
+
+            const idLeido = normalizarId(textoLeido);
+            const alumnoEncontrado = baseDatosAlumnos.find(
+                a => normalizarId(obtenerIdAlumno(a)) !== "" && normalizarId(obtenerIdAlumno(a)) === idLeido
+            );
+
+            if (!alumnoEncontrado) {
+                // QR inválido: se informa y se sigue escaneando
+                if (textoLeido !== ultimoQRInvalido) {
+                    ultimoQRInvalido = textoLeido;
+                    mostrarAlerta("Código QR no reconocido. Verifica que sea tu código personal de Senshi-Kan.");
+                    setTimeout(() => { ultimoQRInvalido = ""; }, 3000);
+                }
+                return;
+            }
+
+            procesandoQR = true;
+            await detenerEscaner();
+            alertaAlumno.classList.add("hidden");
+            activarInterfazAlumno(alumnoEncontrado);
+            procesandoQR = false;
+        }
+
+        function cerrarSesionAlumno() {
+            sessionStorage.removeItem("nombreAlumno");
+            sessionStorage.removeItem("estaturaAlumno");
+            sessionStorage.removeItem("pesoAlumno");
+
+            ocultarModulos();
+            estadoAlumno.classList.add("hidden");
+            bloqueEscaner.classList.remove("hidden");
+            alertaAlumno.classList.add("hidden");
+            window.scrollTo({ top: 0, behavior: "smooth" });
+        }
+
+        // Apaga la cámara si la página se oculta o se abandona
+        document.addEventListener("visibilitychange", () => {
+            if (document.hidden && escaneando) detenerEscaner();
+        });
+        window.addEventListener("pagehide", () => {
+            if (escaneando) detenerEscaner();
+        });
+
+        // ===== FIN ACCESO POR CÓDIGO QR =====
+
         async function inicializarPortal() {
     const contenedorProgreso = document.getElementById("contenedorProgreso");
     const barraProgreso      = document.getElementById("barraProgreso");
 
-    buscadorAlumno.disabled = true;
-    buscadorAlumno.placeholder = "Espera un momento...";
-    buscadorAlumno.classList.add("bg-gray-100", "cursor-not-allowed");
+    deshabilitarBotonEscaner("📷 Espera un momento...");
     contenedorProgreso.style.display = "block";
 
     let progresoActual = 0;
@@ -337,96 +506,46 @@ construirCarruselAnuncios();
             barraProgreso.style.width = "0%";
         }, 400);
 
-        buscadorAlumno.disabled = false;
-        buscadorAlumno.placeholder = "Busca tu nombre aquí...";
-        buscadorAlumno.classList.remove("bg-gray-100", "cursor-not-allowed");
-
         if (baseDatosAlumnos.length === 0) {
+            deshabilitarBotonEscaner("📷 No disponible");
             mostrarAlerta("Atención: El servidor respondió, pero la lista de alumnos vigentes está vacía.");
             return;
         }
 
-        buscadorAlumno.addEventListener("input", manejarEscrituraBuscador);
+        btnIniciarEscaner.addEventListener("click", iniciarEscaner);
+        btnCancelarEscaner.addEventListener("click", detenerEscaner);
+        btnCambiarAlumno.addEventListener("click", cerrarSesionAlumno);
         btnGraficaActual.addEventListener("click",   () => cambiarMesGrafica("actual"));
         btnGraficaAnterior.addEventListener("click", () => cambiarMesGrafica("anterior"));
         btnGraficaTotales.addEventListener("click",  () => cambiarMesGrafica("totales"));
 
-        document.addEventListener("click", (e) => {
-            if (e.target !== buscadorAlumno && e.target !== contenedorSugerencias) {
-                contenedorSugerencias.classList.add("hidden");
-            }
-        });
+        // Verificación: el servidor debe enviar el ID_Alumno de cada alumno
+        const hayIds = baseDatosAlumnos.some(a => normalizarId(obtenerIdAlumno(a)) !== "");
+        if (!hayIds) {
+            console.error("El servidor no está enviando el campo ID_Alumno en la lista de alumnos.");
+            deshabilitarBotonEscaner("📷 Acceso no disponible");
+            mostrarAlerta("Configuración pendiente: el servidor aún no envía el ID_Alumno. Avisa a tu Sensei.");
+            return;
+        }
 
+        habilitarBotonEscaner();
         verificarSesionExistente();
 
     } catch (error) {
         clearInterval(intervalo);
         contenedorProgreso.style.display = "none";
         barraProgreso.style.width = "0%";
-        buscadorAlumno.disabled = false;
-        buscadorAlumno.placeholder = "Busca tu nombre aquí...";
-        buscadorAlumno.classList.remove("bg-gray-100", "cursor-not-allowed");
+        deshabilitarBotonEscaner("📷 Sin conexión");
         console.error("Error:", error);
         mostrarAlerta("Error de conexión: No se pudo leer la base de datos de Google Sheets.");
     }
 }
-
-        function manejarEscrituraBuscador() {
-            const textoBuscar = buscadorAlumno.value.trim().toLowerCase();
-            contenedorSugerencias.innerHTML = "";
-
-            if (textoBuscar === "") {
-                contenedorSugerencias.classList.add("hidden");
-                return;
-            }
-
-            const alumnosFiltrados = baseDatosAlumnos
-                .filter(alumno => alumno.nombre.trim().toLowerCase().startsWith(textoBuscar))
-                .sort((a, b) => a.nombre.trim().localeCompare(b.nombre.trim()));
-
-            if (alumnosFiltrados.length === 0) {
-                contenedorSugerencias.classList.add("hidden");
-                return;
-            }
-
-            alumnosFiltrados.forEach(alumno => {
-                const divOpcion = document.createElement("div");
-                divOpcion.className = "px-4 py-2 hover:bg-gray-100 cursor-pointer text-sm text-gray-700 border-b last:border-b-0";
-                divOpcion.textContent = alumno.nombre.trim();
-                
-                divOpcion.addEventListener("click", () => {
-                    buscadorAlumno.value = alumno.nombre.trim();
-                    contenedorSugerencias.classList.add("hidden");
-                    procesarIngresoAlumno(alumno.nombre.trim());
-                });
-                
-                contenedorSugerencias.appendChild(divOpcion);
-            });
-
-            contenedorSugerencias.classList.remove("hidden");
-        }
-
-        function procesarIngresoAlumno(nombreSeleccionado) {
-            const alumnoEncontrado = baseDatosAlumnos.find(
-                a => a.nombre.trim().toLowerCase() === nombreSeleccionado.toLowerCase()
-            );
-
-            if (!alumnoEncontrado) {
-                mostrarAlerta("El nombre ingresado no coincide con ningún alumno activo.");
-                ocultarModulos();
-                return;
-            }
-
-            alertaAlumno.classList.add("hidden");
-            activarInterfazAlumno(alumnoEncontrado);
-        }
 
         function verificarSesionExistente() {
             const nombreGuardado = sessionStorage.getItem("nombreAlumno");
             if (nombreGuardado) {
                 const alumnoObjeto = baseDatosAlumnos.find(a => a.nombre.trim().toLowerCase() === nombreGuardado.toLowerCase());
                 if (alumnoObjeto) {
-                    buscadorAlumno.value = alumnoObjeto.nombre.trim();
                     activarInterfazAlumno(alumnoObjeto);
                 }
             }
@@ -436,6 +555,11 @@ construirCarruselAnuncios();
             const nombreLimpio = alumno.nombre.trim();
 
             txtNombreAlumno.textContent = nombreLimpio;
+
+            // Muestra únicamente el nombre asociado al ID escaneado
+            txtAlumnoIdentificado.textContent = nombreLimpio;
+            estadoAlumno.classList.remove("hidden");
+            bloqueEscaner.classList.add("hidden");
             
             // Llenado de nodos DOM (para evitar errores JS ya que el contenedor está oculto visualmente)
             if (txtEstatura) txtEstatura.textContent = alumno.estatura || "N/A";

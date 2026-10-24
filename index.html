@@ -541,6 +541,46 @@ construirCarruselAnuncios();
     }
 }
 
+        // ===== ACCESO MANUAL POR ID_ALUMNO =====
+        function abrirAccesoManual() {
+            const ventana = document.getElementById("ventanaAccesoManual");
+            ventana.style.display = "flex";
+            const campo = document.getElementById("inputIdManual");
+            campo.value = "";
+            setTimeout(() => campo.focus(), 50);
+        }
+
+        function cerrarAccesoManual() {
+            document.getElementById("ventanaAccesoManual").style.display = "none";
+        }
+
+        async function validarAccesoManual() {
+            const idEscrito = normalizarId(document.getElementById("inputIdManual").value);
+            if (idEscrito === "") return;
+
+            if (baseDatosAlumnos.length === 0) {
+                cerrarAccesoManual();
+                mostrarAlerta("El listado aún no está disponible. Espera un momento e inténtalo de nuevo.");
+                return;
+            }
+
+            const alumno = baseDatosAlumnos.find(
+                a => normalizarId(obtenerIdAlumno(a)) !== "" && normalizarId(obtenerIdAlumno(a)) === idEscrito
+            );
+
+            cerrarAccesoManual();
+
+            if (!alumno) {
+                mostrarAlerta("ID no reconocido. Verifica que sea tu ID personal de Senshi-Kan.");
+                return;
+            }
+
+            await detenerEscaner();
+            alertaAlumno.classList.add("hidden");
+            activarInterfazAlumno(alumno);
+        }
+        // ===== FIN ACCESO MANUAL =====
+
         function verificarSesionExistente() {
             const nombreGuardado = sessionStorage.getItem("nombreAlumno");
             if (nombreGuardado) {
@@ -890,5 +930,25 @@ function reiniciarTimerCarrusel() {
             });
         }
     </script>
+
+    <!-- ===== ACCESO MANUAL POR ID (botón discreto) ===== -->
+    <button id="btnAccesoManual" onclick="abrirAccesoManual()" aria-label="Acceso manual"
+        style="position:fixed; bottom:6px; right:6px; width:30px; height:30px; padding:0; border:none; background:transparent; color:#6b7280; font-size:12px; opacity:0.12; cursor:pointer; z-index:40;">&#9679;</button>
+
+    <div id="ventanaAccesoManual" class="hidden" style="position:fixed; inset:0; background:rgba(0,0,0,0.6); z-index:50; display:none; align-items:center; justify-content:center; padding:16px;">
+        <div class="bg-white rounded-lg shadow-lg p-5 w-full border-t-4 border-brand-gold" style="max-width:320px;">
+            <h3 class="text-sm font-bold text-gray-800 uppercase tracking-wide mb-2">Ingresar con ID</h3>
+            <input id="inputIdManual" type="text" autocomplete="off" autocapitalize="off" spellcheck="false"
+                placeholder="ID del alumno"
+                class="w-full border border-gray-300 rounded px-3 py-2 text-sm mb-3"
+                onkeydown="if(event.key==='Enter'){ validarAccesoManual(); }">
+            <div class="flex gap-2">
+                <button onclick="cerrarAccesoManual()" class="flex-1 bg-gray-200 text-gray-700 font-bold py-2 rounded text-xs uppercase">Cancelar</button>
+                <button onclick="validarAccesoManual()" class="flex-1 bg-brand-black text-brand-gold border border-brand-gold font-bold py-2 rounded text-xs uppercase">Entrar</button>
+            </div>
+        </div>
+    </div>
+    <!-- ===== FIN ACCESO MANUAL ===== -->
+
 </body>
 </html>

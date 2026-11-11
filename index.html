@@ -14,6 +14,7 @@
         .bg-brand-gold { background-color: #d4af37; }
         .border-brand-gold { border-color: #d4af37; }
         #contenedorProgreso { display: none; }
+                .pestana-oculta { display: none !important; }
 #barraProgreso {
     height: 100%;
     width: 0%;
@@ -193,7 +194,30 @@
                 <div id="panelNivel" class="mt-4 pt-4 border-t border-neutral-700 text-center"></div>
             </div>
         </section>
-
+        <!-- ===== DATOS DEL ALUMNO Y PESTAÑAS ===== -->
+        <section id="barraPestanas" class="hidden mb-6">
+            <div class="grid grid-cols-3 gap-2 mb-4 text-center">
+                <div class="bg-white rounded-lg shadow-sm border-t-4 border-brand-gold p-3">
+                    <span class="block text-[10px] font-semibold text-gray-400 uppercase tracking-widest mb-1">Grado actual</span>
+                    <p id="datoGrado" class="text-xs font-extrabold text-brand-black leading-tight">...</p>
+                </div>
+                <div class="bg-white rounded-lg shadow-sm border-t-4 border-brand-gold p-3">
+                    <span class="block text-[10px] font-semibold text-gray-400 uppercase tracking-widest mb-1">Asistencias</span>
+                    <p id="datoAsistencias" class="text-2xl font-extrabold text-brand-black leading-none">...</p>
+                    <span id="datoAsistenciasDesde" class="block text-[10px] text-gray-400 mt-1"></span>
+                </div>
+                <div class="bg-white rounded-lg shadow-sm border-t-4 border-brand-gold p-3">
+                    <span class="block text-[10px] font-semibold text-gray-400 uppercase tracking-widest mb-1">Horario</span>
+                    <p id="datoHorario" class="text-xs font-extrabold text-brand-black leading-tight">...</p>
+                </div>
+            </div>
+            <div class="flex rounded-md shadow-sm overflow-hidden border border-brand-gold">
+                <button id="tabRetos" onclick="cambiarPestana('retos')" class="flex-1 text-xs font-bold px-2 py-2.5 uppercase tracking-wide focus:outline-none">Retos y puntos</button>
+                <button id="tabExamen" onclick="cambiarPestana('examen')" class="flex-1 text-xs font-bold px-2 py-2.5 uppercase tracking-wide border-l border-brand-gold focus:outline-none">Mi examen</button>
+                <button id="tabPagos" onclick="cambiarPestana('pagos')" class="flex-1 text-xs font-bold px-2 py-2.5 uppercase tracking-wide border-l border-brand-gold focus:outline-none">Pagos pendientes</button>
+            </div>
+        </section>
+        <!-- ===== FIN DATOS Y PESTAÑAS ===== -->
         <section id="seccionTablero" class="hidden bg-white rounded-lg p-6 shadow-sm mb-8 border-t-4 border-brand-gold">
             <h2 class="text-xl font-bold text-gray-800 mb-4 tracking-wide flex items-center gap-2">
                 📊 <span>TU RENDIMIENTO DE PUNTOS</span>
@@ -257,7 +281,25 @@
             </h2>
             <div id="contenedorRetos" class="grid grid-cols-1 md:grid-cols-2 gap-6"></div>
         </section>
+        <!-- ===== SECCIÓN MI EXAMEN ===== -->
+        <section id="seccionExamen" class="hidden mb-8">
+            <div class="bg-white rounded-lg p-6 shadow-sm border-t-4 border-brand-gold">
+                <h2 class="text-xl font-bold text-gray-800 mb-4 tracking-wide flex items-center gap-2">
+                    🥋 <span>MI EXAMEN</span>
+                </h2>
+                <div id="contenidoExamen" class="text-sm text-gray-600">Cargando...</div>
+            </div>
+        </section>
 
+        <!-- ===== SECCIÓN PAGOS PENDIENTES ===== -->
+        <section id="seccionPagos" class="hidden mb-8">
+            <div class="bg-white rounded-lg p-6 shadow-sm border-t-4 border-brand-gold">
+                <h2 class="text-xl font-bold text-gray-800 mb-4 tracking-wide flex items-center gap-2">
+                    💳 <span>PAGOS PENDIENTES</span>
+                </h2>
+                <div id="contenidoPagos" class="text-sm text-gray-600">Cargando...</div>
+            </div>
+        </section>
     </main>
 
     <script>
@@ -593,6 +635,7 @@ construirCarruselAnuncios();
 
         function activarInterfazAlumno(alumno) {
             const nombreLimpio = alumno.nombre.trim();
+                        iniciarPestanas(alumno);
 
             txtNombreAlumno.textContent = nombreLimpio;
 
@@ -686,10 +729,11 @@ contenedorNivelProgreso.innerHTML = `
             construirGraficaDesempeño();
         }
 
-        function ocultarModulos() {
+                function ocultarModulos() {
             panelBienvenida.classList.add("hidden");
             seccionTablero.classList.add("hidden");
             seccionRetos.classList.add("hidden");
+            ocultarPestanas();
         }
 
         function mostrarAlerta(mensaje) {
@@ -929,6 +973,145 @@ function reiniciarTimerCarrusel() {
                 contenedorRetos.appendChild(tarjeta);
             });
         }
+        
+        // ===== PESTAÑAS Y PERFIL DEL ALUMNO =====
+        let _idPerfilActual = "";
+
+        function escaparHTML(t) {
+            return String(t === null || t === undefined ? "" : t)
+                .replace(/&/g, "&amp;").replace(/</g, "&lt;")
+                .replace(/>/g, "&gt;").replace(/"/g, "&quot;");
+        }
+
+        function iniciarPestanas(alumno) {
+            try {
+                const id = String(obtenerIdAlumno(alumno) || "").trim();
+                document.getElementById("barraPestanas").classList.remove("hidden");
+                cambiarPestana("retos");
+                if (id !== "" && id !== _idPerfilActual) cargarPerfil(id);
+            } catch (e) {
+                console.error("Error al iniciar pestañas:", e);
+            }
+        }
+
+        function ocultarPestanas() {
+            _idPerfilActual = "";
+            document.getElementById("barraPestanas").classList.add("hidden");
+            document.getElementById("seccionExamen").classList.add("hidden");
+            document.getElementById("seccionPagos").classList.add("hidden");
+            document.getElementById("seccionTablero").classList.remove("pestana-oculta");
+            document.getElementById("seccionRetos").classList.remove("pestana-oculta");
+        }
+
+        function cambiarPestana(pestana) {
+            const esRetos = pestana === "retos";
+            document.getElementById("seccionTablero").classList.toggle("pestana-oculta", !esRetos);
+            document.getElementById("seccionRetos").classList.toggle("pestana-oculta", !esRetos);
+            document.getElementById("seccionExamen").classList.toggle("hidden", pestana !== "examen");
+            document.getElementById("seccionPagos").classList.toggle("hidden", pestana !== "pagos");
+
+            const activo   = "flex-1 text-xs font-bold px-2 py-2.5 uppercase tracking-wide focus:outline-none bg-brand-black text-brand-gold";
+            const inactivo = "flex-1 text-xs font-bold px-2 py-2.5 uppercase tracking-wide focus:outline-none bg-white text-gray-700";
+            document.getElementById("tabRetos").className  = (esRetos ? activo : inactivo);
+            document.getElementById("tabExamen").className = (pestana === "examen" ? activo : inactivo) + " border-l border-brand-gold";
+            document.getElementById("tabPagos").className  = (pestana === "pagos" ? activo : inactivo) + " border-l border-brand-gold";
+        }
+
+        async function cargarPerfil(id) {
+            _idPerfilActual = id;
+            document.getElementById("datoGrado").textContent = "...";
+            document.getElementById("datoAsistencias").textContent = "...";
+            document.getElementById("datoAsistenciasDesde").textContent = "";
+            document.getElementById("datoHorario").textContent = "...";
+            document.getElementById("contenidoExamen").textContent = "Cargando...";
+            document.getElementById("contenidoPagos").textContent = "Cargando...";
+
+            try {
+                const respuesta = await fetch(WEB_APP_URL + "?accion=perfilAlumno&id=" + encodeURIComponent(id));
+                const perfil = await respuesta.json();
+                if (_idPerfilActual !== id) return; // se cambió de alumno mientras cargaba
+                if (!perfil.success) throw new Error(perfil.error || "Error desconocido");
+                pintarPerfil(perfil);
+            } catch (error) {
+                if (_idPerfilActual !== id) return;
+                console.error("Error al cargar el perfil:", error);
+                document.getElementById("datoGrado").textContent = "N/D";
+                document.getElementById("datoAsistencias").textContent = "N/D";
+                document.getElementById("datoHorario").textContent = "N/D";
+                const msg = `<p class="text-red-600 font-semibold">No fue posible cargar la información. Intenta nuevamente más tarde.</p>`;
+                document.getElementById("contenidoExamen").innerHTML = msg;
+                document.getElementById("contenidoPagos").innerHTML = msg;
+            }
+        }
+
+        function pintarPerfil(p) {
+            // Tarjetas superiores
+            const gradoMostrar = (p.requisitos && p.requisitos.grado) ? p.requisitos.grado : p.grado;
+            document.getElementById("datoGrado").textContent = gradoMostrar;
+            document.getElementById("datoAsistencias").textContent = p.asistencias;
+            document.getElementById("datoAsistenciasDesde").textContent =
+                p.desdeFecha ? "desde el " + p.desdeFecha : "en total";
+            document.getElementById("datoHorario").textContent = p.horario || "Sin horario";
+
+            // --- Mi examen ---
+            let html = "";
+
+            // Próximo examen
+            html += `<h3 class="text-xs font-bold text-gray-700 uppercase tracking-wider mb-2">📅 Próximo examen</h3>`;
+            if (p.examen) {
+                html += `<div class="bg-amber-50 border border-amber-300 rounded px-4 py-3 mb-5">
+                    <p class="text-sm text-gray-800"><span class="font-bold">Fecha:</span> ${escaparHTML(p.examen.fecha)}</p>
+                    <p class="text-sm text-gray-800"><span class="font-bold">Sede:</span> ${escaparHTML(p.examen.sede || "Por confirmar")}</p>
+                </div>`;
+            } else {
+                html += `<p class="italic text-gray-500 mb-5">Aún no tienes examen programado.</p>`;
+            }
+
+            // Requisitos del grado actual
+            html += `<h3 class="text-xs font-bold text-gray-700 uppercase tracking-wider mb-2">📋 Requisitos de tu grado actual</h3>`;
+            if (p.requisitos) {
+                html += `<div class="border border-gray-200 rounded px-4 py-3 mb-5 space-y-3">
+                    <p class="font-bold text-brand-black">${escaparHTML(p.requisitos.grado)}</p>
+                    <div><p class="text-xs font-bold text-gray-500 uppercase">Kata</p>
+                         <p style="white-space:pre-line;">${escaparHTML(p.requisitos.kata || "—")}</p></div>
+                    <div><p class="text-xs font-bold text-gray-500 uppercase">Técnica</p>
+                         <p style="white-space:pre-line;">${escaparHTML(p.requisitos.tecnica || "—")}</p></div>
+                    <div><p class="text-xs font-bold text-gray-500 uppercase">Teoría</p>
+                         <p style="white-space:pre-line;">${escaparHTML(p.requisitos.teoria || "—")}</p></div>
+                </div>`;
+            } else {
+                html += `<p class="italic text-gray-500 mb-5">No se encontraron requisitos para tu grado actual (${escaparHTML(p.grado)}).</p>`;
+            }
+
+            // Historial
+            html += `<h3 class="text-xs font-bold text-gray-700 uppercase tracking-wider mb-2">🏅 Historial de exámenes</h3>`;
+            if (p.historial && p.historial.length > 0) {
+                html += `<div class="border border-gray-200 rounded overflow-hidden">
+                    <div class="grid grid-cols-3 bg-brand-black text-brand-gold text-xs font-bold uppercase px-3 py-2">
+                        <span>Grado</span><span>Fecha</span><span>Sede</span>
+                    </div>`;
+                p.historial.forEach((h, i) => {
+                    html += `<div class="grid grid-cols-3 gap-2 px-3 py-2 text-xs ${i % 2 === 0 ? "bg-white" : "bg-gray-50"}">
+                        <span class="font-bold text-gray-800">${escaparHTML(h.grado)}</span>
+                        <span>${escaparHTML(h.fecha)}</span>
+                        <span>${escaparHTML(h.sede)}</span>
+                    </div>`;
+                });
+                html += `</div>`;
+            } else {
+                html += `<p class="italic text-gray-500">Aún no tienes exámenes registrados.</p>`;
+            }
+            document.getElementById("contenidoExamen").innerHTML = html;
+
+            // --- Pagos pendientes ---
+            const contPagos = document.getElementById("contenidoPagos");
+            if (p.creditos && p.creditos.trim() !== "") {
+                contPagos.innerHTML = `<div class="bg-red-50 border border-red-300 rounded px-4 py-3 text-gray-800" style="white-space:pre-line;">${escaparHTML(p.creditos)}</div>`;
+            } else {
+                contPagos.innerHTML = `<p class="text-green-700 font-semibold">✅ Sin créditos pendientes</p>`;
+            }
+        }
+        // ===== FIN PESTAÑAS Y PERFIL =====
     </script>
 
     <!-- ===== ACCESO MANUAL POR ID (botón discreto) ===== -->

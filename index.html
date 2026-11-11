@@ -215,6 +215,7 @@
                 <button id="tabRetos" onclick="cambiarPestana('retos')" class="flex-1 text-xs font-bold px-2 py-2.5 uppercase tracking-wide focus:outline-none">Retos y puntos</button>
                 <button id="tabExamen" onclick="cambiarPestana('examen')" class="flex-1 text-xs font-bold px-2 py-2.5 uppercase tracking-wide border-l border-brand-gold focus:outline-none">Mi examen</button>
                 <button id="tabPagos" onclick="cambiarPestana('pagos')" class="flex-1 text-xs font-bold px-2 py-2.5 uppercase tracking-wide border-l border-brand-gold focus:outline-none">Pagos pendientes</button>
+                            <button id="tabAsistencias" onclick="cambiarPestana('asistencias')" style="display:none;" class="flex-1 text-xs font-bold px-2 py-2.5 uppercase tracking-wide border-l border-brand-gold focus:outline-none">Asistencias</button>
             </div>
         </section>
         <!-- ===== FIN DATOS Y PESTAÑAS ===== -->
@@ -298,6 +299,16 @@
                     💳 <span>PAGOS PENDIENTES</span>
                 </h2>
                 <div id="contenidoPagos" class="text-sm text-gray-600">Cargando...</div>
+            </div>
+        </section>
+                <!-- ===== SECCIÓN ASISTENCIAS (solo ID 1976 y 1) ===== -->
+        <section id="seccionAsistencias" class="hidden mb-8">
+            <div class="bg-white rounded-lg p-6 shadow-sm border-t-4 border-brand-gold">
+                <h2 class="text-xl font-bold text-gray-800 mb-1 tracking-wide flex items-center gap-2">
+                    📋 <span>ASISTENCIAS</span>
+                </h2>
+                <p id="subtituloAsistencias" class="text-xs text-gray-400 mb-4">Candidatos al próximo examen</p>
+                <div id="contenidoAsistencias" class="space-y-3 text-sm text-gray-600">Cargando...</div>
             </div>
         </section>
     </main>
@@ -983,9 +994,16 @@ function reiniciarTimerCarrusel() {
                 .replace(/>/g, "&gt;").replace(/"/g, "&quot;");
         }
 
+                const IDS_ASISTENCIAS = ["1976", "1"];
+        let _esAdminAsistencias = false;
+        let _asistenciasCargadasPara = "";
+
         function iniciarPestanas(alumno) {
             try {
                 const id = String(obtenerIdAlumno(alumno) || "").trim();
+                _esAdminAsistencias = IDS_ASISTENCIAS.indexOf(id) !== -1;
+                _asistenciasCargadasPara = "";
+                document.getElementById("tabAsistencias").style.display = _esAdminAsistencias ? "block" : "none";
                 document.getElementById("barraPestanas").classList.remove("hidden");
                 cambiarPestana("retos");
                 if (id !== "" && id !== _idPerfilActual) cargarPerfil(id);
@@ -996,25 +1014,79 @@ function reiniciarTimerCarrusel() {
 
         function ocultarPestanas() {
             _idPerfilActual = "";
+            _esAdminAsistencias = false;
+            _asistenciasCargadasPara = "";
             document.getElementById("barraPestanas").classList.add("hidden");
+            document.getElementById("tabAsistencias").style.display = "none";
             document.getElementById("seccionExamen").classList.add("hidden");
             document.getElementById("seccionPagos").classList.add("hidden");
+            document.getElementById("seccionAsistencias").classList.add("hidden");
             document.getElementById("seccionTablero").classList.remove("pestana-oculta");
             document.getElementById("seccionRetos").classList.remove("pestana-oculta");
         }
 
         function cambiarPestana(pestana) {
+            if (pestana === "asistencias" && !_esAdminAsistencias) pestana = "retos";
+
             const esRetos = pestana === "retos";
             document.getElementById("seccionTablero").classList.toggle("pestana-oculta", !esRetos);
             document.getElementById("seccionRetos").classList.toggle("pestana-oculta", !esRetos);
             document.getElementById("seccionExamen").classList.toggle("hidden", pestana !== "examen");
             document.getElementById("seccionPagos").classList.toggle("hidden", pestana !== "pagos");
+            document.getElementById("seccionAsistencias").classList.toggle("hidden", pestana !== "asistencias");
 
             const activo   = "flex-1 text-xs font-bold px-2 py-2.5 uppercase tracking-wide focus:outline-none bg-brand-black text-brand-gold";
             const inactivo = "flex-1 text-xs font-bold px-2 py-2.5 uppercase tracking-wide focus:outline-none bg-white text-gray-700";
             document.getElementById("tabRetos").className  = (esRetos ? activo : inactivo);
             document.getElementById("tabExamen").className = (pestana === "examen" ? activo : inactivo) + " border-l border-brand-gold";
             document.getElementById("tabPagos").className  = (pestana === "pagos" ? activo : inactivo) + " border-l border-brand-gold";
+            document.getElementById("tabAsistencias").className = (pestana === "asistencias" ? activo : inactivo) + " border-l border-brand-gold";
+
+            if (pestana === "asistencias" && _asistenciasCargadasPara !== _idPerfilActual) {
+                cargarAsistencias();
+            }
+        }
+
+        async function cargarAsistencias() {
+            const id = _idPerfilActual;
+            const cont = document.getElementById("contenidoAsistencias");
+            cont.className = "space-y-3 text-sm text-gray-600";
+            cont.textContent = "Cargando...";
+            try {
+                const respuesta = await fetch(WEB_APP_URL + "?accion=listaAsistencias&id=" + encodeURIComponent(id));
+                const datos = await respuesta.json();
+                if (_idPerfilActual !== id) return;
+                if (!datos.success) throw new Error(datos.error || "Error desconocido");
+
+                document.getElementById("subtituloAsistencias").textContent =
+                    "Candidatos al próximo examen · " +
+                    (datos.desdeFecha ? "asistencias desde el " + datos.desdeFecha : "asistencias totales");
+
+                if (!datos.lista || datos.lista.length === 0) {
+                    cont.innerHTML = `<p class="italic text-gray-500 text-center py-4">No hay candidatos al próximo examen.</p>`;
+                } else {
+                    const maximo = Math.max.apply(null, datos.lista.map(x => x.asistencias));
+                    cont.innerHTML = "";
+                    datos.lista.forEach(item => {
+                        const porcentaje = maximo > 0 ? (item.asistencias / maximo) * 100 : 0;
+                        const renglon = document.createElement("div");
+                        renglon.className = "flex items-center gap-3";
+                        renglon.innerHTML = `
+                            <div class="w-24 md:w-28 text-xs font-bold text-gray-700 truncate text-right">${escaparHTML(item.nombre)}</div>
+                            <div class="flex-1 bg-gray-200 rounded h-6 overflow-hidden relative shadow-inner border border-gray-300">
+                                <div class="bg-brand-gold h-full rounded border-r-2 border-yellow-600" style="width: ${porcentaje}%"></div>
+                                <span class="absolute inset-0 flex items-center pl-3 text-xs font-black text-brand-black">${item.asistencias}</span>
+                            </div>
+                        `;
+                        cont.appendChild(renglon);
+                    });
+                }
+                _asistenciasCargadasPara = id;
+            } catch (error) {
+                if (_idPerfilActual !== id) return;
+                console.error("Error al cargar asistencias:", error);
+                cont.innerHTML = `<p class="text-red-600 font-semibold">No fue posible cargar el listado. Intenta nuevamente más tarde.</p>`;
+            }
         }
 
         async function cargarPerfil(id) {

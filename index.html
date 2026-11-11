@@ -177,6 +177,10 @@
 
         <section id="panelBienvenida" class="hidden bg-brand-black text-white rounded-lg p-6 shadow-md mb-8 border-2 border-brand-gold transition-all">
             <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+                            <div class="flex justify-center md:justify-start w-full md:w-auto">
+                    <img id="fotoAlumno" class="hidden rounded-full object-cover border-2 border-brand-gold" style="width:96px;height:96px;" alt="Foto del alumno">
+                    <div id="fotoAlumnoVacia" class="rounded-full border-2 border-brand-gold bg-neutral-800 flex items-center justify-center text-4xl" style="width:96px;height:96px;">🥋</div>
+                </div>    
                 <div>
                     <h3 class="text-2xl font-bold text-brand-gold tracking-wide">¡Hola, <span id="txtNombreAlumno">---</span>!</h3>
                     <p class="text-gray-400 text-xs mt-1 italic">Bienvenido a tu panel de seguimiento.</p>
@@ -1005,6 +1009,7 @@ function reiniciarTimerCarrusel() {
                 _asistenciasCargadasPara = "";
                 document.getElementById("tabAsistencias").style.display = _esAdminAsistencias ? "block" : "none";
                 document.getElementById("barraPestanas").classList.remove("hidden");
+                                cargarFoto(id);
                 cambiarPestana("retos");
                 if (id !== "" && id !== _idPerfilActual) cargarPerfil(id);
             } catch (e) {
@@ -1181,6 +1186,32 @@ function reiniciarTimerCarrusel() {
                 contPagos.innerHTML = `<div class="bg-red-50 border border-red-300 rounded px-4 py-3 text-gray-800" style="white-space:pre-line;">${escaparHTML(p.creditos)}</div>`;
             } else {
                 contPagos.innerHTML = `<p class="text-green-700 font-semibold">✅ Sin créditos pendientes</p>`;
+            }
+        }
+                // ===== FOTO DEL ALUMNO =====
+        let _fotoIdSolicitada = "";
+
+        async function cargarFoto(id) {
+            const img = document.getElementById("fotoAlumno");
+            const vacia = document.getElementById("fotoAlumnoVacia");
+            if (!img || !vacia) return;
+            if (_fotoIdSolicitada === id && !img.classList.contains("hidden")) return;
+
+            _fotoIdSolicitada = id;
+            img.classList.add("hidden");
+            vacia.classList.remove("hidden");
+
+            try {
+                const respuesta = await fetch(WEB_APP_URL + "?accion=fotoAlumno&id=" + encodeURIComponent(id));
+                const datos = await respuesta.json();
+                if (_fotoIdSolicitada !== id) return; // se cambió de alumno mientras cargaba
+                if (datos.success && datos.foto) {
+                    img.src = datos.foto;
+                    img.classList.remove("hidden");
+                    vacia.classList.add("hidden");
+                }
+            } catch (error) {
+                console.error("Error al cargar la foto:", error);
             }
         }
         // ===== FIN PESTAÑAS Y PERFIL =====

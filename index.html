@@ -1178,6 +1178,25 @@ function reiniciarTimerCarrusel() {
             } else {
                 html += `<p class="italic text-gray-500">Aún no tienes exámenes registrados.</p>`;
             }
+                        // Eventos en los que ha participado
+            html += `<h3 class="text-xs font-bold text-gray-700 uppercase tracking-wider mt-6 mb-2">🏆 Eventos en los que has participado</h3>`;
+            if (p.eventos && p.eventos.length > 0) {
+                html += `<div class="border border-gray-200 rounded overflow-hidden">
+                    <div class="grid grid-cols-4 gap-2 bg-brand-black text-brand-gold text-xs font-bold uppercase px-3 py-2">
+                        <span>Fecha</span><span>Tipo</span><span>Evento</span><span>Resultado</span>
+                    </div>`;
+                p.eventos.forEach((ev, i) => {
+                    html += `<div class="grid grid-cols-4 gap-2 px-3 py-2 text-xs ${i % 2 === 0 ? "bg-white" : "bg-gray-50"}">
+                        <span>${escaparHTML(ev.fecha)}</span>
+                        <span>${escaparHTML(ev.tipo)}</span>
+                        <span class="font-bold text-gray-800">${escaparHTML(ev.nombre)}</span>
+                        <span>${escaparHTML(ev.resultado)}</span>
+                    </div>`;
+                });
+                html += `</div>`;
+            } else {
+                html += `<p class="italic text-gray-500">Aun no has participado en eventos</p>`;
+            }
             document.getElementById("contenidoExamen").innerHTML = html;
 
             // --- Pagos pendientes ---

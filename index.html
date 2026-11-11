@@ -1138,7 +1138,8 @@ function reiniciarTimerCarrusel() {
             if (p.examen) {
                 html += `<div class="bg-amber-50 border border-amber-300 rounded px-4 py-3 mb-5">
                     <p class="text-sm text-gray-800"><span class="font-bold">Fecha:</span> ${escaparHTML(p.examen.fecha)}</p>
-                    <p class="text-sm text-gray-800"><span class="font-bold">Sede:</span> ${escaparHTML(p.examen.sede || "Por confirmar")}</p>
+                                        <p class="text-sm text-gray-800"><span class="font-bold">Sede:</span> ${escaparHTML(p.examen.sede || "Por confirmar")}</p>
+                    ${(p.requisitos && formatearMoneda(p.requisitos.costo)) ? `<p class="text-sm text-gray-800"><span class="font-bold">Costo:</span> ${escaparHTML(formatearMoneda(p.requisitos.costo))}</p>` : ""}
                 </div>`;
             } else {
                 html += `<p class="italic text-gray-500 mb-5">Aún no tienes examen programado.</p>`;
@@ -1197,6 +1198,27 @@ function reiniciarTimerCarrusel() {
             } else {
                 html += `<p class="italic text-gray-500">Aun no has participado en eventos</p>`;
             }
+                        // Pagos realizados
+            html += `<h3 class="text-xs font-bold text-gray-700 uppercase tracking-wider mt-6 mb-2">💳 Pagos realizados</h3>`;
+            if (p.pagos && p.pagos.length > 0) {
+                const columnasPagos = "grid-template-columns: 1.1fr 1.2fr 1fr 1fr 1.6fr;";
+                html += `<div class="border border-gray-200 rounded overflow-hidden">
+                    <div class="grid gap-2 bg-brand-black text-brand-gold text-xs font-bold uppercase px-3 py-2" style="${columnasPagos}">
+                        <span>Fecha</span><span>Concepto</span><span>Monto</span><span>Forma de pago</span><span>Notas</span>
+                    </div>`;
+                p.pagos.forEach((pg, i) => {
+                    html += `<div class="grid gap-2 px-3 py-2 text-xs ${i % 2 === 0 ? "bg-white" : "bg-gray-50"}" style="${columnasPagos} word-break:break-word;">
+                        <span>${escaparHTML(pg.fecha)}</span>
+                        <span class="font-bold text-gray-800">${escaparHTML(pg.concepto)}</span>
+                        <span>${escaparHTML(formatearMoneda(pg.monto))}</span>
+                        <span>${escaparHTML(pg.forma)}</span>
+                        <span style="white-space:pre-line;">${escaparHTML(pg.notas)}</span>
+                    </div>`;
+                });
+                html += `</div>`;
+            } else {
+                html += `<p class="italic text-gray-500">Aún no tienes pagos registrados.</p>`;
+            }
             document.getElementById("contenidoExamen").innerHTML = html;
 
             // --- Pagos pendientes ---
@@ -1232,6 +1254,15 @@ function reiniciarTimerCarrusel() {
             } catch (error) {
                 console.error("Error al cargar la foto:", error);
             }
+        }
+                // ===== FORMATO DE MONEDA =====
+        function formatearMoneda(valor) {
+            if (valor === "" || valor === null || valor === undefined) return "";
+            const numero = (typeof valor === "number")
+                ? valor
+                : parseFloat(String(valor).replace(/[^0-9.\-]/g, ""));
+            if (isNaN(numero)) return String(valor);
+            return "$" + numero.toLocaleString("es-MX", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
         }
         // ===== FIN PESTAÑAS Y PERFIL =====
     </script>

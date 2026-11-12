@@ -1164,15 +1164,16 @@ function reiniciarTimerCarrusel() {
             // Historial
             html += `<h3 class="text-xs font-bold text-gray-700 uppercase tracking-wider mb-2">🏅 Historial de exámenes</h3>`;
             if (p.historial && p.historial.length > 0) {
-                html += `<div class="border border-gray-200 rounded overflow-hidden">
-                    <div class="grid grid-cols-3 bg-brand-black text-brand-gold text-xs font-bold uppercase px-3 py-2">
-                        <span>Grado</span><span>Fecha</span><span>Sede</span>
+                                html += `<div class="border border-gray-200 rounded overflow-hidden">
+                    <div class="grid grid-cols-4 gap-2 bg-brand-black text-brand-gold text-xs font-bold uppercase px-3 py-2">
+                        <span>Grado</span><span>Fecha</span><span>Sede</span><span>Calificación</span>
                     </div>`;
                 p.historial.forEach((h, i) => {
-                    html += `<div class="grid grid-cols-3 gap-2 px-3 py-2 text-xs ${i % 2 === 0 ? "bg-white" : "bg-gray-50"}">
+                    html += `<div class="grid grid-cols-4 gap-2 px-3 py-2 text-xs ${i % 2 === 0 ? "bg-white" : "bg-gray-50"}">
                         <span class="font-bold text-gray-800">${escaparHTML(h.grado)}</span>
                         <span>${escaparHTML(h.fecha)}</span>
                         <span>${escaparHTML(h.sede)}</span>
+                        <span class="font-bold">${escaparHTML(h.calificacion || "—")}</span>
                     </div>`;
                 });
                 html += `</div>`;

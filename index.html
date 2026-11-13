@@ -95,7 +95,7 @@
 </head>
 <body class="bg-gray-100 min-h-screen font-sans">
 
-    <header class="bg-brand-black text-white py-4 shadow-md border-b-4 border-brand-gold">
+        <header class="relative bg-brand-black text-white py-4 shadow-md border-b-4 border-brand-gold">
     
     <div class="max-w-5xl mx-auto flex items-center justify-center gap-4 px-4">
         
@@ -118,7 +118,27 @@
         </div>
 
     </div>
-
+    <div id="indicadorSatisfaccion" class="flex-col items-center mx-auto mt-3 md:mt-0 md:absolute md:right-4 md:top-1/2 md:-translate-y-1/2" style="display:none; width:140px;">
+        <p class="text-brand-gold text-center font-semibold" style="font-size:10px; line-height:1.2;">Así nos has calificado este mes</p>
+        <svg viewBox="0 8 200 118" style="width:110px; display:block;" role="img" aria-label="Calificación promedio del mes">
+            <defs>
+                <linearGradient id="gradSatisfaccion" gradientUnits="userSpaceOnUse" x1="20" y1="0" x2="180" y2="0">
+                    <stop offset="0%" stop-color="#dc2626"/>
+                    <stop offset="33%" stop-color="#f97316"/>
+                    <stop offset="66%" stop-color="#facc15"/>
+                    <stop offset="100%" stop-color="#16a34a"/>
+                </linearGradient>
+            </defs>
+            <path d="M 20 100 A 80 80 0 0 1 180 100" fill="none" stroke="url(#gradSatisfaccion)" stroke-width="18"/>
+            <text x="20" y="116" text-anchor="middle" fill="#9ca3af" font-size="10">0</text>
+            <text x="180" y="116" text-anchor="middle" fill="#9ca3af" font-size="10">10</text>
+            <g id="agujaSatisfaccion" visibility="hidden" transform="rotate(0 100 100)">
+                <polygon points="30,100 100,95.5 100,104.5" fill="#ffffff"/>
+            </g>
+            <circle cx="100" cy="100" r="7" fill="#ffffff"/>
+            <text id="valorSatisfaccion" x="100" y="124" text-anchor="middle" fill="#ffffff" font-size="16" font-weight="700"></text>
+        </svg>
+    </div>
 </header>
     <main class="max-w-4xl mx-auto px-4 py-8">
         <!-- ===== TABLERO DE ANUNCIOS ===== -->
@@ -315,13 +335,18 @@
                     </div>
                 </div>
                                 <div id="bloqueTienda" class="mb-6">
-                    <h3 class="text-xs font-bold text-gray-700 uppercase tracking-wider mb-2">🛒 Uniformes y equipo</h3>
+                                        <button type="button" onclick="alternarTienda()" class="w-full flex items-center justify-between border border-gray-200 rounded px-4 py-3 bg-white focus:outline-none">
+                        <span class="text-xs font-bold text-gray-700 uppercase tracking-wider">🛒 Uniformes y equipo</span>
+                        <span id="iconoTienda" class="text-xs text-gray-500" style="transition:transform .2s;">▶</span>
+                    </button>
+                    <div id="cuerpoTienda" class="hidden mt-3">
                     <div class="flex rounded-md shadow-sm overflow-hidden border border-brand-gold mb-3">
                         <button id="tabTiendaUniformes" onclick="mostrarCategoriaTienda('Uniformes')" class="flex-1 text-xs font-bold px-2 py-2 uppercase tracking-wide focus:outline-none bg-brand-black text-brand-gold">Uniformes</button>
                         <button id="tabTiendaEquipo" onclick="mostrarCategoriaTienda('Equipo')" class="flex-1 text-xs font-bold px-2 py-2 uppercase tracking-wide focus:outline-none bg-white text-gray-700 border-l border-brand-gold">Equipo</button>
                         <button id="tabTiendaPlayeras" onclick="mostrarCategoriaTienda('Playeras')" class="flex-1 text-xs font-bold px-2 py-2 uppercase tracking-wide focus:outline-none bg-white text-gray-700 border-l border-brand-gold">Playeras</button>
                     </div>
-                    <div id="listaTienda" class="space-y-2 text-sm text-gray-600">Cargando...</div>
+                                        <div id="listaTienda" class="space-y-2 text-sm text-gray-600">Cargando...</div>
+                    </div>
                 </div>
                 <div id="contenidoPagos" class="text-sm text-gray-600">Cargando...</div>
             </div>
@@ -396,6 +421,7 @@ window.addEventListener("DOMContentLoaded", () => {
 
     // Inicializamos el portal normalmente
     inicializarPortal();
+        cargarSatisfaccion();
 });
 
 // 2. BLINDAJE CRÍTICO: Detectar si se regresa usando el botón "Atrás" del navegador
@@ -1187,22 +1213,27 @@ function reiniciarTimerCarrusel() {
                 html += `<p class="italic text-gray-500 mb-5">No se encontraron requisitos para tu grado actual (${escaparHTML(p.grado)}).</p>`;
             }
 
-            // Historial
+                        // Historial
             html += `<h3 class="text-xs font-bold text-gray-700 uppercase tracking-wider mb-2">🏅 Historial de exámenes</h3>`;
             if (p.historial && p.historial.length > 0) {
-                                html += `<div class="border border-gray-200 rounded overflow-hidden">
-                    <div class="grid grid-cols-4 gap-2 bg-brand-black text-brand-gold text-xs font-bold uppercase px-3 py-2">
-                        <span>Grado</span><span>Fecha</span><span>Sede</span><span>Calificación</span>
+                const colsHist = "grid-template-columns: 1.4fr 1.1fr 1.5fr 1.2fr 1fr 1fr;";
+                html += `<div style="overflow-x:auto;">
+                  <div class="border border-gray-200 rounded overflow-hidden" style="min-width:540px;">
+                    <div class="grid gap-2 bg-brand-black text-brand-gold text-xs font-bold uppercase px-3 py-2" style="${colsHist}">
+                        <span>Grado</span><span>Fecha</span><span>Sede</span><span>Calificación</span><span class="text-center">Destacado</span><span class="text-center">Asistencia</span>
                     </div>`;
                 p.historial.forEach((h, i) => {
-                    html += `<div class="grid grid-cols-4 gap-2 px-3 py-2 text-xs ${i % 2 === 0 ? "bg-white" : "bg-gray-50"}">
+                    html += `<div class="grid gap-2 px-3 py-2 text-xs ${i % 2 === 0 ? "bg-white" : "bg-gray-50"}" style="${colsHist} word-break:break-word;">
                         <span class="font-bold text-gray-800">${escaparHTML(h.grado)}</span>
                         <span>${escaparHTML(h.fecha)}</span>
                         <span>${escaparHTML(h.sede)}</span>
                         <span class="font-bold">${escaparHTML(h.calificacion || "—")}</span>
+                        <span class="text-center">${h.destacado ? "🏅" : ""}</span>
+                        <span class="text-center">${h.asistencia ? "✅" : ""}</span>
                     </div>`;
                 });
-                html += `</div>`;
+                html += `</div></div>
+                    <p class="text-gray-400 mt-2" style="font-size:10px;">🏅 Examen destacado &nbsp;·&nbsp; ✅ Asistencia perfecta</p>`;
             } else {
                 html += `<p class="italic text-gray-500">Aún no tienes exámenes registrados.</p>`;
             }
@@ -1463,7 +1494,10 @@ function reiniciarTimerCarrusel() {
                 pendientes.push({ id: p.id, fila: fila });
             });
 
-            cargarFotosTienda(pendientes, token);
+                        const cuerpoTienda = document.getElementById("cuerpoTienda");
+            if (!cuerpoTienda || !cuerpoTienda.classList.contains("hidden")) {
+                cargarFotosTienda(pendientes, token);
+            }
         }
 
         // Las fotos se piden una por una para no saturar el servidor
@@ -1511,9 +1545,51 @@ function reiniciarTimerCarrusel() {
                 boton.textContent = "Comprar";
             }
         }
+
+                function alternarTienda() {
+            const cuerpo = document.getElementById("cuerpoTienda");
+            const icono = document.getElementById("iconoTienda");
+            if (!cuerpo) return;
+            const abrir = cuerpo.classList.contains("hidden");
+            cuerpo.classList.toggle("hidden", !abrir);
+            if (icono) icono.style.transform = abrir ? "rotate(90deg)" : "";
+            if (abrir && _tiendaDatos) mostrarCategoriaTienda(_tiendaCategoria);
+        }
         // ===== FIN TIENDA =====
         // ===== FIN PAGO DE EXAMEN Y VISITA =====
         // ===== FIN PAGO DE MENSUALIDAD =====
+                // ===== INDICADOR DE SATISFACCIÓN DEL MES =====
+        async function cargarSatisfaccion() {
+            const cont = document.getElementById("indicadorSatisfaccion");
+            if (!cont) return;
+            try {
+                const respuesta = await fetch(WEB_APP_URL + "?accion=satisfaccionMes");
+                const datos = await respuesta.json();
+                if (!datos.success) return;
+                pintarSatisfaccion(datos.promedio);
+                cont.style.display = "flex";
+            } catch (error) {
+                console.error("Error al cargar la satisfacción:", error);
+            }
+        }
+
+        function pintarSatisfaccion(promedio) {
+            const aguja = document.getElementById("agujaSatisfaccion");
+            const texto = document.getElementById("valorSatisfaccion");
+            if (!aguja || !texto) return;
+            if (promedio === null || promedio === undefined) {
+                aguja.setAttribute("visibility", "hidden");
+                texto.setAttribute("font-size", "10");
+                texto.textContent = "Aún sin calificaciones";
+                return;
+            }
+            const v = Math.max(0, Math.min(10, Number(promedio)));
+            aguja.setAttribute("transform", "rotate(" + ((v / 10) * 180) + " 100 100)");
+            aguja.setAttribute("visibility", "visible");
+            texto.setAttribute("font-size", "16");
+            texto.textContent = v.toFixed(1);
+        }
+        // ===== FIN INDICADOR DE SATISFACCIÓN =====
         // ===== FIN PESTAÑAS Y PERFIL =====
     </script>
 

@@ -303,6 +303,16 @@
                     💳 <span>PAGOS PENDIENTES</span>
                 </h2>
                                 <div id="bloquePagoMensualidad" class="mb-6"></div>
+                                <div id="bloqueOtrosPagos" class="mb-6">
+                    <h3 class="text-xs font-bold text-gray-700 uppercase tracking-wider mb-2">🧾 Otros pagos</h3>
+                    <div class="flex items-center justify-between gap-3 border border-gray-200 rounded px-4 py-3">
+                        <div>
+                            <p class="text-sm font-bold text-gray-800">Visita</p>
+                            <p class="text-xs text-gray-600">$100.00</p>
+                        </div>
+                        <button onclick="pagarVisita(this)" class="bg-brand-black text-brand-gold border border-brand-gold text-xs font-bold px-4 py-2 rounded uppercase tracking-wide">Pagar</button>
+                    </div>
+                </div>
                 <div id="contenidoPagos" class="text-sm text-gray-600">Cargando...</div>
             </div>
         </section>
@@ -1142,6 +1152,7 @@ function reiniciarTimerCarrusel() {
                     <p class="text-sm text-gray-800"><span class="font-bold">Fecha:</span> ${escaparHTML(p.examen.fecha)}</p>
                                         <p class="text-sm text-gray-800"><span class="font-bold">Sede:</span> ${escaparHTML(p.examen.sede || "Por confirmar")}</p>
                     ${(p.requisitos && formatearMoneda(p.requisitos.costo)) ? `<p class="text-sm text-gray-800"><span class="font-bold">Costo:</span> ${escaparHTML(formatearMoneda(p.requisitos.costo))}</p>` : ""}
+                                        <div id="bloquePagoExamen" class="mt-3"></div>
                 </div>`;
             } else {
                 html += `<p class="italic text-gray-500 mb-5">Aún no tienes examen programado.</p>`;
@@ -1203,6 +1214,7 @@ function reiniciarTimerCarrusel() {
             }
                         
             document.getElementById("contenidoExamen").innerHTML = html;
+                        cargarPagoExamen(_idPerfilActual);
 
                         // --- Pagos pendientes ---
             const contPagos = document.getElementById("contenidoPagos");
@@ -1336,6 +1348,45 @@ function reiniciarTimerCarrusel() {
                 boton.textContent = "Pagar";
             }
         }
+
+                // ===== PAGO DE EXAMEN Y VISITA (MERCADO PAGO) =====
+        async function cargarPagoExamen(id) {
+            if (!id) return;
+            try {
+                const respuesta = await fetch(WEB_APP_URL + "?accion=opcionExamen&id=" + encodeURIComponent(id));
+                const datos = await respuesta.json();
+                if (_idPerfilActual !== id) return;
+                if (!datos.success || !datos.disponible) return;
+                const cont = document.getElementById("bloquePagoExamen");
+                if (!cont) return;
+                cont.innerHTML = datos.pagado
+                    ? `<p class="text-green-700 text-xs font-bold">✅ Examen pagado</p>`
+                    : `<button onclick="pagarExamen(this)" class="bg-brand-black text-brand-gold border border-brand-gold text-xs font-bold px-4 py-2 rounded uppercase tracking-wide">Pagar examen (${escaparHTML(formatearMoneda(datos.monto))})</button>`;
+            } catch (error) {
+                console.error("Error al cargar el pago del examen:", error);
+            }
+        }
+
+        async function iniciarPagoMP(accion, boton, textoOriginal) {
+            const id = _idPerfilActual;
+            boton.disabled = true;
+            boton.textContent = "Abriendo...";
+            try {
+                const respuesta = await fetch(WEB_APP_URL + "?accion=" + accion + "&id=" + encodeURIComponent(id));
+                const datos = await respuesta.json();
+                if (!datos.success || !datos.url) throw new Error(datos.error || "Error desconocido");
+                window.location.href = datos.url;
+            } catch (error) {
+                console.error("Error al iniciar el pago:", error);
+                alert("No fue posible iniciar el pago. Intenta nuevamente más tarde.");
+                boton.disabled = false;
+                boton.textContent = textoOriginal;
+            }
+        }
+
+        function pagarExamen(boton) { iniciarPagoMP("crearPagoExamen", boton, boton.textContent); }
+        function pagarVisita(boton) { iniciarPagoMP("crearPagoVisita", boton, "Pagar"); }
+        // ===== FIN PAGO DE EXAMEN Y VISITA =====
         // ===== FIN PAGO DE MENSUALIDAD =====
         // ===== FIN PESTAÑAS Y PERFIL =====
     </script>

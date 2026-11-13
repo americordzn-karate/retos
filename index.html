@@ -303,6 +303,7 @@
                     💳 <span>PAGOS</span>
                 </h2>
                                 <div id="bloquePagoMensualidad" class="mb-6"></div>
+                                <div id="contenidoCreditos" class="text-sm text-gray-600 mb-6">Cargando...</div>
                                 <div id="bloqueOtrosPagos" class="mb-6">
                     <h3 class="text-xs font-bold text-gray-700 uppercase tracking-wider mb-2">🧾 Otros pagos</h3>
                     <div class="flex items-center justify-between gap-3 border border-gray-200 rounded px-4 py-3">
@@ -1124,6 +1125,7 @@ function reiniciarTimerCarrusel() {
             document.getElementById("datoHorario").textContent = "...";
             document.getElementById("contenidoExamen").textContent = "Cargando...";
             document.getElementById("contenidoPagos").textContent = "Cargando...";
+                        document.getElementById("contenidoCreditos").textContent = "Cargando...";
 
             try {
                 const respuesta = await fetch(WEB_APP_URL + "?accion=perfilAlumno&id=" + encodeURIComponent(id));
@@ -1140,6 +1142,7 @@ function reiniciarTimerCarrusel() {
                 const msg = `<p class="text-red-600 font-semibold">No fue posible cargar la información. Intenta nuevamente más tarde.</p>`;
                 document.getElementById("contenidoExamen").innerHTML = msg;
                 document.getElementById("contenidoPagos").innerHTML = msg;
+                                document.getElementById("contenidoCreditos").innerHTML = msg;
             }
         }
 
@@ -1226,18 +1229,19 @@ function reiniciarTimerCarrusel() {
             document.getElementById("contenidoExamen").innerHTML = html;
                         cargarPagoExamen(_idPerfilActual);
 
-                        // --- Pagos pendientes ---
-            const contPagos = document.getElementById("contenidoPagos");
-            let htmlPagos = "";
-
+                                    // --- Notas de crédito ---
+            const contCreditos = document.getElementById("contenidoCreditos");
+            let htmlCreditos = `<h3 class="text-xs font-bold text-gray-700 uppercase tracking-wider mb-2">📝 Notas de crédito</h3>`;
             if (p.creditos && p.creditos.trim() !== "") {
-                htmlPagos += `<div class="bg-red-50 border border-red-300 rounded px-4 py-3 text-gray-800" style="white-space:pre-line;">${escaparHTML(p.creditos)}</div>`;
+                htmlCreditos += `<div class="bg-red-50 border border-red-300 rounded px-4 py-3 text-gray-800" style="white-space:pre-line;">${escaparHTML(p.creditos)}</div>`;
             } else {
-                htmlPagos += `<p class="text-green-700 font-semibold">✅ Sin créditos pendientes</p>`;
+                htmlCreditos += `<p class="text-green-700 font-semibold">✅ Sin créditos pendientes</p>`;
             }
+            contCreditos.innerHTML = htmlCreditos;
 
-            // Pagos realizados
-            htmlPagos += `<h3 class="text-xs font-bold text-gray-700 uppercase tracking-wider mt-6 mb-2">💳 Pagos realizados</h3>`;
+            // --- Historial de pagos ---
+            const contPagos = document.getElementById("contenidoPagos");
+            let htmlPagos = `<h3 class="text-xs font-bold text-gray-700 uppercase tracking-wider mb-2">💳 Historial de pagos</h3>`;
             if (p.pagos && p.pagos.length > 0) {
                 const columnasPagos = "grid-template-columns: 1.1fr 1.2fr 1fr 1fr 1.6fr;";
                 htmlPagos += `<div class="border border-gray-200 rounded overflow-hidden">
@@ -1257,7 +1261,6 @@ function reiniciarTimerCarrusel() {
             } else {
                 htmlPagos += `<p class="italic text-gray-500">Aún no tienes pagos registrados.</p>`;
             }
-
             contPagos.innerHTML = htmlPagos;
         }
                 // ===== FOTO DEL ALUMNO =====

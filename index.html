@@ -302,6 +302,7 @@
                 <h2 class="text-xl font-bold text-gray-800 mb-4 tracking-wide flex items-center gap-2">
                     💳 <span>PAGOS PENDIENTES</span>
                 </h2>
+                                <div id="bloquePagoMensualidad" class="mb-6"></div>
                 <div id="contenidoPagos" class="text-sm text-gray-600">Cargando...</div>
             </div>
         </section>
@@ -1010,6 +1011,7 @@ function reiniciarTimerCarrusel() {
                 document.getElementById("tabAsistencias").style.display = _esAdminAsistencias ? "block" : "none";
                 document.getElementById("barraPestanas").classList.remove("hidden");
                                 cargarFoto(id);
+                                cargarOpcionesMensualidad(id);
                 cambiarPestana("retos");
                 if (id !== "" && id !== _idPerfilActual) cargarPerfil(id);
             } catch (e) {
@@ -1271,6 +1273,70 @@ function reiniciarTimerCarrusel() {
             if (isNaN(numero)) return String(valor);
             return "$" + numero.toLocaleString("es-MX", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
         }
+
+                // ===== PAGO DE MENSUALIDAD (MERCADO PAGO) =====
+        let _mpIdActual = "";
+
+        async function cargarOpcionesMensualidad(id) {
+            _mpIdActual = id;
+            const cont = document.getElementById("bloquePagoMensualidad");
+            if (!cont) return;
+            cont.innerHTML = "";
+            try {
+                const respuesta = await fetch(WEB_APP_URL + "?accion=opcionesMensualidad&id=" + encodeURIComponent(id));
+                const datos = await respuesta.json();
+                if (_mpIdActual !== id) return;
+                if (!datos.success) return;
+
+                let aviso = "";
+                const st = new URLSearchParams(window.location.search).get("status");
+                if (st === "approved") {
+                    aviso = `<p class="bg-green-50 border border-green-300 text-green-800 rounded px-3 py-2 text-xs font-semibold mb-3">✅ Recibimos tu pago. Se reflejará en tu historial en unos instantes.</p>`;
+                } else if (st === "pending" || st === "in_process") {
+                    aviso = `<p class="bg-amber-50 border border-amber-300 text-amber-800 rounded px-3 py-2 text-xs font-semibold mb-3">⏳ Tu pago está pendiente de confirmación.</p>`;
+                }
+
+                let html = `<h3 class="text-xs font-bold text-gray-700 uppercase tracking-wider mb-2">💳 Pagar mensualidad</h3>
+                    ${aviso}
+                    <p class="text-xs text-gray-500 mb-3">Del día 1 al 5 de cada mes no hay recargo. A partir del día 6 se agrega un recargo de $100. Pagar el mes siguiente por adelantado no genera recargo.</p>
+                    <div class="space-y-2">`;
+                datos.opciones.forEach(op => {
+                    const recargoTxt = op.recargo > 0 ? ` <span class="text-red-600">(incluye recargo de ${escaparHTML(formatearMoneda(op.recargo))})</span>` : "";
+                    const accion = op.pagado
+                        ? `<span class="text-green-700 text-xs font-bold">✅ Pagado</span>`
+                        : `<button onclick="pagarMensualidad('${escaparHTML(op.mes)}', this)" class="bg-brand-black text-brand-gold border border-brand-gold text-xs font-bold px-4 py-2 rounded uppercase tracking-wide">Pagar</button>`;
+                    html += `<div class="flex items-center justify-between gap-3 border border-gray-200 rounded px-4 py-3">
+                        <div>
+                            <p class="text-sm font-bold text-gray-800">${escaparHTML(op.etiqueta)}</p>
+                            <p class="text-xs text-gray-600">${escaparHTML(formatearMoneda(op.monto))}${recargoTxt}</p>
+                        </div>
+                        ${accion}
+                    </div>`;
+                });
+                html += `</div>`;
+                cont.innerHTML = html;
+            } catch (error) {
+                console.error("Error al cargar opciones de pago:", error);
+            }
+        }
+
+        async function pagarMensualidad(mes, boton) {
+            const id = _mpIdActual;
+            boton.disabled = true;
+            boton.textContent = "Abriendo...";
+            try {
+                const respuesta = await fetch(WEB_APP_URL + "?accion=crearPagoMensualidad&id=" + encodeURIComponent(id) + "&mes=" + encodeURIComponent(mes));
+                const datos = await respuesta.json();
+                if (!datos.success || !datos.url) throw new Error(datos.error || "Error desconocido");
+                window.location.href = datos.url;
+            } catch (error) {
+                console.error("Error al iniciar el pago:", error);
+                alert("No fue posible iniciar el pago. Intenta nuevamente más tarde.");
+                boton.disabled = false;
+                boton.textContent = "Pagar";
+            }
+        }
+        // ===== FIN PAGO DE MENSUALIDAD =====
         // ===== FIN PESTAÑAS Y PERFIL =====
     </script>
 

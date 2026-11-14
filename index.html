@@ -8,6 +8,7 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <!-- Lector de códigos QR (acceso de alumnos) -->
     <script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcode-generator/1.4.4/qrcode.min.js"></script>
     <style>
         .bg-brand-black { background-color: #1a1a1a; }
         .text-brand-gold { color: #d4af37; }
@@ -212,6 +213,18 @@
 
         <section id="panelBienvenida" class="hidden bg-brand-black text-white rounded-lg p-6 shadow-md mb-8 border-2 border-brand-gold transition-all">
                         <div id="barraAccionesAlumno" class="flex justify-end gap-4 mb-4">
+                                            <div class="flex flex-col items-center gap-1">
+                    <button type="button" onclick="abrirModalQr()" aria-label="Ver y descargar mi código QR" title="Mi código QR"
+                        class="w-11 h-11 rounded-full bg-neutral-800 border border-brand-gold text-brand-gold flex items-center justify-center focus:outline-none">
+                        <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                            <rect x="3" y="3" width="7" height="7" rx="1"/>
+                            <rect x="14" y="3" width="7" height="7" rx="1"/>
+                            <rect x="3" y="14" width="7" height="7" rx="1"/>
+                            <path d="M14 14h3v3h-3zM20 14v3M17 20h4M14 20v1"/>
+                        </svg>
+                    </button>
+                    <span class="text-gray-400 uppercase tracking-widest" style="font-size:9px;">QR</span>
+                </div>
                 <div class="flex flex-col items-center gap-1">
                     <button type="button" onclick="abrirModalCurp()" aria-label="Registrar mi CURP" title="Registrar mi CURP"
                         class="w-11 h-11 rounded-full bg-neutral-800 border border-brand-gold text-brand-gold flex items-center justify-center focus:outline-none">
@@ -1852,6 +1865,130 @@ function reiniciarTimerCarrusel() {
         // Aplica el bloqueo si todavía está vigente (por ejemplo, al recargar la página)
         refrescarBloqueoCurp();
         // ===== FIN INGRESO Y REGISTRO POR CURP =====
+            // ===== CÓDIGO QR DEL ALUMNO =====
+        let _qrNombreArchivo = "";
+
+        // Divide el texto en las líneas necesarias para que quepa en el ancho indicado
+        function ajustarTextoQr(ctx, texto, anchoMax) {
+            const palabras = String(texto).split(/\s+/).filter(Boolean);
+            const lineas = [];
+            let actual = "";
+            palabras.forEach(p => {
+                const prueba = actual ? actual + " " + p : p;
+                if (!actual || ctx.measureText(prueba).width <= anchoMax) {
+                    actual = prueba;
+                } else {
+                    lineas.push(actual);
+                    actual = p;
+                }
+            });
+            if (actual) lineas.push(actual);
+            return lineas.length ? lineas : [""];
+        }
+
+        // Dibuja el QR (valor = ID_Alumno) con el nombre debajo y regresa el lienzo
+        function dibujarQrAlumno(id, nombre) {
+            if (typeof qrcode === "undefined") throw new Error("La biblioteca de QR no está disponible.");
+
+            const qr = qrcode(0, "M");
+            qr.addData(String(id));
+            qr.make();
+            const n = qr.getModuleCount();
+
+            const ANCHO = 600;
+            const celda = Math.max(1, Math.floor(520 / (n + 8)));   // 4 módulos de margen por lado
+            const bloque = celda * (n + 8);
+
+            const lienzo = document.createElement("canvas");
+            let ctx = lienzo.getContext("2d");
+
+            // Tamaño de letra del nombre: máximo 2 líneas
+            const maxTexto = ANCHO - 60;
+            let fuente = 40;
+            let lineas;
+            while (true) {
+                ctx.font = "bold " + fuente + "px Arial, Helvetica, sans-serif";
+                lineas = ajustarTextoQr(ctx, nombre, maxTexto);
+                if (lineas.length <= 2 || fuente <= 20) break;
+                fuente -= 2;
+            }
+            const interlineado = Math.round(fuente * 1.25);
+            const altoTexto = lineas.length * interlineado + 40;
+
+            lienzo.width = ANCHO;
+            lienzo.height = 20 + bloque + altoTexto;
+            ctx = lienzo.getContext("2d");
+
+            ctx.fillStyle = "#ffffff";
+            ctx.fillRect(0, 0, lienzo.width, lienzo.height);
+
+            const x0 = Math.floor((ANCHO - bloque) / 2) + celda * 4;
+            const y0 = 20 + celda * 4;
+            ctx.fillStyle = "#000000";
+            for (let f = 0; f < n; f++) {
+                for (let c = 0; c < n; c++) {
+                    if (qr.isDark(f, c)) ctx.fillRect(x0 + c * celda, y0 + f * celda, celda, celda);
+                }
+            }
+
+            ctx.fillStyle = "#111111";
+            ctx.textAlign = "center";
+            ctx.textBaseline = "top";
+            ctx.font = "bold " + fuente + "px Arial, Helvetica, sans-serif";
+            lineas.forEach((l, i) => {
+                ctx.fillText(l, ANCHO / 2, 20 + bloque + 10 + i * interlineado);
+            });
+
+            return lienzo;
+        }
+
+        function abrirModalQr() {
+            const id = String(_idPerfilActual || "").trim();
+            const nombre = (document.getElementById("txtNombreAlumno").textContent || "").trim();
+            const modal = document.getElementById("ventanaQr");
+            const img = document.getElementById("imagenQr");
+            const msg = document.getElementById("mensajeQr");
+            const btn = document.getElementById("btnDescargarQr");
+            if (!modal || !img || !msg || !btn) return;
+
+            modal.style.display = "flex";
+            try {
+                if (!id) throw new Error("No hay un alumno identificado.");
+                const lienzo = dibujarQrAlumno(id, nombre);
+                img.src = lienzo.toDataURL("image/png");
+                img.classList.remove("hidden");
+                btn.disabled = false;
+                msg.className = "text-xs text-center text-gray-500 mb-4";
+                msg.textContent = "Toca Descargar para guardarla. Si no se descarga, mantén presionada la imagen y elige \"Guardar imagen\".";
+
+                const seguro = nombre.normalize("NFD").replace(/[\u0300-\u036f]/g, "")
+                    .replace(/[^A-Za-z0-9]+/g, "_").replace(/^_+|_+$/g, "");
+                _qrNombreArchivo = "QR_" + (seguro || "Senshi-Kan") + ".png";
+            } catch (error) {
+                console.error("Error al generar el QR:", error);
+                img.classList.add("hidden");
+                btn.disabled = true;
+                msg.className = "text-xs text-center text-red-600 font-semibold mb-4";
+                msg.textContent = "No fue posible generar tu código QR. Recarga la página e inténtalo de nuevo.";
+            }
+        }
+
+        function cerrarModalQr() {
+            const modal = document.getElementById("ventanaQr");
+            if (modal) modal.style.display = "none";
+        }
+
+        function descargarQr() {
+            const img = document.getElementById("imagenQr");
+            if (!img || !img.src) return;
+            const a = document.createElement("a");
+            a.href = img.src;
+            a.download = _qrNombreArchivo || "QR_Senshi-Kan.png";
+            document.body.appendChild(a);
+            a.click();
+            a.remove();
+        }
+        // ===== FIN CÓDIGO QR DEL ALUMNO =====
         // ===== FIN PESTAÑAS Y PERFIL =====
     </script>
 
@@ -1880,6 +2017,22 @@ function reiniciarTimerCarrusel() {
         </div>
     </div>
     <!-- ===== FIN REGISTRO DE CURP ===== -->
+    
+    <!-- ===== CÓDIGO QR DEL ALUMNO ===== -->
+    <div id="ventanaQr" class="hidden" style="position:fixed; inset:0; background:rgba(0,0,0,0.6); z-index:50; display:none; align-items:center; justify-content:center; padding:16px;">
+        <div class="bg-white rounded-lg shadow-lg p-5 w-full border-t-4 border-brand-gold" style="max-width:340px;">
+            <h3 class="text-sm font-bold text-gray-800 uppercase tracking-wide mb-3 text-center">Mi código QR</h3>
+            <div class="flex justify-center mb-3">
+                <img id="imagenQr" class="hidden border border-gray-200 rounded" style="width:260px; max-width:100%; height:auto;" alt="Mi código QR">
+            </div>
+            <p id="mensajeQr" class="text-xs text-center text-gray-500 mb-4"></p>
+            <div class="flex gap-2">
+                <button onclick="cerrarModalQr()" class="flex-1 bg-gray-200 text-gray-700 font-bold py-2 rounded text-xs uppercase">Cerrar</button>
+                <button id="btnDescargarQr" onclick="descargarQr()" class="flex-1 bg-brand-black text-brand-gold border border-brand-gold font-bold py-2 rounded text-xs uppercase disabled:opacity-50">Descargar</button>
+            </div>
+        </div>
+    </div>
+    <!-- ===== FIN CÓDIGO QR DEL ALUMNO ===== -->
     <!-- ===== FIN ACCESO MANUAL ===== -->
 
 </body>

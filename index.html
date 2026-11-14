@@ -1213,26 +1213,25 @@ function reiniciarTimerCarrusel() {
                 html += `<p class="italic text-gray-500 mb-5">No se encontraron requisitos para tu grado actual (${escaparHTML(p.grado)}).</p>`;
             }
 
-                        // Historial
+                                    // Historial
             html += `<h3 class="text-xs font-bold text-gray-700 uppercase tracking-wider mb-2">🏅 Historial de exámenes</h3>`;
             if (p.historial && p.historial.length > 0) {
-                const colsHist = "grid-template-columns: 1.4fr 1.1fr 1.5fr 1.2fr 1fr 1fr;";
-                html += `<div style="overflow-x:auto;">
-                  <div class="border border-gray-200 rounded overflow-hidden" style="min-width:540px;">
-                    <div class="grid gap-2 bg-brand-black text-brand-gold text-xs font-bold uppercase px-3 py-2" style="${colsHist}">
-                        <span>Grado</span><span>Fecha</span><span>Sede</span><span>Calificación</span><span class="text-center">Destacado</span><span class="text-center">Asistencia</span>
+                const colsHist = "grid-template-columns: minmax(0,38fr) minmax(0,54fr) minmax(0,54fr) minmax(0,34fr) minmax(0,30fr) minmax(0,34fr);";
+                html += `<div class="border border-gray-200 rounded overflow-hidden">
+                    <div class="grid gap-1 sm:gap-2 bg-brand-black text-brand-gold text-[9px] sm:text-xs font-bold uppercase px-2 sm:px-3 py-2" style="${colsHist}">
+                        <span>Grado</span><span>Fecha</span><span>Sede</span><span class="text-center">Calif.</span><span class="text-center">Dest.</span><span class="text-center">Asist.</span>
                     </div>`;
                 p.historial.forEach((h, i) => {
-                    html += `<div class="grid gap-2 px-3 py-2 text-xs ${i % 2 === 0 ? "bg-white" : "bg-gray-50"}" style="${colsHist} word-break:break-word;">
+                    html += `<div class="grid gap-1 sm:gap-2 items-center px-2 sm:px-3 py-2 text-[10px] sm:text-xs ${i % 2 === 0 ? "bg-white" : "bg-gray-50"}" style="${colsHist} overflow-wrap:anywhere;">
                         <span class="font-bold text-gray-800">${escaparHTML(h.grado)}</span>
                         <span>${escaparHTML(h.fecha)}</span>
                         <span>${escaparHTML(h.sede)}</span>
-                        <span class="font-bold">${escaparHTML(h.calificacion || "—")}</span>
-                        <span class="text-center">${h.destacado ? "🏅" : ""}</span>
-                        <span class="text-center">${h.asistencia ? "✅" : ""}</span>
+                        <span class="font-bold text-center">${escaparHTML(h.calificacion || "—")}</span>
+                        <span class="text-center text-xs">${h.destacado ? "🏅" : ""}</span>
+                        <span class="text-center text-xs">${h.asistencia ? "✅" : ""}</span>
                     </div>`;
                 });
-                html += `</div></div>
+                html += `</div>
                     <p class="text-gray-400 mt-2" style="font-size:10px;">🏅 Examen destacado &nbsp;·&nbsp; ✅ Asistencia perfecta</p>`;
             } else {
                 html += `<p class="italic text-gray-500">Aún no tienes exámenes registrados.</p>`;

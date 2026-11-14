@@ -163,7 +163,7 @@
                 </div>
             </div>
 
-            <!-- Bloque de escaneo (visible mientras no hay alumno identificado) -->
+                        <!-- Bloque de escaneo (visible mientras no hay alumno identificado) -->
             <div id="bloqueEscaner">
                 <p class="text-gray-600 text-sm mb-4">Para ingresar, presenta tu código QR personal a la cámara trasera de tu dispositivo.</p>
 
@@ -181,6 +181,21 @@
                         Cancelar
                     </button>
                 </div>
+
+                <!-- Ingreso con los últimos 4 caracteres del CURP -->
+                <div id="bloqueIngresoCurp" class="mt-5 pt-4 border-t border-gray-200">
+                    <p class="text-center text-xs text-gray-500 mb-2">¿Olvidaste tu QR? Ingresa con los <span class="font-bold">últimos 4 caracteres de tu CURP</span>.</p>
+                    <div class="flex gap-2">
+                        <input id="inputCurpIngreso" type="text" maxlength="18" autocomplete="off" autocapitalize="characters" spellcheck="false"
+                            placeholder="Últimos 4 caracteres"
+                            oninput="normalizarEntradaCurp(this)"
+                            onkeydown="if(event.key==='Enter'){ ingresarConCurp(); }"
+                            class="flex-1 min-w-0 border border-gray-300 rounded px-3 py-2 text-sm tracking-widest">
+                        <button id="btnIngresarCurp" onclick="ingresarConCurp()"
+                            class="bg-brand-black text-brand-gold border border-brand-gold font-bold px-4 py-2 rounded text-xs uppercase tracking-wide">Entrar</button>
+                    </div>
+                    <p id="mensajeCurpIngreso" class="text-xs mt-2 text-center"></p>
+                </div>
             </div>
 
             <!-- Alumno identificado -->
@@ -196,6 +211,20 @@
         </section>
 
         <section id="panelBienvenida" class="hidden bg-brand-black text-white rounded-lg p-6 shadow-md mb-8 border-2 border-brand-gold transition-all">
+                        <div id="barraAccionesAlumno" class="flex justify-end gap-4 mb-4">
+                <div class="flex flex-col items-center gap-1">
+                    <button type="button" onclick="abrirModalCurp()" aria-label="Registrar mi CURP" title="Registrar mi CURP"
+                        class="w-11 h-11 rounded-full bg-neutral-800 border border-brand-gold text-brand-gold flex items-center justify-center focus:outline-none">
+                        <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                            <rect x="3" y="5" width="18" height="14" rx="2"/>
+                            <circle cx="9" cy="11" r="2"/>
+                            <path d="M6 16c.6-1.6 1.8-2.4 3-2.4s2.4.8 3 2.4"/>
+                            <path d="M14 10h4M14 13h4"/>
+                        </svg>
+                    </button>
+                    <span class="text-gray-400 uppercase tracking-widest" style="font-size:9px;">CURP</span>
+                </div>
+            </div>
             <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
                             <div class="flex justify-center md:justify-start w-full md:w-auto">
                     <img id="fotoAlumno" class="hidden rounded-full object-cover border-2 border-brand-gold" style="width:96px;height:96px;" alt="Foto del alumno">
@@ -1589,6 +1618,240 @@ function reiniciarTimerCarrusel() {
             texto.textContent = v.toFixed(1);
         }
         // ===== FIN INDICADOR DE SATISFACCIÓN =====
+                // ===== INGRESO Y REGISTRO POR CURP =====
+        const CURP_MAX_FALLOS = 3;
+        const CURP_BLOQUEO_MIN = 2;
+        let _curpTimer = null;
+
+        // Envía datos al script por POST y regresa la respuesta JSON
+        async function postScript(datos) {
+            const respuesta = await fetch(WEB_APP_URL, {
+                method: "POST",
+                headers: { "Content-Type": "text/plain;charset=utf-8" },
+                body: JSON.stringify(datos)
+            });
+            return await respuesta.json();
+        }
+
+        // Convierte a mayúsculas y deja solo letras y números
+        function normalizarEntradaCurp(input) {
+            const limpio = input.value.toUpperCase().replace(/[^A-Z0-9]/g, "");
+            if (limpio !== input.value) input.value = limpio;
+        }
+
+        function curpLeer(clave) {
+            try { return parseInt(localStorage.getItem(clave) || "0", 10) || 0; } catch (e) { return 0; }
+        }
+        function curpGuardar(clave, valor) {
+            try { localStorage.setItem(clave, String(valor)); } catch (e) {}
+        }
+        function curpBloqueoRestanteMs() {
+            return Math.max(0, curpLeer("curpBloqueoHasta") - Date.now());
+        }
+
+        function mostrarMensajeCurp(texto, esError) {
+            const msg = document.getElementById("mensajeCurpIngreso");
+            if (!msg) return;
+            msg.className = "text-xs mt-2 text-center " + (esError ? "text-red-600 font-semibold" : "text-gray-500");
+            msg.textContent = texto;
+        }
+
+        // Aplica o retira el bloqueo del campo CURP (el QR nunca se bloquea)
+        function refrescarBloqueoCurp() {
+            const input = document.getElementById("inputCurpIngreso");
+            const boton = document.getElementById("btnIngresarCurp");
+            if (!input || !boton) return;
+            const restante = curpBloqueoRestanteMs();
+            if (restante > 0) {
+                input.disabled = true;
+                boton.disabled = true;
+                const seg = Math.ceil(restante / 1000);
+                const m = Math.floor(seg / 60);
+                const s = seg % 60;
+                mostrarMensajeCurp("Demasiados intentos. Espera " + m + ":" + String(s).padStart(2, "0") + " o ingresa con tu código QR.", true);
+                if (!_curpTimer) _curpTimer = setInterval(refrescarBloqueoCurp, 1000);
+            } else {
+                if (_curpTimer) { clearInterval(_curpTimer); _curpTimer = null; }
+                if (curpLeer("curpBloqueoHasta") > 0) {
+                    curpGuardar("curpBloqueoHasta", 0);
+                    curpGuardar("curpFallos", 0);
+                    mostrarMensajeCurp("", false);
+                }
+                input.disabled = false;
+                boton.disabled = false;
+            }
+        }
+
+        async function ingresarConCurp() {
+            const input = document.getElementById("inputCurpIngreso");
+            const boton = document.getElementById("btnIngresarCurp");
+            if (!input || !boton) return;
+
+            if (curpBloqueoRestanteMs() > 0) { refrescarBloqueoCurp(); return; }
+
+            const valor = input.value.toUpperCase().replace(/[^A-Z0-9]/g, "");
+            if (valor.length < 4) {
+                mostrarMensajeCurp("Escribe los últimos 4 caracteres de tu CURP.", true);
+                return;
+            }
+            if (baseDatosAlumnos.length === 0) {
+                mostrarMensajeCurp("El listado aún no está disponible. Espera un momento e inténtalo de nuevo.", true);
+                return;
+            }
+
+            boton.disabled = true;
+            boton.textContent = "...";
+            try {
+                const r = await postScript({ accion: "curpIngresar", sufijo: valor });
+
+                if (r.success) {
+                    const alumno = baseDatosAlumnos.find(a => normalizarId(obtenerIdAlumno(a)) === normalizarId(r.id));
+                    if (!alumno) {
+                        mostrarMensajeCurp("No fue posible ingresar. Usa tu código QR.", true);
+                        return;
+                    }
+                    curpGuardar("curpFallos", 0);
+                    input.value = "";
+                    mostrarMensajeCurp("", false);
+                    await detenerEscaner();
+                    alertaAlumno.classList.add("hidden");
+                    activarInterfazAlumno(alumno);
+                    return;
+                }
+
+                if (r.codigo === "VARIOS") {
+                    mostrarMensajeCurp(valor.length >= 18
+                        ? "Hay más de un alumno con ese CURP. Ingresa con tu código QR."
+                        : "Hay más de un alumno con esos caracteres. Escribe más caracteres de tu CURP o ingresa con tu código QR.", true);
+                    return;
+                }
+
+                if (r.codigo === "NO_ENCONTRADO") {
+                    const fallos = curpLeer("curpFallos") + 1;
+                    curpGuardar("curpFallos", fallos);
+                    if (fallos >= CURP_MAX_FALLOS) {
+                        curpGuardar("curpBloqueoHasta", Date.now() + CURP_BLOQUEO_MIN * 60000);
+                        refrescarBloqueoCurp();
+                    } else {
+                        const quedan = CURP_MAX_FALLOS - fallos;
+                        mostrarMensajeCurp("Ese CURP no se encuentra registrado. Ingresa usando tu código QR. (Te quedan " + quedan + " intento" + (quedan === 1 ? "" : "s") + ".)", true);
+                    }
+                    return;
+                }
+
+                mostrarMensajeCurp("No fue posible verificar tu CURP. Intenta de nuevo o ingresa con tu código QR.", true);
+            } catch (error) {
+                console.error("Error al ingresar con CURP:", error);
+                mostrarMensajeCurp("No fue posible verificar tu CURP. Intenta de nuevo o ingresa con tu código QR.", true);
+            } finally {
+                boton.disabled = curpBloqueoRestanteMs() > 0;
+                boton.textContent = "Entrar";
+            }
+        }
+
+        // --- Ventana para registrar el CURP completo ---
+        function cerrarModalCurp() {
+            const modal = document.getElementById("ventanaCurp");
+            if (modal) modal.style.display = "none";
+        }
+
+        function mostrarFormularioCurp() {
+            document.getElementById("contenidoCurp").innerHTML = `
+                <p class="text-xs text-gray-500 mb-3">Escribe tu CURP completo (18 caracteres). Después podrás ingresar al portal con sus últimos 4 caracteres.</p>
+                <input id="inputCurpCompleto" type="text" maxlength="18" autocomplete="off" autocapitalize="characters" spellcheck="false"
+                    placeholder="CURP de 18 caracteres" oninput="alEscribirCurpCompleto(this)"
+                    class="w-full border border-gray-300 rounded px-3 py-2 text-sm tracking-widest mb-1">
+                <p id="contadorCurp" class="text-gray-400 text-right mb-2" style="font-size:10px;">0/18</p>
+                <p id="mensajeCurp" class="text-xs mb-3"></p>
+                <div class="flex gap-2">
+                    <button onclick="cerrarModalCurp()" class="flex-1 bg-gray-200 text-gray-700 font-bold py-2 rounded text-xs uppercase">Cancelar</button>
+                    <button id="btnGuardarCurp" onclick="guardarCurp()" disabled class="flex-1 bg-brand-black text-brand-gold border border-brand-gold font-bold py-2 rounded text-xs uppercase opacity-50">Guardar</button>
+                </div>`;
+            setTimeout(() => {
+                const c = document.getElementById("inputCurpCompleto");
+                if (c) c.focus();
+            }, 50);
+        }
+
+        function mostrarCurpRegistrado(termina, recienGuardado) {
+            const titulo = recienGuardado ? "✅ ¡CURP registrado!" : "✅ Tu CURP ya está registrado";
+            document.getElementById("contenidoCurp").innerHTML = `
+                <p class="font-semibold text-green-700 mb-2">${titulo}</p>
+                <p class="text-xs text-gray-600 mb-1">Termina en <span class="font-bold tracking-widest">${escaparHTML(termina || "")}</span>.</p>
+                <p class="text-xs text-gray-500 mb-4">Ya puedes ingresar al portal con los últimos 4 caracteres de tu CURP. Si necesitas corregirlo, consulta a tu Sensei.</p>
+                <button onclick="cerrarModalCurp()" class="w-full bg-brand-black text-brand-gold border border-brand-gold font-bold py-2 rounded text-xs uppercase">Cerrar</button>`;
+        }
+
+        async function abrirModalCurp() {
+            const id = _idPerfilActual;
+            const modal = document.getElementById("ventanaCurp");
+            const cont = document.getElementById("contenidoCurp");
+            if (!modal || !cont || !id) return;
+            modal.style.display = "flex";
+            cont.textContent = "Cargando...";
+            try {
+                const r = await postScript({ accion: "curpEstado", id: id });
+                if (!r.success) throw new Error(r.error || "Error desconocido");
+                if (r.registrado) mostrarCurpRegistrado(r.termina, false);
+                else mostrarFormularioCurp();
+            } catch (error) {
+                console.error("Error al consultar el CURP:", error);
+                cont.innerHTML = `<p class="text-red-600 font-semibold mb-4">No fue posible consultar tu CURP. Intenta nuevamente más tarde.</p>
+                    <button onclick="cerrarModalCurp()" class="w-full bg-gray-200 text-gray-700 font-bold py-2 rounded text-xs uppercase">Cerrar</button>`;
+            }
+        }
+
+        function alEscribirCurpCompleto(input) {
+            normalizarEntradaCurp(input);
+            document.getElementById("contadorCurp").textContent = input.value.length + "/18";
+            const listo = input.value.length === 18;
+            const btn = document.getElementById("btnGuardarCurp");
+            btn.disabled = !listo;
+            btn.classList.toggle("opacity-50", !listo);
+            document.getElementById("mensajeCurp").textContent = "";
+        }
+
+        async function guardarCurp() {
+            const input = document.getElementById("inputCurpCompleto");
+            const btn = document.getElementById("btnGuardarCurp");
+            const msg = document.getElementById("mensajeCurp");
+            if (!input || !btn || !msg) return;
+
+            const mostrarError = (texto) => {
+                msg.className = "text-xs mb-3 text-red-600 font-semibold";
+                msg.textContent = texto;
+            };
+
+            const curp = (input.value || "").toUpperCase().replace(/[^A-Z0-9]/g, "");
+            if (curp.length !== 18) {
+                mostrarError("El CURP debe tener exactamente 18 caracteres (letras y números).");
+                return;
+            }
+
+            btn.disabled = true;
+            btn.textContent = "Guardando...";
+            try {
+                const r = await postScript({ accion: "curpGuardar", id: _idPerfilActual, curp: curp });
+                if (r.success) { mostrarCurpRegistrado(r.termina, true); return; }
+                if (r.codigo === "YA_REGISTRADO") { mostrarCurpRegistrado(r.termina, false); return; }
+
+                let texto = "No fue posible guardar tu CURP. Intenta nuevamente más tarde.";
+                if (r.codigo === "DUPLICADO") texto = "Ese CURP ya está asociado a otro alumno. Consulta a tu Sensei.";
+                if (r.codigo === "INVALIDO")  texto = "El CURP debe tener exactamente 18 caracteres (letras y números).";
+                mostrarError(texto);
+                btn.disabled = false;
+                btn.textContent = "Guardar";
+            } catch (error) {
+                console.error("Error al guardar el CURP:", error);
+                mostrarError("No fue posible guardar tu CURP. Intenta nuevamente más tarde.");
+                btn.disabled = false;
+                btn.textContent = "Guardar";
+            }
+        }
+
+        // Aplica el bloqueo si todavía está vigente (por ejemplo, al recargar la página)
+        refrescarBloqueoCurp();
+        // ===== FIN INGRESO Y REGISTRO POR CURP =====
         // ===== FIN PESTAÑAS Y PERFIL =====
     </script>
 
@@ -1609,6 +1872,14 @@ function reiniciarTimerCarrusel() {
             </div>
         </div>
     </div>
+        <!-- ===== REGISTRO DE CURP ===== -->
+    <div id="ventanaCurp" class="hidden" style="position:fixed; inset:0; background:rgba(0,0,0,0.6); z-index:50; display:none; align-items:center; justify-content:center; padding:16px;">
+        <div class="bg-white rounded-lg shadow-lg p-5 w-full border-t-4 border-brand-gold" style="max-width:340px;">
+            <h3 class="text-sm font-bold text-gray-800 uppercase tracking-wide mb-2">Registrar mi CURP</h3>
+            <div id="contenidoCurp" class="text-sm text-gray-600">Cargando...</div>
+        </div>
+    </div>
+    <!-- ===== FIN REGISTRO DE CURP ===== -->
     <!-- ===== FIN ACCESO MANUAL ===== -->
 
 </body>

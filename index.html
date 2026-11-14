@@ -214,6 +214,16 @@
         <section id="panelBienvenida" class="hidden bg-brand-black text-white rounded-lg p-6 shadow-md mb-8 border-2 border-brand-gold transition-all">
                         <div id="barraAccionesAlumno" class="flex justify-end gap-4 mb-4">
                                             <div class="flex flex-col items-center gap-1">
+                    <button type="button" onclick="abrirModalFoto()" aria-label="Cambiar mi foto" title="Cambiar mi foto"
+                        class="w-11 h-11 rounded-full bg-neutral-800 border border-brand-gold text-brand-gold flex items-center justify-center focus:outline-none">
+                        <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                            <path d="M4 8h3l1.5-2h7L17 8h3a1 1 0 0 1 1 1v9a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V9a1 1 0 0 1 1-1z"/>
+                            <circle cx="12" cy="13" r="3.5"/>
+                        </svg>
+                    </button>
+                    <span class="text-gray-400 uppercase tracking-widest" style="font-size:9px;">Foto</span>
+                </div>
+                                            <div class="flex flex-col items-center gap-1">
                     <button type="button" onclick="abrirModalQr()" aria-label="Ver y descargar mi código QR" title="Mi código QR"
                         class="w-11 h-11 rounded-full bg-neutral-800 border border-brand-gold text-brand-gold flex items-center justify-center focus:outline-none">
                         <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
@@ -1989,6 +1999,143 @@ function reiniciarTimerCarrusel() {
             a.remove();
         }
         // ===== FIN CÓDIGO QR DEL ALUMNO =====
+            // ===== CAMBIO DE FOTO DEL ALUMNO =====
+        let _fotoNuevaDataUrl = "";
+
+        function mostrarMensajeFoto(texto, esError) {
+            const msg = document.getElementById("mensajeFoto");
+            if (!msg) return;
+            msg.className = "text-xs text-center mb-4 " + (esError ? "text-red-600 font-semibold" : "text-gray-500");
+            msg.textContent = texto;
+        }
+
+        function abrirModalFoto() {
+            const modal = document.getElementById("ventanaFoto");
+            if (!modal) return;
+            _fotoNuevaDataUrl = "";
+
+            const prev = document.getElementById("vistaPreviaFoto");
+            const vacia = document.getElementById("vistaPreviaVacia");
+            const fotoActual = document.getElementById("fotoAlumno");
+            if (fotoActual && !fotoActual.classList.contains("hidden") && fotoActual.src) {
+                prev.src = fotoActual.src;
+                prev.classList.remove("hidden");
+                vacia.classList.add("hidden");
+            } else {
+                prev.classList.add("hidden");
+                vacia.classList.remove("hidden");
+            }
+
+            document.getElementById("archivoFoto").value = "";
+            const btn = document.getElementById("btnGuardarFoto");
+            btn.disabled = true;
+            btn.textContent = "Guardar";
+            mostrarMensajeFoto("Elige una foto donde se te vea bien el rostro.", false);
+            modal.style.display = "flex";
+        }
+
+        function cerrarModalFoto() {
+            const modal = document.getElementById("ventanaFoto");
+            if (modal) modal.style.display = "none";
+        }
+
+        // Recorta la imagen al centro en formato cuadrado y la reduce a 600 x 600 (JPEG)
+        function reducirFoto(archivo) {
+            return new Promise((resolve, reject) => {
+                const url = URL.createObjectURL(archivo);
+                const img = new Image();
+                img.onload = () => {
+                    try {
+                        const LADO = 600;
+                        const lienzo = document.createElement("canvas");
+                        lienzo.width = LADO;
+                        lienzo.height = LADO;
+                        const ctx = lienzo.getContext("2d");
+                        const lado = Math.min(img.naturalWidth, img.naturalHeight);
+                        const sx = (img.naturalWidth - lado) / 2;
+                        const sy = (img.naturalHeight - lado) / 2;
+                        ctx.fillStyle = "#ffffff";
+                        ctx.fillRect(0, 0, LADO, LADO);
+                        ctx.drawImage(img, sx, sy, lado, lado, 0, 0, LADO, LADO);
+                        resolve(lienzo.toDataURL("image/jpeg", 0.85));
+                    } catch (e) {
+                        reject(e);
+                    } finally {
+                        URL.revokeObjectURL(url);
+                    }
+                };
+                img.onerror = () => {
+                    URL.revokeObjectURL(url);
+                    reject(new Error("Imagen no válida"));
+                };
+                img.src = url;
+            });
+        }
+
+        async function alElegirFoto(input) {
+            const archivo = input.files && input.files[0];
+            if (!archivo) return;
+            const btn = document.getElementById("btnGuardarFoto");
+            if (!/^image\//i.test(archivo.type)) {
+                mostrarMensajeFoto("El archivo elegido no es una imagen.", true);
+                return;
+            }
+            btn.disabled = true;
+            mostrarMensajeFoto("Preparando la foto...", false);
+            try {
+                _fotoNuevaDataUrl = await reducirFoto(archivo);
+                const prev = document.getElementById("vistaPreviaFoto");
+                const vacia = document.getElementById("vistaPreviaVacia");
+                prev.src = _fotoNuevaDataUrl;
+                prev.classList.remove("hidden");
+                vacia.classList.add("hidden");
+                btn.disabled = false;
+                mostrarMensajeFoto("Así se verá tu foto. Pulsa Guardar para confirmar.", false);
+            } catch (error) {
+                console.error("Error al preparar la foto:", error);
+                _fotoNuevaDataUrl = "";
+                mostrarMensajeFoto("No fue posible leer esa imagen. Prueba con otra foto.", true);
+            }
+        }
+
+        async function guardarFoto() {
+            if (!_fotoNuevaDataUrl) return;
+            const btn = document.getElementById("btnGuardarFoto");
+            btn.disabled = true;
+            btn.textContent = "Guardando...";
+            try {
+                const r = await postScript({ accion: "fotoSubir", id: _idPerfilActual, imagen: _fotoNuevaDataUrl });
+                if (r.success) {
+                    const img = document.getElementById("fotoAlumno");
+                    const vacia = document.getElementById("fotoAlumnoVacia");
+                    if (img && vacia) {
+                        img.src = _fotoNuevaDataUrl;
+                        img.classList.remove("hidden");
+                        vacia.classList.add("hidden");
+                    }
+                    _fotoNuevaDataUrl = "";
+                    document.getElementById("archivoFoto").value = "";
+                    btn.textContent = "Listo";
+                    mostrarMensajeFoto("✅ ¡Foto actualizada!", false);
+                    setTimeout(cerrarModalFoto, 1200);
+                    return;
+                }
+
+                let texto = "No fue posible guardar tu foto. Intenta nuevamente más tarde.";
+                if (r.codigo === "LIMITE")      texto = "Has cambiado tu foto varias veces. Intenta de nuevo más tarde.";
+                if (r.codigo === "SIN_CARPETA") texto = "No se encontró la carpeta de fotos. Avisa a tu Sensei.";
+                if (r.codigo === "INVALIDO")    texto = "La foto no es válida. Prueba con otra.";
+                mostrarMensajeFoto(texto, true);
+                btn.disabled = false;
+                btn.textContent = "Guardar";
+            } catch (error) {
+                console.error("Error al guardar la foto:", error);
+                mostrarMensajeFoto("No fue posible guardar tu foto. Intenta nuevamente más tarde.", true);
+                btn.disabled = false;
+                btn.textContent = "Guardar";
+            }
+        }
+        // ===== FIN CAMBIO DE FOTO DEL ALUMNO =====
         // ===== FIN PESTAÑAS Y PERFIL =====
     </script>
 
@@ -2033,6 +2180,26 @@ function reiniciarTimerCarrusel() {
         </div>
     </div>
     <!-- ===== FIN CÓDIGO QR DEL ALUMNO ===== -->
+    
+    <!-- ===== CAMBIO DE FOTO DEL ALUMNO ===== -->
+    <div id="ventanaFoto" class="hidden" style="position:fixed; inset:0; background:rgba(0,0,0,0.6); z-index:50; display:none; align-items:center; justify-content:center; padding:16px;">
+        <div class="bg-white rounded-lg shadow-lg p-5 w-full border-t-4 border-brand-gold" style="max-width:340px;">
+            <h3 class="text-sm font-bold text-gray-800 uppercase tracking-wide mb-3 text-center">Cambiar mi foto</h3>
+            <div class="flex justify-center mb-3">
+                <img id="vistaPreviaFoto" class="hidden rounded-full object-cover border-2 border-brand-gold" style="width:160px; height:160px;" alt="Vista previa de la foto">
+                <div id="vistaPreviaVacia" class="rounded-full border-2 border-brand-gold bg-gray-100 flex items-center justify-center text-5xl" style="width:160px; height:160px;">🥋</div>
+            </div>
+            <input id="archivoFoto" type="file" accept="image/*" class="hidden" onchange="alElegirFoto(this)">
+            <button type="button" onclick="document.getElementById('archivoFoto').click()"
+                class="w-full bg-gray-200 text-gray-700 hover:bg-gray-300 font-bold py-2 rounded text-xs uppercase tracking-wide mb-2">📷 Tomar o elegir foto</button>
+            <p id="mensajeFoto" class="text-xs text-center text-gray-500 mb-4"></p>
+            <div class="flex gap-2">
+                <button onclick="cerrarModalFoto()" class="flex-1 bg-gray-200 text-gray-700 font-bold py-2 rounded text-xs uppercase">Cancelar</button>
+                <button id="btnGuardarFoto" onclick="guardarFoto()" disabled class="flex-1 bg-brand-black text-brand-gold border border-brand-gold font-bold py-2 rounded text-xs uppercase disabled:opacity-50">Guardar</button>
+            </div>
+        </div>
+    </div>
+    <!-- ===== FIN CAMBIO DE FOTO DEL ALUMNO ===== -->
     <!-- ===== FIN ACCESO MANUAL ===== -->
 
 </body>

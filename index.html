@@ -2189,9 +2189,14 @@ function reiniciarTimerCarrusel() {
                 <img id="vistaPreviaFoto" class="hidden rounded-full object-cover border-2 border-brand-gold" style="width:160px; height:160px;" alt="Vista previa de la foto">
                 <div id="vistaPreviaVacia" class="rounded-full border-2 border-brand-gold bg-gray-100 flex items-center justify-center text-5xl" style="width:160px; height:160px;">🥋</div>
             </div>
+                        <input id="archivoFotoCamara" type="file" accept="image/*" capture="user" class="hidden" onchange="alElegirFoto(this)">
             <input id="archivoFoto" type="file" accept="image/*" class="hidden" onchange="alElegirFoto(this)">
-            <button type="button" onclick="document.getElementById('archivoFoto').click()"
-                class="w-full bg-gray-200 text-gray-700 hover:bg-gray-300 font-bold py-2 rounded text-xs uppercase tracking-wide mb-2">📷 Tomar o elegir foto</button>
+            <div class="flex gap-2 mb-2">
+                <button type="button" onclick="document.getElementById('archivoFotoCamara').click()"
+                    class="flex-1 bg-gray-200 text-gray-700 hover:bg-gray-300 font-bold py-2 rounded text-xs uppercase tracking-wide">📷 Tomar foto</button>
+                <button type="button" onclick="document.getElementById('archivoFoto').click()"
+                    class="flex-1 bg-gray-200 text-gray-700 hover:bg-gray-300 font-bold py-2 rounded text-xs uppercase tracking-wide">🖼️ Elegir de galería</button>
+            </div>
             <p id="mensajeFoto" class="text-xs text-center text-gray-500 mb-4"></p>
             <div class="flex gap-2">
                 <button onclick="cerrarModalFoto()" class="flex-1 bg-gray-200 text-gray-700 font-bold py-2 rounded text-xs uppercase">Cancelar</button>

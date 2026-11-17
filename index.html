@@ -1667,6 +1667,7 @@ function reiniciarTimerCarrusel() {
                     <div class="flex-1 min-w-0">
                         <p class="text-sm font-bold text-gray-800" style="word-break:break-word;">${escaparHTML(p.nombre)}</p>
                         <p class="text-xs text-gray-600">${escaparHTML(formatearMoneda(p.precio))}</p>
+                                                ${p.existencia === undefined ? "" : `<p class="text-xs font-semibold ${Number(p.existencia) < 3 ? "text-red-600" : "text-green-600"}">Existencia: ${Number(p.existencia) || 0} Pzas.</p>`}
                     </div>
                     <button data-id="${escaparHTML(p.id)}" onclick="comprarProducto(this)" class="bg-brand-black text-brand-gold border border-brand-gold text-xs font-bold px-4 py-2 rounded uppercase tracking-wide">Comprar</button>
                 `;

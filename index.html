@@ -342,13 +342,7 @@
 
                 <div id="contenedorGrafica" class="space-y-3 pr-2"></div>
                 
-                <div class="flex justify-between text-neutral-400 text-[10px] font-mono mt-3 pl-28 border-t pt-1">
-    <span>0 pts</span>
-    <span>3,750 pts</span>
-    <span>7,500 pts</span>
-    <span>11,250 pts</span>
-    <span>15,000 pts</span>
-</div>
+                                <div id="escalaGrafica" class="flex justify-between text-neutral-400 text-[10px] font-mono mt-3 pl-28 border-t pt-1"></div>
             </div>
         </section>
 
@@ -979,11 +973,86 @@ function reiniciarTimerCarrusel() {
 };
 }
         
+                // ===== GRÁFICA DE PUNTOS (escalas, fotos y animación) =====
+        // Niveles de escala: el último es el límite (la barra se llena y se pone negra)
+        const NIVELES_ESCALA = {
+            actual:   [1000, 3000, 6000],
+            anterior: [1000, 3000, 6000],
+            totales:  [15000, 30000]
+        };
+        const DURACION_ANIMACION_GRAFICA = "2s";
+        let _rankingToken = 0;
+        const _fotosRanking = {};
+
+        // Escala según el puntaje más alto: pasa al siguiente nivel cuando alguien lo alcanza
+        function calcularEscalaGrafica(modo, maxPuntos) {
+            const niveles = NIVELES_ESCALA[modo] || NIVELES_ESCALA.actual;
+            for (let i = 0; i < niveles.length; i++) {
+                if (maxPuntos < niveles[i]) return niveles[i];
+            }
+            return niveles[niveles.length - 1];
+        }
+
+        function pintarEscalaGrafica(maximo) {
+            const cont = document.getElementById("escalaGrafica");
+            if (!cont) return;
+            let html = "";
+            for (let i = 0; i <= 4; i++) {
+                html += "<span>" + Math.round(maximo * i / 4).toLocaleString("en-US") + " pts</span>";
+            }
+            cont.innerHTML = html;
+        }
+
+        // El ranking usa nombres; la foto se busca por ID entre los alumnos vigentes
+        function idPorNombreRanking(nombre) {
+            const clave = normalizarId(nombre);
+            const alumno = baseDatosAlumnos.find(a => normalizarId(a.nombre) === clave);
+            return alumno ? String(obtenerIdAlumno(alumno) || "").trim() : "";
+        }
+
+        // Pide las fotos (3 a la vez) y las coloca en los círculos
+        async function cargarFotosRanking(items, token) {
+            let siguiente = 0;
+            const trabajador = async () => {
+                while (siguiente < items.length) {
+                    if (token !== _rankingToken) return;
+                    const it = items[siguiente++];
+                    let foto = _fotosRanking[it.id];
+                    if (foto === undefined) {
+                        try {
+                            const respuesta = await fetch(WEB_APP_URL + "?accion=fotoAlumno&id=" + encodeURIComponent(it.id));
+                            const datos = await respuesta.json();
+                            foto = (datos.success && datos.foto) ? datos.foto : "";
+                        } catch (error) {
+                            foto = "";
+                        }
+                        _fotosRanking[it.id] = foto;
+                    }
+                    if (token !== _rankingToken) return;
+                    if (foto) {
+                        const img = it.renglon.querySelector(".foto-rank");
+                        const vacia = it.renglon.querySelector(".foto-rank-vacia");
+                        if (img && vacia) {
+                            img.src = foto;
+                            img.classList.remove("hidden");
+                            vacia.classList.add("hidden");
+                        }
+                    }
+                }
+            };
+            await Promise.all([trabajador(), trabajador(), trabajador()]);
+        }
+
         function construirGraficaDesempeño() {
             contenedorGrafica.innerHTML = "";
-            const origenDatos = mesSeleccionadoGrafica === "totales"
+            _rankingToken++;
+            const token = _rankingToken;
+            const modo = mesSeleccionadoGrafica;
+            pintarEscalaGrafica(calcularEscalaGrafica(modo, 0));
+
+            const origenDatos = modo === "totales"
                 ? puntosTotales
-                : (mesSeleccionadoGrafica === "actual" ? datosDashboard.actual : datosDashboard.anterior);
+                : (modo === "actual" ? datosDashboard.actual : datosDashboard.anterior);
 
             if (!origenDatos || Object.keys(origenDatos).length === 0) {
                 contenedorGrafica.innerHTML = `<p class="text-gray-400 text-xs py-4 italic text-center">No hay registros de puntuaciones.</p>`;
@@ -994,30 +1063,90 @@ function reiniciarTimerCarrusel() {
                 .map(nombre => ({ nombre: nombre.trim(), puntos: parseInt(origenDatos[nombre]) || 0 }))
                 .filter(item => item.puntos > 0)
                 .sort((a, b) => {
-    if (b.puntos !== a.puntos) return b.puntos - a.puntos;
-    const fechaA = datosDashboardFecha.actual[a.nombre] ? new Date(datosDashboardFecha.actual[a.nombre]) : new Date();
-    const fechaB = datosDashboardFecha.actual[b.nombre] ? new Date(datosDashboardFecha.actual[b.nombre]) : new Date();
-    return fechaA - fechaB;
-});
+                    if (b.puntos !== a.puntos) return b.puntos - a.puntos;
+                    const fechaA = datosDashboardFecha.actual[a.nombre] ? new Date(datosDashboardFecha.actual[a.nombre]) : new Date();
+                    const fechaB = datosDashboardFecha.actual[b.nombre] ? new Date(datosDashboardFecha.actual[b.nombre]) : new Date();
+                    return fechaA - fechaB;
+                });
 
             if (listaRanking.length === 0) {
                 contenedorGrafica.innerHTML = `<p class="text-gray-400 text-xs py-4 italic text-center">Aún no hay alumnos con puntos acumulados.</p>`;
                 return;
             }
 
+            // Escala según el puntaje más alto de esta gráfica
+            const escala = calcularEscalaGrafica(modo, listaRanking[0].puntos);
+            pintarEscalaGrafica(escala);
+
+            // Fotos: todos los alumnos que tengan alguno de los 3 puntajes más altos (empates incluidos)
+            const valoresUnicos = [];
             listaRanking.forEach(item => {
-                const porcentaje = Math.min((item.puntos / 15000) * 100, 100); // ESCALA DE LA GRÁFICA EN 15000
+                if (valoresUnicos.indexOf(item.puntos) === -1) valoresUnicos.push(item.puntos);
+            });
+            const umbralFoto = valoresUnicos[Math.min(2, valoresUnicos.length - 1)];
+
+            const nombreActual = normalizarId(txtNombreAlumno.textContent);
+            const animaciones = [];
+            const fotosPendientes = [];
+
+            listaRanking.forEach(item => {
+                const llevaFoto = item.puntos >= umbralFoto;
+                const esYo = nombreActual !== "" && normalizarId(item.nombre) === nombreActual;
+                const lleno = item.puntos >= escala;   // solo ocurre en la escala máxima
+                const porcentaje = lleno ? 100 : Math.min((item.puntos / escala) * 100, 100);
+
+                const claseNombre = esYo
+                    ? "w-24 md:w-28 text-xs font-bold truncate text-right bg-brand-black text-brand-gold rounded px-2 py-1 shadow"
+                    : "w-24 md:w-28 text-xs font-bold text-gray-700 truncate text-right";
+                const claseBarra = lleno
+                    ? "bg-brand-black border-r-2 border-black"
+                    : "bg-brand-gold border-r-2 border-yellow-600";
+                const claseTexto = lleno ? "text-white" : "text-brand-black";
+
+                const bloqueFoto = llevaFoto ? `
+                    <div class="absolute" style="left:1px; right:1px; top:0; height:24px; pointer-events:none;">
+                        <div class="seg-rank" style="position:relative; width:0%; height:100%; transition:width ${DURACION_ANIMACION_GRAFICA} ease-out;">
+                            <div style="position:absolute; right:-16px; top:50%; transform:translateY(-50%); width:32px; height:32px; border-radius:9999px; border:2px solid #ffffff; background:#e5e7eb; overflow:hidden; box-shadow:0 1px 4px rgba(0,0,0,0.45); display:flex; align-items:center; justify-content:center;">
+                                <img class="foto-rank hidden" style="width:100%; height:100%; object-fit:cover;" alt="">
+                                <span class="foto-rank-vacia" style="font-size:16px; line-height:1;">🥋</span>
+                            </div>
+                        </div>
+                    </div>` : "";
+
                 const renglon = document.createElement("div");
                 renglon.className = "flex items-center gap-3";
                 renglon.innerHTML = `
-                    <div class="w-24 md:w-28 text-xs font-bold text-gray-700 truncate text-right">${item.nombre}</div>
-                    <div class="flex-1 bg-gray-200 rounded h-6 overflow-hidden relative shadow-inner border border-gray-300">
-                        <div class="bg-brand-gold h-full rounded border-r-2 border-yellow-600" style="width: ${porcentaje}%"></div>
-                        <span class="absolute inset-0 flex items-center pl-3 text-xs font-black text-brand-black">${item.puntos} pts</span>
+                    <div class="${claseNombre}" title="${escaparHTML(item.nombre)}">${escaparHTML(item.nombre)}</div>
+                    <div class="flex-1 relative">
+                        <div class="bg-gray-200 rounded h-6 overflow-hidden relative shadow-inner border border-gray-300">
+                            <div class="barra-rank h-full rounded ${claseBarra}" style="width:0%; transition:width ${DURACION_ANIMACION_GRAFICA} ease-out;"></div>
+                            <span class="absolute inset-0 flex items-center pl-3 text-xs font-black ${claseTexto}">${item.puntos} pts</span>
+                        </div>
+                        ${bloqueFoto}
                     </div>
                 `;
                 contenedorGrafica.appendChild(renglon);
+
+                animaciones.push({
+                    barra: renglon.querySelector(".barra-rank"),
+                    seg: renglon.querySelector(".seg-rank"),
+                    porcentaje: porcentaje
+                });
+
+                if (llevaFoto) {
+                    const idFoto = idPorNombreRanking(item.nombre);
+                    if (idFoto) fotosPendientes.push({ id: idFoto, renglon: renglon });
+                }
             });
+
+            // Animación: las barras (y las fotos) parten de 0 y avanzan hasta su posición
+            void contenedorGrafica.offsetWidth;
+            animaciones.forEach(a => {
+                a.barra.style.width = a.porcentaje + "%";
+                if (a.seg) a.seg.style.width = a.porcentaje + "%";
+            });
+
+            if (fotosPendientes.length > 0) cargarFotosRanking(fotosPendientes, token);
         }
 
         function construirTarjetasRetos(nombreAlumno, fechaNacimiento) {

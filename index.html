@@ -736,12 +736,15 @@ construirCarruselAnuncios();
             if (nombreGuardado) {
                 const alumnoObjeto = baseDatosAlumnos.find(a => a.nombre.trim().toLowerCase() === nombreGuardado.toLowerCase());
                 if (alumnoObjeto) {
+                                        _restaurandoSesion = true;
                     activarInterfazAlumno(alumnoObjeto);
+                    _restaurandoSesion = false;
                 }
             }
         }
 
         function activarInterfazAlumno(alumno) {
+                        if (!_restaurandoSesion) registrarIngresoPortal(alumno);
             const nombreLimpio = alumno.nombre.trim();
                         iniciarPestanas(alumno);
 
@@ -2266,6 +2269,20 @@ function reiniciarTimerCarrusel() {
             }
         }
         // ===== FIN CAMBIO DE FOTO DEL ALUMNO =====
+        // ===== REGISTRO DE INGRESOS (TABLA LOG) =====
+        let _restaurandoSesion = false;
+
+        // Avisa el ingreso al script en segundo plano; si falla, el alumno no nota nada
+        function registrarIngresoPortal(alumno) {
+            try {
+                const id = String(obtenerIdAlumno(alumno) || "").trim();
+                if (id === "") return;
+                postScript({ accion: "registrarIngresoPortal", id: id }).catch(() => {});
+            } catch (e) {
+                console.error("No se pudo registrar el ingreso:", e);
+            }
+        }
+        // ===== FIN REGISTRO DE INGRESOS =====
         // ===== FIN PESTAÑAS Y PERFIL =====
     </script>
 

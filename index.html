@@ -92,6 +92,46 @@
     border: none;
 }
 .indicador-anuncio.activo { background-color: #d4af37; }
+        /* --- Ventana flotante de anuncio (proporción 9:16) --- */
+        .caja-anuncio-flotante {
+            position: relative;
+            width: min(92vw, calc(70vh * 9 / 16));
+            width: min(92vw, calc(70dvh * 9 / 16));
+            aspect-ratio: 9 / 16;
+            background: #1a1a1a;
+            border: 2px solid #d4af37;
+            border-radius: 14px;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.6);
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+        .barra-tiempo-anuncio { height: 3px; background: rgba(255,255,255,0.15); flex-shrink: 0; }
+        #barraTiempoAnuncio { height: 100%; width: 100%; background: #d4af37; }
+        .cerrar-anuncio-flotante {
+            position: absolute; top: 8px; right: 8px; width: 30px; height: 30px;
+            border-radius: 9999px; background: rgba(0,0,0,0.55); border: 1px solid #d4af37;
+            color: #d4af37; font-size: 14px; line-height: 1; cursor: pointer;
+            display: flex; align-items: center; justify-content: center; z-index: 2;
+        }
+        .titulo-anuncio-flotante {
+            flex-shrink: 0; margin: 0; padding: 9px 44px 7px 12px; font-size: 11px; font-weight: 700;
+            letter-spacing: 0.08em; text-transform: uppercase; color: #d4af37;
+            white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+        }
+        .foto-anuncio-flotante {
+            flex-shrink: 0; width: calc(100% - 20px); margin: 0 auto; aspect-ratio: 3 / 4;
+            background: #2a2a2a; border-radius: 8px; overflow: hidden;
+        }
+        .foto-anuncio-flotante img { width: 100%; height: 100%; object-fit: cover; display: block; }
+        .cuerpo-anuncio-flotante { flex: 1 1 auto; min-height: 0; overflow-y: auto; padding: 8px 12px 4px; }
+        .cuerpo-anuncio-flotante p { margin: 0; font-size: 12px; line-height: 1.35; color: #e5e7eb; text-align: center; white-space: pre-line; }
+        .pie-anuncio-flotante { flex-shrink: 0; padding: 6px 12px 12px; }
+        .boton-anuncio-flotante {
+            display: block; text-align: center; background: #d4af37; color: #1a1a1a; font-weight: 800;
+            font-size: 12px; text-transform: uppercase; letter-spacing: 0.06em; padding: 9px 12px;
+            border-radius: 8px; text-decoration: none;
+        }
     </style>
 </head>
 <body class="bg-gray-100 min-h-screen font-sans">
@@ -468,6 +508,7 @@ window.addEventListener("DOMContentLoaded", () => {
     // Inicializamos el portal normalmente
     inicializarPortal();
         cargarSatisfaccion();
+        cargarAnuncioFlotante();
 });
 
 // 2. BLINDAJE CRÍTICO: Detectar si se regresa usando el botón "Atrás" del navegador
@@ -745,6 +786,7 @@ construirCarruselAnuncios();
 
         function activarInterfazAlumno(alumno) {
                         if (!_restaurandoSesion) registrarIngresoPortal(alumno);
+                        if (!_restaurandoSesion) solicitarAnuncioFlotante();
             const nombreLimpio = alumno.nombre.trim();
                         iniciarPestanas(alumno);
 
@@ -2283,6 +2325,89 @@ function reiniciarTimerCarrusel() {
             }
         }
         // ===== FIN REGISTRO DE INGRESOS =====
+        // ===== VENTANA FLOTANTE DE ANUNCIO =====
+        const ANUNCIO_FLOTANTE_SEGUNDOS = 10;
+        let _anuncioFlotante = null;            // anuncio recibido del servidor (o null)
+        let _anuncioFlotanteListo = false;      // true cuando ya se consultó al servidor
+        let _anuncioFlotantePendiente = false;  // true cuando un alumno se identificó y falta mostrarlo
+        let _anuncioFlotanteTimer = null;
+
+        async function cargarAnuncioFlotante() {
+            try {
+                const respuesta = await fetch(WEB_APP_URL + "?accion=anuncioFlotante");
+                const datos = await respuesta.json();
+                _anuncioFlotante = (datos && datos.success && datos.anuncio) ? datos.anuncio : null;
+            } catch (error) {
+                console.error("Error al cargar el anuncio flotante:", error);
+                _anuncioFlotante = null;
+            }
+            _anuncioFlotanteListo = true;
+            if (_anuncioFlotantePendiente) mostrarAnuncioFlotante();
+        }
+
+        // Se llama cuando un alumno se identifica (no al restaurar la sesión al recargar)
+        function solicitarAnuncioFlotante() {
+            _anuncioFlotantePendiente = true;
+            if (_anuncioFlotanteListo) mostrarAnuncioFlotante();
+        }
+
+        function mostrarAnuncioFlotante() {
+            _anuncioFlotantePendiente = false;
+            const a = _anuncioFlotante;
+            const ventana = document.getElementById("ventanaAnuncioFlotante");
+            if (!a || !ventana) return;
+
+            // Título
+            const tit = document.getElementById("tituloAnuncioFlotante");
+            tit.textContent = a.titulo || "";
+            tit.style.display = a.titulo ? "block" : "none";
+
+            // Foto (mismo método que el carrusel: enlace directo de Drive a través del servicio de imágenes)
+            const contFoto = document.getElementById("contFotoAnuncioFlotante");
+            const img = document.getElementById("fotoAnuncioFlotante");
+            if (a.foto) {
+                img.onerror = () => { contFoto.style.display = "none"; };
+                img.src = "https://images.weserv.nl/?url=" + encodeURIComponent(a.foto) + "&w=800";
+                contFoto.style.display = "block";
+            } else {
+                img.removeAttribute("src");
+                contFoto.style.display = "none";
+            }
+
+            // Texto
+            document.getElementById("textoAnuncioFlotante").textContent = a.texto || "";
+
+            // Botón "Ver más" (solo si hay un enlace válido; abre en una pestaña nueva)
+            const pie = document.getElementById("pieAnuncioFlotante");
+            const enlace = document.getElementById("enlaceAnuncioFlotante");
+            if (a.link && /^https?:\/\//i.test(a.link)) {
+                enlace.href = a.link;
+                pie.style.display = "block";
+            } else {
+                enlace.removeAttribute("href");
+                pie.style.display = "none";
+            }
+
+            ventana.style.display = "flex";
+
+            // Barra de tiempo y cierre automático
+            const barra = document.getElementById("barraTiempoAnuncio");
+            barra.style.transition = "none";
+            barra.style.width = "100%";
+            void barra.offsetWidth;
+            barra.style.transition = "width " + ANUNCIO_FLOTANTE_SEGUNDOS + "s linear";
+            barra.style.width = "0%";
+
+            if (_anuncioFlotanteTimer) clearTimeout(_anuncioFlotanteTimer);
+            _anuncioFlotanteTimer = setTimeout(cerrarAnuncioFlotante, ANUNCIO_FLOTANTE_SEGUNDOS * 1000);
+        }
+
+        function cerrarAnuncioFlotante() {
+            if (_anuncioFlotanteTimer) { clearTimeout(_anuncioFlotanteTimer); _anuncioFlotanteTimer = null; }
+            const ventana = document.getElementById("ventanaAnuncioFlotante");
+            if (ventana) ventana.style.display = "none";
+        }
+        // ===== FIN VENTANA FLOTANTE DE ANUNCIO =====
         // ===== FIN PESTAÑAS Y PERFIL =====
     </script>
 
@@ -2352,6 +2477,27 @@ function reiniciarTimerCarrusel() {
         </div>
     </div>
     <!-- ===== FIN CAMBIO DE FOTO DEL ALUMNO ===== -->
+
+    <!-- ===== VENTANA FLOTANTE DE ANUNCIO ===== -->
+    <div id="ventanaAnuncioFlotante" class="hidden" role="dialog" aria-modal="true" aria-label="Anuncio"
+        style="position:fixed; inset:0; background:rgba(0,0,0,0.65); z-index:60; display:none; align-items:center; justify-content:center; padding:12px;"
+        onclick="if (event.target === this) { cerrarAnuncioFlotante(); }">
+        <div class="caja-anuncio-flotante">
+            <div class="barra-tiempo-anuncio"><div id="barraTiempoAnuncio"></div></div>
+            <button type="button" onclick="cerrarAnuncioFlotante()" aria-label="Cerrar anuncio" class="cerrar-anuncio-flotante">&#10005;</button>
+            <p id="tituloAnuncioFlotante" class="titulo-anuncio-flotante"></p>
+            <div id="contFotoAnuncioFlotante" class="foto-anuncio-flotante">
+                <img id="fotoAnuncioFlotante" alt="">
+            </div>
+            <div id="cuerpoAnuncioFlotante" class="cuerpo-anuncio-flotante">
+                <p id="textoAnuncioFlotante"></p>
+            </div>
+            <div id="pieAnuncioFlotante" class="pie-anuncio-flotante">
+                <a id="enlaceAnuncioFlotante" class="boton-anuncio-flotante" href="#" target="_blank" rel="noopener noreferrer">Ver más →</a>
+            </div>
+        </div>
+    </div>
+    <!-- ===== FIN VENTANA FLOTANTE DE ANUNCIO ===== -->
     <!-- ===== FIN ACCESO MANUAL ===== -->
 
 </body>

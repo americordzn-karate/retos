@@ -1429,7 +1429,7 @@ function reiniciarTimerCarrusel() {
                 html += `<div class="border border-gray-200 rounded px-4 py-3 mb-5 space-y-3">
                     <p class="font-bold text-brand-black">${escaparHTML(p.requisitos.grado)}</p>
                     <div><p class="text-xs font-bold text-gray-500 uppercase">Kata</p>
-                         <p style="white-space:pre-line;">${escaparHTML(p.requisitos.kata || "—")}</p></div>
+                                                  <p style="white-space:pre-line;">${escaparHTML(p.requisitos.kata || "—")}</p>${htmlMaterialesGrado(p.requisitos)}</div>
                     <div><p class="text-xs font-bold text-gray-500 uppercase">Técnica</p>
                          <p style="white-space:pre-line;">${escaparHTML(p.requisitos.tecnica || "—")}</p></div>
                     <div><p class="text-xs font-bold text-gray-500 uppercase">Teoría</p>
@@ -2449,6 +2449,97 @@ function reiniciarTimerCarrusel() {
                     <p class="${ex.extemporaneo ? claseVigente : claseOtro}">Costo después del ${escaparHTML(ex.fechaMaxima)}: ${escaparHTML(ext)}</p>`;
         }
         // ===== FIN COSTO DEL EXAMEN =====
+
+            // ===== MATERIAL DE VIDEO (YOUTUBE) =====
+        // Enlaces azules en negritas debajo de Kata
+        function htmlMaterialesGrado(r) {
+            if (!r) return "";
+            let html = "";
+            [[r.materialNombre1, r.materialUrl1, 1], [r.materialNombre2, r.materialUrl2, 2]].forEach(m => {
+                const nombre = String(m[0] || "").trim();
+                const url = String(m[1] || "").trim();
+                if (url === "" || !/^https?:\/\//i.test(url)) return;
+                const etiqueta = nombre !== "" ? nombre : "Ver video " + m[2];
+                html += `<p class="mt-1"><a href="${escaparHTML(url)}" target="_blank" rel="noopener noreferrer" data-titulo="${escaparHTML(etiqueta)}" onclick="return abrirVideoMaterial(this, event)" style="color:#1d4ed8; font-weight:700; text-decoration:underline;">${escaparHTML(etiqueta)}</a></p>`;
+            });
+            return html;
+        }
+
+        // "30", "30s", "1m30s" o "1h2m3s" a segundos
+        function segundosInicioYoutube(valor) {
+            if (!valor) return 0;
+            if (/^\d+$/.test(valor)) return parseInt(valor, 10);
+            const m = String(valor).match(/^(?:(\d+)h)?(?:(\d+)m)?(?:(\d+)s)?$/);
+            if (!m) return 0;
+            return parseInt(m[1] || 0, 10) * 3600 + parseInt(m[2] || 0, 10) * 60 + parseInt(m[3] || 0, 10);
+        }
+
+        // Devuelve { id, inicio } si la dirección es de un video de YouTube; si no, null
+        function extraerVideoYoutube(url) {
+            try {
+                const u = new URL(url);
+                const host = u.hostname.toLowerCase().replace(/^www\./, "").replace(/^m\./, "");
+                let id = "";
+                if (host === "youtu.be") {
+                    id = u.pathname.split("/")[1] || "";
+                } else if (host === "youtube.com" || host === "music.youtube.com" || host === "youtube-nocookie.com") {
+                    const partes = u.pathname.split("/").filter(Boolean);
+                    if (partes[0] === "watch") id = u.searchParams.get("v") || "";
+                    else if (["shorts", "embed", "live", "v"].indexOf(partes[0]) !== -1) id = partes[1] || "";
+                }
+                if (!/^[A-Za-z0-9_-]{11}$/.test(id)) return null;
+                return { id: id, inicio: segundosInicioYoutube(u.searchParams.get("t") || u.searchParams.get("start") || "") };
+            } catch (e) {
+                return null;
+            }
+        }
+
+        function _teclaVideoMaterial(evento) {
+            if (evento.key === "Escape") cerrarVideoMaterial();
+        }
+
+        // Devuelve false cuando abre la ventana; true para que el enlace se abra normalmente en otra pestaña
+        function abrirVideoMaterial(enlace, evento) {
+            const url = enlace.getAttribute("href") || "";
+            const video = extraerVideoYoutube(url);
+            if (!video) return true;
+            if (evento) evento.preventDefault();
+
+            const ventana = document.getElementById("ventanaVideoMaterial");
+            const cont = document.getElementById("contVideoMaterial");
+            if (!ventana || !cont) return true;
+
+            document.getElementById("tituloVideoMaterial").textContent = enlace.dataset.titulo || "";
+            document.getElementById("enlaceYoutubeMaterial").href = url;
+
+            let src = "https://www.youtube-nocookie.com/embed/" + video.id +
+                      "?autoplay=1&rel=0&iv_load_policy=3&playsinline=1&fs=1";
+            if (video.inicio > 0) src += "&start=" + video.inicio;
+
+            const iframe = document.createElement("iframe");
+            iframe.src = src;
+            iframe.title = "Video";
+            iframe.setAttribute("allow", "autoplay; encrypted-media; picture-in-picture; fullscreen");
+            iframe.setAttribute("allowfullscreen", "");
+            iframe.setAttribute("referrerpolicy", "strict-origin-when-cross-origin");
+            iframe.style.cssText = "position:absolute; top:0; left:0; width:100%; height:100%; border:0;";
+
+            cont.innerHTML = "";
+            cont.appendChild(iframe);
+            ventana.style.display = "flex";
+            document.addEventListener("keydown", _teclaVideoMaterial);
+            return false;
+        }
+
+        // Al cerrar se retira el reproductor, y con eso se detiene el video
+        function cerrarVideoMaterial() {
+            const ventana = document.getElementById("ventanaVideoMaterial");
+            const cont = document.getElementById("contVideoMaterial");
+            if (cont) cont.innerHTML = "";
+            if (ventana) ventana.style.display = "none";
+            document.removeEventListener("keydown", _teclaVideoMaterial);
+        }
+        // ===== FIN MATERIAL DE VIDEO =====
         // ===== FIN PESTAÑAS Y PERFIL =====
     </script>
 
@@ -2539,6 +2630,24 @@ function reiniciarTimerCarrusel() {
         </div>
     </div>
     <!-- ===== FIN VENTANA FLOTANTE DE ANUNCIO ===== -->
+    
+    <!-- ===== VENTANA DE VIDEO DE MATERIAL ===== -->
+    <div id="ventanaVideoMaterial" class="hidden" role="dialog" aria-modal="true" aria-label="Video"
+        style="position:fixed; inset:0; background:rgba(0,0,0,0.8); z-index:70; display:none; align-items:center; justify-content:center; padding:12px;"
+        onclick="if (event.target === this) { cerrarVideoMaterial(); }">
+        <div style="position:relative; width:min(94vw, 720px); background:#111111; border:2px solid #d4af37; border-radius:12px; overflow:hidden; box-shadow:0 10px 40px rgba(0,0,0,0.6);">
+            <div style="display:flex; align-items:center; justify-content:space-between; gap:8px; padding:8px 8px 8px 14px;">
+                <p id="tituloVideoMaterial" style="margin:0; font-size:12px; font-weight:700; letter-spacing:0.06em; text-transform:uppercase; color:#d4af37; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;"></p>
+                <button type="button" onclick="cerrarVideoMaterial()" aria-label="Cerrar video"
+                    style="flex-shrink:0; width:30px; height:30px; border-radius:9999px; background:rgba(0,0,0,0.55); border:1px solid #d4af37; color:#d4af37; font-size:14px; line-height:1; cursor:pointer; display:flex; align-items:center; justify-content:center;">&#10005;</button>
+            </div>
+            <div id="contVideoMaterial" style="position:relative; width:100%; aspect-ratio:16 / 9; background:#000000;"></div>
+            <p style="margin:0; padding:8px 12px; text-align:center;">
+                <a id="enlaceYoutubeMaterial" href="#" target="_blank" rel="noopener noreferrer" style="font-size:11px; color:#9ca3af; text-decoration:underline;">Abrir en YouTube</a>
+            </p>
+        </div>
+    </div>
+    <!-- ===== FIN VENTANA DE VIDEO DE MATERIAL ===== -->
     <!-- ===== FIN ACCESO MANUAL ===== -->
 
 </body>

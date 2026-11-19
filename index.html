@@ -1416,7 +1416,7 @@ function reiniciarTimerCarrusel() {
                 html += `<div class="bg-amber-50 border border-amber-300 rounded px-4 py-3 mb-5">
                     <p class="text-sm text-gray-800"><span class="font-bold">Fecha:</span> ${escaparHTML(p.examen.fecha)}</p>
                                         <p class="text-sm text-gray-800"><span class="font-bold">Sede:</span> ${escaparHTML(p.examen.sede || "Por confirmar")}</p>
-                    ${(p.requisitos && formatearMoneda(p.requisitos.costo)) ? `<p class="text-sm text-gray-800"><span class="font-bold">Costo:</span> ${escaparHTML(formatearMoneda(p.requisitos.costo))}</p>` : ""}
+                                        ${htmlCostosExamen(p)}
                                         <div id="bloquePagoExamen" class="mt-3"></div>
                 </div>`;
             } else {
@@ -1628,9 +1628,10 @@ function reiniciarTimerCarrusel() {
                 if (!datos.success || !datos.disponible) return;
                 const cont = document.getElementById("bloquePagoExamen");
                 if (!cont) return;
+                                _examenExtemporaneoMostrado = !!datos.extemporaneo;
                 cont.innerHTML = datos.pagado
                     ? `<p class="text-green-700 text-xs font-bold">✅ Examen pagado</p>`
-                    : `<button onclick="pagarExamen(this)" class="bg-brand-black text-brand-gold border border-brand-gold text-xs font-bold px-4 py-2 rounded uppercase tracking-wide">Pagar examen (${escaparHTML(formatearMoneda(datos.monto))})</button>`;
+                    : `<button onclick="pagarExamen(this)" class="bg-brand-black text-brand-gold border border-brand-gold text-xs font-bold px-4 py-2 rounded uppercase tracking-wide">Pagar examen${datos.extemporaneo ? " extemporáneo" : ""} (${escaparHTML(formatearMoneda(datos.monto))})</button>`;
             } catch (error) {
                 console.error("Error al cargar el pago del examen:", error);
             }
@@ -1653,7 +1654,27 @@ function reiniciarTimerCarrusel() {
             }
         }
 
-        function pagarExamen(boton) { iniciarPagoMP("crearPagoExamen", boton, boton.textContent); }
+                async function pagarExamen(boton) {
+            const textoOriginal = boton.textContent;
+            boton.disabled = true;
+            boton.textContent = "Abriendo...";
+            try {
+                const respuesta = await fetch(WEB_APP_URL + "?accion=crearPagoExamen&id=" + encodeURIComponent(_idPerfilActual) + "&ext=" + (_examenExtemporaneoMostrado ? "1" : "0"));
+                const datos = await respuesta.json();
+                if (datos.codigo === "COSTO_CAMBIO") {
+                    alert("El costo del examen cambió. Se actualizará la información; vuelve a pulsar el botón.");
+                    cargarPerfil(_idPerfilActual);
+                    return;
+                }
+                if (!datos.success || !datos.url) throw new Error(datos.error || "Error desconocido");
+                window.location.href = datos.url;
+            } catch (error) {
+                console.error("Error al iniciar el pago:", error);
+                alert("No fue posible iniciar el pago. Intenta nuevamente más tarde.");
+                boton.disabled = false;
+                boton.textContent = textoOriginal;
+            }
+        }
         function pagarVisita(boton) { iniciarPagoMP("crearPagoVisita", boton, "Pagar"); }
                 // ===== TIENDA: UNIFORMES, EQUIPO Y PLAYERAS =====
         let _tiendaDatos = null;
@@ -2408,6 +2429,26 @@ function reiniciarTimerCarrusel() {
             if (ventana) ventana.style.display = "none";
         }
         // ===== FIN VENTANA FLOTANTE DE ANUNCIO =====
+            // ===== COSTO DEL EXAMEN (NORMAL Y EXTEMPORÁNEO) =====
+        let _examenExtemporaneoMostrado = false;
+
+        function htmlCostosExamen(p) {
+            const normal = (p.requisitos && formatearMoneda(p.requisitos.costo)) ? formatearMoneda(p.requisitos.costo) : "";
+            if (normal === "") return "";
+            const ex = p.examen || {};
+            const ext = (p.requisitos && formatearMoneda(p.requisitos.costoExtemporaneo)) ? formatearMoneda(p.requisitos.costoExtemporaneo) : "";
+
+            // Sin fecha límite o sin costo extemporáneo: una sola línea, como siempre
+            if (!ex.tieneExtemporaneo || ext === "" || !ex.fechaMaxima) {
+                return `<p class="text-sm text-gray-800"><span class="font-bold">Costo:</span> ${escaparHTML(normal)}</p>`;
+            }
+
+            const claseVigente = "text-sm text-gray-800 font-bold";
+            const claseOtro = "text-sm text-gray-400";
+            return `<p class="${ex.extemporaneo ? claseOtro : claseVigente}">Costo hasta ${escaparHTML(ex.fechaMaxima)}: ${escaparHTML(normal)}</p>
+                    <p class="${ex.extemporaneo ? claseVigente : claseOtro}">Costo después del ${escaparHTML(ex.fechaMaxima)}: ${escaparHTML(ext)}</p>`;
+        }
+        // ===== FIN COSTO DEL EXAMEN =====
         // ===== FIN PESTAÑAS Y PERFIL =====
     </script>
 

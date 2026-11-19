@@ -2449,10 +2449,11 @@ function reiniciarTimerCarrusel() {
                 return `<p class="text-sm text-gray-800"><span class="font-bold">Costo:</span> ${escaparHTML(normal)}</p>`;
             }
 
-            const claseVigente = "text-sm text-gray-800 font-bold";
-            const claseOtro = "text-sm text-gray-400";
-            return `<p class="${ex.extemporaneo ? claseOtro : claseVigente}">Costo hasta ${escaparHTML(ex.fechaMaxima)}: ${escaparHTML(normal)}</p>
-                    <p class="${ex.extemporaneo ? claseVigente : claseOtro}">Costo después del ${escaparHTML(ex.fechaMaxima)}: ${escaparHTML(ext)}</p>`;
+                        const RESALTAR_VIGENTE = true;   // true: negritas en la línea del costo que aplica hoy; false: ambas en letra normal
+            const pesoA = (RESALTAR_VIGENTE && !ex.extemporaneo) ? "font-bold" : "font-normal";
+            const pesoB = (RESALTAR_VIGENTE && ex.extemporaneo) ? "font-bold" : "font-normal";
+            return `<p class="text-sm ${pesoA}" style="color:#000000;">Costo hasta ${escaparHTML(ex.fechaMaxima)}: ${escaparHTML(normal)}</p>
+                    <p class="text-sm ${pesoB}" style="color:#dc2626;">Costo después del ${escaparHTML(ex.fechaMaxima)}: ${escaparHTML(ext)}</p>`;
         }
         // ===== FIN COSTO DEL EXAMEN =====
 

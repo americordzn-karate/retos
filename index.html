@@ -616,6 +616,7 @@ window.addEventListener("pageshow", (event) => {
 
         async function alLeerQR(textoLeido) {
             if (procesandoQR) return;
+                        _metodoIngresoActual = "QR";
 
             const idLeido = normalizarId(textoLeido);
             const alumnoEncontrado = baseDatosAlumnos.find(
@@ -747,6 +748,7 @@ construirCarruselAnuncios();
 
         async function validarAccesoManual() {
             const idEscrito = normalizarId(document.getElementById("inputIdManual").value);
+                        _metodoIngresoActual = "OCULTO";
             if (idEscrito === "") return;
 
             if (baseDatosAlumnos.length === 0) {
@@ -1909,6 +1911,7 @@ function reiniciarTimerCarrusel() {
             if (!input || !boton) return;
 
             if (curpBloqueoRestanteMs() > 0) { refrescarBloqueoCurp(); return; }
+                        _metodoIngresoActual = "CURP";
 
             const valor = input.value.toUpperCase().replace(/[^A-Z0-9]/g, "");
             if (valor.length < 4) {
@@ -2336,13 +2339,14 @@ function reiniciarTimerCarrusel() {
         // ===== FIN CAMBIO DE FOTO DEL ALUMNO =====
         // ===== REGISTRO DE INGRESOS (TABLA LOG) =====
         let _restaurandoSesion = false;
+                let _metodoIngresoActual = "";
 
         // Avisa el ingreso al script en segundo plano; si falla, el alumno no nota nada
         function registrarIngresoPortal(alumno) {
             try {
                 const id = String(obtenerIdAlumno(alumno) || "").trim();
                 if (id === "") return;
-                postScript({ accion: "registrarIngresoPortal", id: id }).catch(() => {});
+                                postScript({ accion: "registrarIngresoPortal", id: id, metodo: _metodoIngresoActual }).catch(() => {});
             } catch (e) {
                 console.error("No se pudo registrar el ingreso:", e);
             }

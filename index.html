@@ -1457,7 +1457,7 @@ function reiniciarTimerCarrusel() {
                         <span class="font-bold text-center">${escaparHTML(h.calificacion || "—")}</span>
                         <span class="text-center text-xs">${h.destacado ? "🏅" : ""}</span>
                         <span class="text-center text-xs">${h.asistencia ? "✅" : ""}</span>
-                        <span class="text-center text-xs">${(h.certificado && /^https?:\/\//i.test(h.certificado)) ? `<a href="${escaparHTML(h.certificado)}" target="_blank" rel="noopener noreferrer" title="Descargar certificado" aria-label="Descargar certificado" style="text-decoration:none; font-size:14px;">📄</a>` : ""}</span>
+                        <span class="text-center text-xs">${(h.certificado && /^https?:\/\//i.test(h.certificado)) ? `<a href="${escaparHTML(h.certificado)}" target="_blank" rel="noopener noreferrer" title="Descargar certificado" aria-label="Descargar certificado" style="text-decoration:none; font-size:14px;">📥</a>` : ""}</span>
                     </div>`;
                 });
                 html += `</div>
